@@ -1,7 +1,7 @@
 # Bodimkarayo 🏠
 
 **Smart Roommate & Property Finder Platform**  
-*(University Project - Sprint 1)*
+
 
 ---
 
