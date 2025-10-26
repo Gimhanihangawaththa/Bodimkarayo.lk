@@ -64,12 +64,13 @@ bodimkarayo/
 
 ## 🧑‍🤝‍🧑 Team Members
 
-| Name | Role | Responsibilities |
-|------|------|------------------|
-| Bodhinayake Don Suwan Senuja Bodhinayake | Team Leader / Full Stack Developer | System architecture, backend & frontend integration |
-| Member 2 | Frontend Developer | Figma design, UI/UX, React development |
-| Member 3 | Backend Developer | Spring Boot API, database design |
-| Member 4 | DevOps / QA Engineer | Deployment, testing, CI/CD |
+ Name
+
+| Member   | Name |
+| Member 1 | Senuja Bodhinayake |
+| Member 2 | Thamindu Dambewela | 
+| Member 3 | Dushan Senith | 
+| Member 4 | Gimhani Hangawaththa | 
 
 ---
 
