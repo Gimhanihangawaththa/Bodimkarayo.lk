@@ -11,7 +11,14 @@
 
 The platform will connect tenants, landlords, and potential roommates through an intelligent recommendation system, verified profiles, and map-based property listings.
 
-
+## Objectives
+• Develop a user-friendly platform for property listing and roommate finding.
+• Integrate search and personalized recommendations.
+• Enable property owners and tenants to create verified profiles.
+• Map Integration – Map-based property search and navigation
+• Provide an admin dashboard for management, reporting, and issue handling.
+• Deliver first a fully functional web application, followed by a mobile application built
+with Flutter for broader accessibility.
 
 ## 🧠 System Architecture (High-Level)
 
@@ -64,9 +71,8 @@ bodimkarayo/
 
 ## 🧑‍🤝‍🧑 Team Members
 
- Name
-
-| Member   | Name |
+| Member| Name |
+|-------|-------------|
 | Member 1 | Senuja Bodhinayake |
 | Member 2 | Thamindu Dambewela | 
 | Member 3 | Dushan Senith | 
