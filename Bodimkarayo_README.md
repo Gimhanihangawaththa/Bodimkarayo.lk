@@ -83,7 +83,7 @@ bodimkarayo/
 ## 🎨 Figma Design
 
 You can view our interface designs on Figma:  
-🔗 [Figma Link Here](#) *(Add your actual Figma link)*
+🔗 [[Figma Link Here](https://www.figma.com/design/n9Z5hYrIfyWAnvATHLYb9M/Bordimkarayo.lk?node-id=0-1&t=Z3Nk3LqGJwWJyRlq-1)](#) *(Add your actual Figma link)*
 
 ---
 
