@@ -79,7 +79,7 @@ export default function AddProperty() {
       <div className="bg-white shadow h-20"></div>
 
       {/* Main Content */}
-      <form onSubmit={handleSubmit} className="max-w-6xl mx-auto px-4 py-8">
+      <form onSubmit={handleSubmit}   className="w-full lg:w-[80%] mx-auto px-4 py-8">
         {/* Image Upload Section */}
         <FormSection title="Add Property" isMainTitle={true}>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
