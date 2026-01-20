@@ -1,15 +1,17 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Signup from "./pages/SignUp.jsx";
-import SignIn from "./pages/SignIn.jsx";
+import AddProperty from "./pages/AddProperty.jsx";
+import PropertyView from "./pages/PropertyView.jsx";
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/signin" element={<SignIn />} />
+        <Route path="/add-property" element={<AddProperty />} />
+        <Route path="/AddProperty" element={<AddProperty />} />
+        <Route path="/property/:propertyId" element={<PropertyView />} />
+        <Route path="/" element={<AddProperty />} />
         
-        <Route path="*" element={<Signup />} />
+        <Route path="*" element={<AddProperty />} />
       </Routes>
     </Router>
   );
