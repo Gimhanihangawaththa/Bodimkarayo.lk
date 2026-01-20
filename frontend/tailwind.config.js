@@ -13,7 +13,7 @@ export default {
         light: '#f9fafb',
       },
       backgroundImage: {
-        'hero-gradient': 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #6366f1 100%)',
+        'hero-gradient': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%)',
       },
     },
   },

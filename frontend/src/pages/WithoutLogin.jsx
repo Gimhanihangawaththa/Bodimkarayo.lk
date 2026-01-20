@@ -45,7 +45,7 @@ const TestimonialCard = ({ rating, text, name, role }) => (
   </div>
 )
 
-export default function Home() {
+export default function WithoutLogin() {
   const [searchLocation, setSearchLocation] = useState('')
 
   const properties = [
@@ -86,26 +86,26 @@ export default function Home() {
   return (
     <>
       {/* Hero Section */}
-      <section className="bg-hero-gradient py-20 text-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full mix-blend-multiply filter blur-3xl" />
+      <section style={{ background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%)' }} className="py-32 text-white relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-black rounded-full mix-blend-multiply filter blur-3xl" />
         </div>
         <div className="max-w-6xl mx-auto px-4 relative z-10 text-center">
-          <h1 className="text-5xl font-bold mb-4 leading-tight">
+          <h1 className="text-5xl font-bold mb-4 leading-tight text-white drop-shadow-lg">
             Find Your Perfect Boarding in<br />Sri Lanka
           </h1>
-          <p className="text-lg text-blue-100 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg text-white mb-8 max-w-2xl mx-auto drop-shadow-md font-medium">
             Discover comfortable rooms and verified roommates across the island. Your next home is just a search away.
           </p>
           
           {/* Search Box */}
-          <div className="bg-white rounded-full p-2 flex items-center max-w-md mx-auto shadow-lg">
+          <div className="bg-white rounded-full p-1 flex items-center max-w-md mx-auto shadow-lg overflow-hidden">
             <input
               type="text"
               placeholder="Where do you want to stay?"
               value={searchLocation}
               onChange={(e) => setSearchLocation(e.target.value)}
-              className="flex-1 px-4 py-3 text-gray-900 outline-none"
+              className="flex-1 px-4 py-3 text-gray-900 outline-none bg-white"
             />
             <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-medium transition flex items-center gap-2">
               <span>🔍</span>
@@ -123,7 +123,7 @@ export default function Home() {
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Handpicked properties for you</h2>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-4 gap-6 mb-8">
             {properties.map((prop, i) => (
               <FeaturedCard key={i} {...prop} />
             ))}
@@ -145,7 +145,7 @@ export default function Home() {
             <p className="text-gray-600">Find your perfect boarding in 3 simple steps</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div className="grid grid-cols-3 gap-12">
             <StepCard
               icon="🔍"
               number="1"
@@ -176,7 +176,7 @@ export default function Home() {
             <p className="text-gray-600">Trusted by thousands across Sri Lanka</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-3 gap-8">
             <TestimonialCard
               rating={5}
               text="Found my perfect boarding in Colombo within a week! The platform is so easy to use and all properties are verified. Highly recommend!"
