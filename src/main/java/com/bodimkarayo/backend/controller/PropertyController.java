@@ -1,42 +1,42 @@
 package com.bodimkarayo.backend.controller;
 
 import com.bodimkarayo.backend.model.Property;
+import com.bodimkarayo.backend.service.PropertyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
-import com.bodimkarayo.backend.repository.PropertyRepository;
 
 import java.util.List;
 
-// controller/PropertyController.java
 @RestController
 @RequestMapping("/api/properties")
 public class PropertyController {
-    @Autowired
-    private PropertyRepository repo;
 
-    @PostMapping
-    public Property add(@RequestBody Property p) {
-        return repo.save(p);
-    }
+    @Autowired
+    private PropertyService propertyService;
 
     @GetMapping
-    public List<Property> list() {
-        return repo.findAll();
+    public List<Property> getAll() {
+        return propertyService.getAllProperties();
     }
 
     @GetMapping("/{id}")
-    public Property get(@PathVariable Long id) {
-        return repo.findById(id).orElseThrow();
+    public Property getById(@PathVariable Long id) {
+        return propertyService.getPropertyById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+    }
+
+    @PostMapping
+    public Property create(@RequestBody Property property) {
+        return propertyService.createProperty(property);
     }
 
     @PutMapping("/{id}")
-    public Property update(@PathVariable Long id, @RequestBody Property p) {
-        p.setId(id);
-        return repo.save(p);
+    public Property update(@PathVariable Long id, @RequestBody Property property) {
+        return propertyService.updateProperty(id, property);
     }
 
     @DeleteMapping("/{id}")
     public void delete(@PathVariable Long id) {
-        repo.deleteById(id);
+        propertyService.deleteProperty(id);
     }
 }

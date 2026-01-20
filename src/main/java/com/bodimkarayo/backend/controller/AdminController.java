@@ -1,29 +1,26 @@
 package com.bodimkarayo.backend.controller;
 
-import com.bodimkarayo.backend.model.User;
-import com.bodimkarayo.backend.repository.UserRepository;
+import com.bodimkarayo.backend.model.AdminLog;
+import com.bodimkarayo.backend.service.AdminLogService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// controller/AdminController.java
 @RestController
-@RequestMapping("/api/admin")
-@PreAuthorize("hasRole('ADMIN')")
+@RequestMapping("/api/admin/logs")
 public class AdminController {
-    @Autowired
-    private UserRepository userRepo;
 
-    @GetMapping("/users")
-    public List<User> allUsers() {
-        return userRepo.findAll();
+    @Autowired
+    private AdminLogService adminLogService;
+
+    @GetMapping
+    public List<AdminLog> getAllLogs() {
+        return adminLogService.getAllLogs();
     }
 
-    @DeleteMapping("/users/{id}")
-    public void deleteUser(@PathVariable Long id) {
-        userRepo.deleteById(id);
+    @PostMapping
+    public AdminLog createLog(@RequestBody AdminLog log) {
+        return adminLogService.createLog(log);
     }
 }
-
