@@ -17,12 +17,16 @@ export default function SignUp() {
   return (
     <div className="min-h-screen grid grid-cols-2 bg-white">
       {/* Left panel */}
-      <div style={{ background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%)' }} className="flex relative overflow-hidden text-white">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.08),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.07),transparent_35%),radial-gradient(circle_at_40%_80%,rgba(0,0,0,0.15),transparent_40%)]" />
+      <div style={{ background: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%)' }} className="flex flex-col relative overflow-hidden text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.08),transparent_40%),radial-gradient(circle_at_80%_0%,rgba(255,255,255,0.07),transparent_35%),radial-gradient(circle_at_40%_80%,rgba(0,0,0,0.15),transparent_40%)]"/>
         <div className="absolute -left-16 -top-10 w-96 h-96 rounded-full bg-white/15 blur-3xl" />
         <div className="absolute right-[-80px] top-24 w-80 h-80 rounded-full bg-black/15 blur-2xl" />
 
-        <div className="relative z-10 flex items-center justify-center w-full p-14">
+        <div className="relative z-10 pt-20 flex justify-center">
+          <h2 className="text-5xl font-bold text-white drop-shadow-lg">Bodimkarayo.lk</h2>
+        </div>
+
+        <div className="relative z-10 flex items-center justify-center w-full p-14 flex-1">
           <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-10 max-w-lg w-full shadow-2xl">
             <p className="text-sm uppercase tracking-[0.3em] text-white/70 mb-6">Welcome!</p>
             <h1 className="text-5xl font-bold leading-tight mb-4">Join Us!</h1>

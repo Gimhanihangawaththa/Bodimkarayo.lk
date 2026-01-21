@@ -29,6 +29,27 @@ const StepCard = ({ icon, number, title, desc }) => (
   </div>
 )
 
+const RoommateCard = ({ name, age, location, bio, interests, verified }) => (
+  <div className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition">
+    <div className="bg-gradient-to-br from-green-300 to-blue-300 h-48" />
+    <div className="p-4">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold text-gray-900">{name}, {age}</h3>
+        {verified && <span className="text-blue-600 font-bold">✓</span>}
+      </div>
+      <p className="text-sm text-gray-600 mb-3">📍 {location}</p>
+      <p className="text-sm text-gray-700 mb-3">{bio}</p>
+      <div className="flex flex-wrap gap-2">
+        {interests.map((interest, i) => (
+          <span key={i} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+            {interest}
+          </span>
+        ))}
+      </div>
+    </div>
+  </div>
+)
+
 const TestimonialCard = ({ rating, text, name, role }) => (
   <div className="bg-white rounded-lg p-6 shadow">
     <div className="flex gap-1 mb-3">
@@ -83,6 +104,41 @@ export default function WithoutLogin() {
     },
   ]
 
+  const roommates = [
+    {
+      name: 'Kasun',
+      age: 23,
+      location: 'Colombo 7',
+      bio: 'Engineering student looking for a friendly roommate',
+      interests: ['Tech', 'Sports', 'Music'],
+      verified: true,
+    },
+    {
+      name: 'Amelia',
+      age: 24,
+      location: 'Colombo 5',
+      bio: 'Marketing professional seeking a roommate',
+      interests: ['Books', 'Yoga', 'Cooking'],
+      verified: true,
+    },
+    {
+      name: 'Ravi',
+      age: 22,
+      location: 'Colombo 6',
+      bio: 'Medical student, quiet and focused',
+      interests: ['Reading', 'Gaming', 'Photography'],
+      verified: true,
+    },
+    {
+      name: 'Shenal',
+      age: 25,
+      location: 'Colombo 4',
+      bio: 'Software developer open to sharing apartment',
+      interests: ['Coding', 'Movies', 'Travel'],
+      verified: true,
+    },
+  ]
+
   return (
     <>
       {/* Hero Section */}
@@ -132,6 +188,28 @@ export default function WithoutLogin() {
           <div className="text-center">
             <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
               View all properties →
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Roommates */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="text-center mb-12">
+            <p className="text-blue-600 font-semibold mb-2">Find Roommates</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Connect with verified roommates</h2>
+          </div>
+          
+          <div className="grid grid-cols-4 gap-6 mb-8">
+            {roommates.map((roommate, i) => (
+              <RoommateCard key={i} {...roommate} />
+            ))}
+          </div>
+          
+          <div className="text-center">
+            <a href="#" className="text-blue-600 hover:text-blue-700 font-medium">
+              View all roommates →
             </a>
           </div>
         </div>
