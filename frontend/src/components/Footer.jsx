@@ -3,7 +3,7 @@ import logo from '../assets/logo.jpg'
 export default function Footer() {
   const year = new Date().getFullYear();
   return (
-    <footer className="bg-gray-900 text-gray-100">
+    <footer className="bg-gradient-to-r from-blue-900 via-blue-600 to-blue-400 text-gray-100">
       <div className="w-full px-8 py-12">
         <div className="grid grid-cols-4 gap-12 mb-8">
           <div>
