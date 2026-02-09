@@ -24,6 +24,15 @@ const RoommateCard = ({ image, name, age, location, bio, interests, verified }) 
 )
 
 export default function Roommates() {
+  const appliedRoommate = (() => {
+    try {
+      const raw = localStorage.getItem('appliedRoommate')
+      return raw ? JSON.parse(raw) : null
+    } catch (e) {
+      return null
+    }
+  })()
+
   const roommates = [
     {
       image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
@@ -99,6 +108,21 @@ export default function Roommates() {
     },
   ]
 
+  const mergedRoommates = [
+    ...(appliedRoommate
+      ? [{
+          image: appliedRoommate.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+          name: appliedRoommate.name,
+          age: appliedRoommate.age,
+          location: appliedRoommate.location,
+          bio: appliedRoommate.bio,
+          interests: appliedRoommate.interests || [],
+          verified: false,
+        }]
+      : []),
+    ...roommates,
+  ]
+
   return (
     <>
       {/* Hero Section */}
@@ -136,7 +160,7 @@ export default function Roommates() {
           </div>
           
           <div className="grid grid-cols-4 gap-6">
-            {roommates.map((roommate, i) => (
+            {mergedRoommates.map((roommate, i) => (
               <RoommateCard key={i} {...roommate} />
             ))}
           </div>

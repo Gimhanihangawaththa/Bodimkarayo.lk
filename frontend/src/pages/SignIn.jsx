@@ -1,17 +1,32 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import logo from '../assets/logo.jpg'
+import { useAuth } from '../context/AuthContext'
 
 export default function SignIn() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
+  const [error, setError] = useState('')
+  const { login } = useAuth()
+  const navigate = useNavigate()
+
+  const DEMO_USERNAME = 'demo'
+  const DEMO_PASSWORD = 'demo123'
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    console.log({ username, password, remember })
+    setError('')
+    // Demo-only: accept a hardcoded username/password.
+    if (username === DEMO_USERNAME && password === DEMO_PASSWORD) {
+      login({ username })
+      navigate('/')
+      return
+    }
+
+    setError('Invalid credentials. Use demo / demo123.')
   }
 
   return (
@@ -65,6 +80,10 @@ export default function SignIn() {
                 required
               />
             </div>
+
+            <p className="text-xs text-gray-500">Demo credentials: <span className="font-mono">demo</span> / <span className="font-mono">demo123</span></p>
+
+            {error && <p className="text-sm text-red-600">{error}</p>}
 
             <div className="flex items-center justify-between text-sm text-gray-600">
               <label className="inline-flex items-center gap-2">

@@ -7,6 +7,7 @@ import Properties from './pages/Properties'
 import Roommates from './pages/Roommates'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
+import ApplyRoommate from './pages/ApplyRoommate'
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="home" element={<Home />} />
           <Route path="properties" element={<Properties />} />
           <Route path="roommates" element={<Roommates />} />
+          <Route path="apply-roommate" element={<ApplyRoommate />} />
           <Route path="signin" element={<SignIn />} />
           <Route path="signup" element={<SignUp />} />
         </Route>
