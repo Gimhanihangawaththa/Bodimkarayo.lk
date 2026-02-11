@@ -11,6 +11,13 @@ export function AuthProvider({ children }) {
       return null
     }
   })
+  const [token, setToken] = useState(() => {
+    try {
+      return localStorage.getItem('authToken') || null
+    } catch (e) {
+      return null
+    }
+  })
 
   useEffect(() => {
     try {
@@ -21,11 +28,29 @@ export function AuthProvider({ children }) {
     }
   }, [user])
 
-  const login = (userData) => setUser(userData)
-  const logout = () => setUser(null)
+  useEffect(() => {
+    try {
+      if (token) localStorage.setItem('authToken', token)
+      else localStorage.removeItem('authToken')
+    } catch (e) {
+      // ignore
+    }
+  }, [token])
+
+  const login = (authData) => {
+    if (!authData) return
+    setUser(authData.user || null)
+    setToken(authData.token || null)
+  }
+  const logout = () => {
+    setUser(null)
+    setToken(null)
+  }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, token, isAuthenticated: !!token, login, logout }}>
+      {children}
+    </AuthContext.Provider>
   )
 }
 

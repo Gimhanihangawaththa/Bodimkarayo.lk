@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './App.css'
 import Layout from './components/Layout'
-import WithoutLogin from './pages/WithoutLogin'
 import Home from './pages/Home'
 import Properties from './pages/Properties'
 import Roommates from './pages/Roommates'
@@ -14,7 +13,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Layout />}> 
-          <Route index element={<WithoutLogin />} />
+          <Route index element={<Home />} />
           <Route path="home" element={<Home />} />
           <Route path="properties" element={<Properties />} />
           <Route path="roommates" element={<Roommates />} />

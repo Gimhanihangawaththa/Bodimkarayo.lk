@@ -1,17 +1,44 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import axios from 'axios'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
+import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logo.jpg'
 
 export default function SignUp() {
+  const navigate = useNavigate()
+  const { login } = useAuth()
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log({ username, email, password })
+    setError('')
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.')
+      return
+    }
+
+    setIsSubmitting(true)
+
+    try {
+      await axios.post('/api/auth/register', { username, email, password })
+      const loginResponse = await axios.post('/api/auth/login', { email, password })
+      const authData = loginResponse.data
+      login({ user: authData.user, token: authData.token })
+      navigate('/')
+    } catch (err) {
+      const message = err?.response?.data?.message || err?.message || 'Something went wrong. Please try again.'
+      setError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -71,9 +98,28 @@ export default function SignUp() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+              <Input
+                type="password"
+                placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
             </div>
 
-            <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white">Sign Up</Button>
+            {error && (
+              <div className="text-sm text-red-600" role="alert">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Creating account...' : 'Sign Up'}
+            </Button>
           </form>
 
           <div className="flex items-center gap-3 text-sm text-gray-500">

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import axios from 'axios'
 import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -6,27 +7,30 @@ import logo from '../assets/logo.jpg'
 import { useAuth } from '../context/AuthContext'
 
 export default function SignIn() {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [remember, setRemember] = useState(false)
   const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const DEMO_USERNAME = 'demo'
-  const DEMO_PASSWORD = 'demo123'
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
-    // Demo-only: accept a hardcoded username/password.
-    if (username === DEMO_USERNAME && password === DEMO_PASSWORD) {
-      login({ username })
-      navigate('/')
-      return
-    }
+    setIsSubmitting(true)
 
-    setError('Invalid credentials. Use demo / demo123.')
+    try {
+      const response = await axios.post('/api/auth/login', { email, password })
+      const authData = response.data
+      login({ user: authData.user, token: authData.token })
+      navigate('/')
+    } catch (err) {
+      const message = err?.response?.data?.message || err?.message || 'Something went wrong. Please try again.'
+      setError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -66,10 +70,10 @@ export default function SignIn() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-3">
               <Input
-                type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
               />
               <Input
@@ -81,9 +85,11 @@ export default function SignIn() {
               />
             </div>
 
-            <p className="text-xs text-gray-500">Demo credentials: <span className="font-mono">demo</span> / <span className="font-mono">demo123</span></p>
-
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && (
+              <p className="text-sm text-red-600" role="alert">
+                {error}
+              </p>
+            )}
 
             <div className="flex items-center justify-between text-sm text-gray-600">
               <label className="inline-flex items-center gap-2">
@@ -98,7 +104,13 @@ export default function SignIn() {
               <button type="button" className="text-blue-700 hover:underline">Forgot password?</button>
             </div>
 
-            <Button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white">Login</Button>
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-800 text-white"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Signing in...' : 'Login'}
+            </Button>
           </form>
 
           <div className="flex items-center gap-3 text-sm text-gray-500">

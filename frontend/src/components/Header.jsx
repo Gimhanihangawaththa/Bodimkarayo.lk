@@ -5,8 +5,8 @@ import { useAuth } from '../context/AuthContext'
 export default function Header() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, logout } = useAuth()
-  const isLoggedIn = Boolean(user)
+  const { user, token, logout } = useAuth()
+  const isLoggedIn = Boolean(token)
 
   const handleLogout = () => {
     logout()
