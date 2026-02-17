@@ -2,6 +2,11 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './App.css'
 import Layout from './components/Layout'
 import Home from './pages/Home'
+import Properties from './pages/Properties'
+import Roommates from './pages/Roommates'
+import SignIn from './pages/SignIn'
+import SignUp from './pages/SignUp'
+import ApplyRoommate from './pages/ApplyRoommate'
 
 function App() {
   return (
@@ -9,6 +14,12 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}> 
           <Route index element={<Home />} />
+          <Route path="home" element={<Home />} />
+          <Route path="properties" element={<Properties />} />
+          <Route path="roommates" element={<Roommates />} />
+          <Route path="apply-roommate" element={<ApplyRoommate />} />
+          <Route path="signin" element={<SignIn />} />
+          <Route path="signup" element={<SignUp />} />
         </Route>
       </Routes>
     </BrowserRouter>
