@@ -21,4 +21,9 @@ public class AuthController {
     public User login(@RequestBody User user) {
         return authService.login(user.getEmail(), user.getPassword());
     }
+
+    @PutMapping("/upgrade-to-owner/{userId}")
+    public User upgradeToOwner(@PathVariable Long userId) {
+        return authService.upgradeToOwner(userId);
+    }
 }

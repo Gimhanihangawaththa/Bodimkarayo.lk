@@ -20,6 +20,10 @@ public class AuthService {
             throw new RuntimeException("Email already registered");
         }
 
+        // Set default role and verification status
+        user.setRole("USER");
+        user.setVerified(false);
+
         // Save new user
         return userRepository.save(user);
     }
@@ -31,5 +35,20 @@ public class AuthService {
         }
 
         return user.get();
+    }
+
+    public User upgradeToOwner(Long userId) {
+        Optional<User> userOpt = userRepository.findById(userId);
+        if (userOpt.isEmpty()) {
+            throw new RuntimeException("User not found");
+        }
+
+        User user = userOpt.get();
+        if ("OWNER".equals(user.getRole()) || "ADMIN".equals(user.getRole())) {
+            throw new RuntimeException("User is already an owner or admin");
+        }
+
+        user.setRole("OWNER");
+        return userRepository.save(user);
     }
 }

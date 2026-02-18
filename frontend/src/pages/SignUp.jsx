@@ -4,18 +4,48 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 const SignUp = () => {
-  const [username, setUsername] = useState("")
+  const [fullName, setFullName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
 
-  const navigate = useNavigate() // Initialize useNavigate
+  const navigate = useNavigate()
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    console.log({ username, email, password })
+    setError("")
+    setLoading(true)
 
-  
-    navigate("/signin")
+    try {
+      const response = await fetch("http://localhost:8080/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName,
+          email,
+          password,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        throw new Error(errorData || "Registration failed")
+      }
+
+      const data = await response.json()
+      console.log("Registration successful:", data)
+
+      // Navigate to sign in page after successful registration
+      navigate("/signin")
+    } catch (err) {
+      setError(err.message || "Failed to register. Please try again.")
+      console.error("Registration error:", err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -46,12 +76,18 @@ const SignUp = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
             <Input
               type="text"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Full Name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
               required
+              disabled={loading}
             />
             <Input
               type="email"
@@ -59,6 +95,7 @@ const SignUp = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              disabled={loading}
             />
             <Input
               type="password"
@@ -66,9 +103,10 @@ const SignUp = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              disabled={loading}
             />
-            <Button type="submit" className="w-full">
-              Sign up
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Signing up..." : "Sign up"}
             </Button>
           </form>
 
