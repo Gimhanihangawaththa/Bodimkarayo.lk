@@ -9,7 +9,7 @@ import logo from '../assets/logo.jpg'
 export default function SignUp() {
   const navigate = useNavigate()
   const { login } = useAuth()
-  const [username, setUsername] = useState('')
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -28,11 +28,13 @@ export default function SignUp() {
     setIsSubmitting(true)
 
     try {
-      await axios.post('/api/auth/register', { username, email, password })
-      const loginResponse = await axios.post('/api/auth/login', { email, password })
-      const authData = loginResponse.data
-      login({ user: authData.user, token: authData.token })
-      navigate('/')
+      await axios.post('http://localhost:8080/api/auth/register', { 
+        fullName, 
+        email, 
+        password 
+      })
+      // Registration successful - redirect to sign in
+      navigate('/signin')
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'Something went wrong. Please try again.'
       setError(message)
@@ -79,9 +81,9 @@ export default function SignUp() {
             <div className="space-y-3">
               <Input
                 type="text"
-                placeholder="Username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 required
               />
               <Input
