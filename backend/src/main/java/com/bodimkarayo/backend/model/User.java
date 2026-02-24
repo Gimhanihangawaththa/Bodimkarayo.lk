@@ -21,5 +21,6 @@ public class User {
 
     private String role;
 
-    private boolean verified;
+    @Builder.Default
+    private Boolean verified = false;
 }

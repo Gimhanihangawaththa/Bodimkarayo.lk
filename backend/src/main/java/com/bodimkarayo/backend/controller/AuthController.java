@@ -1,5 +1,6 @@
 package com.bodimkarayo.backend.controller;
 
+import com.bodimkarayo.backend.dto.AuthResponse;
 import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.service.AuthService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +19,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public User login(@RequestBody User user) {
+    public AuthResponse login(@RequestBody User user) {
         return authService.login(user.getEmail(), user.getPassword());
     }
 

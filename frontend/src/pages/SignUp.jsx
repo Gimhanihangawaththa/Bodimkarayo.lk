@@ -28,7 +28,7 @@ export default function SignUp() {
     setIsSubmitting(true)
 
     try {
-      await axios.post('http://localhost:8080/api/auth/register', { 
+      await axios.post('http://localhost:4000/api/auth/register', { 
         fullName, 
         email, 
         password 

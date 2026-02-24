@@ -21,7 +21,7 @@ export default function SignIn() {
     setIsSubmitting(true)
 
     try {
-      const response = await axios.post('/api/auth/login', { email, password })
+      const response = await axios.post('http://localhost:4000/api/auth/login', { email, password })
       const authData = response.data
       login({ user: authData.user, token: authData.token })
       navigate('/')
