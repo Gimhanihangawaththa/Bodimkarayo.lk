@@ -1,9 +1,0 @@
-<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- Shield shape with house icon -->
-  <path d="M20 2L8 8V16C8 26 20 36 20 36C20 36 32 26 32 16V8L20 2Z" fill="#1e40af" stroke="#1e3a8a" strokeWidth="1.5"/>
-  <!-- House inside shield -->
-  <path d="M20 14L14 20V28H26V20L20 14Z" fill="white"/>
-  <rect x="16" y="22" width="3" height="3" fill="#1e40af"/>
-  <rect x="21" y="22" width="3" height="3" fill="#1e40af"/>
-  <polygon points="20,16 18,18 22,18" fill="#1e40af"/>
-</svg>
