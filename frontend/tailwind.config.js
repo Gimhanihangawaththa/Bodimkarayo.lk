@@ -2,18 +2,14 @@
 export default {
   content: [
     "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/**/*.{js,jsx}",
   ],
   theme: {
     extend: {
       colors: {
-        primary: '#1e3a8a',
-        secondary: '#3b82f6',
-        dark: '#1a1a2e',
-        light: '#f9fafb',
-      },
-      backgroundImage: {
-        'hero-gradient': 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%)',
+        primary: '#1F2937',
+        secondary: '#6B7280',
+        accent: '#3B82F6',
       },
     },
   },
