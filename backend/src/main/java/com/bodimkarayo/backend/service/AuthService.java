@@ -1,6 +1,8 @@
 package com.bodimkarayo.backend.service;
 
 import com.bodimkarayo.backend.dto.AuthResponse;
+import com.bodimkarayo.backend.exception.BadRequestException;
+import com.bodimkarayo.backend.exception.UnauthorizedException;
 import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.repository.UserRepository;
 import com.bodimkarayo.backend.util.JwtUtil;
@@ -26,7 +28,7 @@ public class AuthService {
         // Check if email already exists
         Optional<User> existing = userRepository.findByEmail(user.getEmail());
         if (existing.isPresent()) {
-            throw new RuntimeException("Email already registered");
+            throw new BadRequestException("Email already registered");
         }
 
         // Hash password
@@ -43,7 +45,7 @@ public class AuthService {
     public AuthResponse login(String email, String password) {
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isEmpty() || !passwordEncoder.matches(password, user.get().getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new UnauthorizedException("Invalid email or password");
         }
 
         User foundUser = user.get();
@@ -55,12 +57,12 @@ public class AuthService {
     public User upgradeToOwner(Long userId) {
         Optional<User> userOpt = userRepository.findById(userId);
         if (userOpt.isEmpty()) {
-            throw new RuntimeException("User not found");
+            throw new BadRequestException("User not found");
         }
 
         User user = userOpt.get();
         if ("OWNER".equals(user.getRole()) || "ADMIN".equals(user.getRole())) {
-            throw new RuntimeException("User is already an owner or admin");
+            throw new BadRequestException("User is already an owner or admin");
         }
 
         user.setRole("OWNER");

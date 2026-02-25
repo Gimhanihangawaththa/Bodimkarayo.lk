@@ -30,7 +30,12 @@ public class RoommateService {
         RoommatePost post = (RoommatePost) roommateRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
+        post.setGender(updatedPost.getGender());
+        post.setAge(updatedPost.getAge());
+        post.setOccupation(updatedPost.getOccupation());
         post.setLocation(updatedPost.getLocation());
+        post.setBio(updatedPost.getBio());
+        post.setInterests(updatedPost.getInterests());
         post.setPreferences(updatedPost.getPreferences());
         post.setBudget(updatedPost.getBudget());
         post.setPoster(updatedPost.getPoster());

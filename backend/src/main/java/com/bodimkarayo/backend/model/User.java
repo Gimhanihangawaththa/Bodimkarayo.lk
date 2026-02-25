@@ -23,4 +23,8 @@ public class User {
 
     @Builder.Default
     private Boolean verified = false;
+
+    private String profilePictureUrl;
+    
+    private String gender;
 }

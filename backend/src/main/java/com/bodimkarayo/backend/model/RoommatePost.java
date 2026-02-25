@@ -14,9 +14,14 @@ public class RoommatePost {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String preferences;
+    private String gender;
+    private Integer age;
+    private String occupation;
     private String location;
-    private double budget;
+    private String bio;
+    private String interests; // Comma-separated
+    private String preferences;
+    private Double budget;
 
     @ManyToOne
     private User poster;
