@@ -3,16 +3,23 @@ package com.bodimkarayo.backend.service;
 import com.bodimkarayo.backend.model.Property;
 import com.bodimkarayo.backend.repository.PropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 @Service
 public class PropertyService {
 
     @Autowired
     private PropertyRepository propertyRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     public List<Property> getAllProperties() {
         return propertyRepository.findAll();
@@ -58,5 +65,42 @@ public class PropertyService {
 
     public void deleteProperty(Long id) {
         propertyRepository.deleteById(id);
+    }
+
+    /**
+     * Async method to upload images and update property
+     * Runs in background thread pool - doesn't block the response
+     */
+    @Async
+    public void uploadPropertyImagesAsync(Long propertyId, List<MultipartFile> imageFiles) {
+        try {
+            if (imageFiles == null || imageFiles.isEmpty()) {
+                return;
+            }
+
+            // Upload images in parallel
+            List<CompletableFuture<String>> uploadFutures = imageFiles.stream()
+                    .filter(file -> file != null && !file.isEmpty())
+                    .map(file -> CompletableFuture.supplyAsync(() -> 
+                            cloudinaryService.uploadPropertyImage(file, propertyId)))
+                    .collect(Collectors.toList());
+            
+            // Wait for all uploads to complete
+            List<String> imageUrls = uploadFutures.stream()
+                    .map(CompletableFuture::join)
+                    .collect(Collectors.toList());
+
+            // Update property with images
+            Property property = propertyRepository.findById(propertyId)
+                    .orElseThrow(() -> new RuntimeException("Property not found"));
+            
+            property.setImages(imageUrls);
+            propertyRepository.save(property);
+            
+            System.out.println("Property " + propertyId + " images uploaded successfully: " + imageUrls.size() + " images");
+        } catch (Exception e) {
+            System.err.println("Error uploading images for property " + propertyId + ": " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 }

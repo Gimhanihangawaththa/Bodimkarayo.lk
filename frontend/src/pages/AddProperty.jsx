@@ -4,12 +4,14 @@ import { ImageUploadBox } from "../components/ImageUploadBox";
 import { FormInput } from "../components/FormInput";
 import { FormSection } from "../components/FormSection";
 import { propertyService } from "../services";
+import { useAuth } from "../context/AuthContext";
 
 const MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024;
 const MAX_TOTAL_IMAGE_SIZE_BYTES = 80 * 1024 * 1024;
 
 export default function AddProperty() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [imagePreviews, setImagePreviews] = useState([null, null, null, null, null]);
@@ -154,59 +156,57 @@ export default function AddProperty() {
     setError(null);
 
     try {
-      // Create FormData for multipart/form-data submission (supports file uploads)
-      const formDataToSend = new FormData();
+      // Separate images from other data
+      const hasImages = formData.images.some(img => img !== null);
+      
+      // Create JSON payload for property data
+      const propertyData = {
+        title: formData.title,
+        propertyType: formData.propertyType,
+        rent: parseFloat(formData.price) || 0,
+        availableFrom: formData.availableFrom,
+        location: formData.location,
+        address: formData.address,
+        numberOfPeople: formData.numberOfPeople,
+        description: formData.description,
+        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
+        kitchens: formData.kitchens ? parseInt(formData.kitchens) : null,
+        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
+        floor: formData.floor,
+        furnished: formData.furnished,
+        parking: formData.parking,
+        petsAllowed: formData.petsAllowed,
+        mapEmbedUrl: formData.mapEmbedUrl,
+        offers: formData.offers.filter((o) => o.trim() !== ""),
+        highlights: formData.highlights.filter((h) => h.trim() !== ""),
+        rules: formData.rules.filter((r) => r.trim() !== ""),
+        nearby: formData.nearby.filter((n) => n.trim() !== ""),
+        owner: user ? { id: user.id } : null,
+      };
 
-      // Append all form fields
-      formDataToSend.append("title", formData.title);
-      formDataToSend.append("propertyType", formData.propertyType);
-      formDataToSend.append("price", formData.price);
-      formDataToSend.append("availableFrom", formData.availableFrom);
-      formDataToSend.append("location", formData.location);
-      formDataToSend.append("address", formData.address);
-      formDataToSend.append("numberOfPeople", formData.numberOfPeople);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("bedrooms", formData.bedrooms);
-      formDataToSend.append("kitchens", formData.kitchens);
-      formDataToSend.append("bathrooms", formData.bathrooms);
-      formDataToSend.append("floor", formData.floor);
-      formDataToSend.append("furnished", formData.furnished);
-      formDataToSend.append("parking", formData.parking);
-      formDataToSend.append("petsAllowed", formData.petsAllowed);
-      formDataToSend.append("mapEmbedUrl", formData.mapEmbedUrl);
-
-      // Append arrays (filter out empty values)
-      formDataToSend.append(
-        "offers",
-        JSON.stringify(formData.offers.filter((o) => o.trim() !== ""))
-      );
-      formDataToSend.append(
-        "highlights",
-        JSON.stringify(formData.highlights.filter((h) => h.trim() !== ""))
-      );
-      formDataToSend.append(
-        "rules",
-        JSON.stringify(formData.rules.filter((r) => r.trim() !== ""))
-      );
-      formDataToSend.append(
-        "nearby",
-        JSON.stringify(formData.nearby.filter((n) => n.trim() !== ""))
-      );
-
-      // Append image files
-      formData.images.forEach((image) => {
-        if (image) {
-          formDataToSend.append("images", image);
-        }
-      });
-
-      // Call the backend API
-      const response = await propertyService.createProperty(formDataToSend);
-
+      // Create property first (without images)
+      const response = await propertyService.createProperty(propertyData);
       console.log("Property created successfully:", response);
-      alert("Property added successfully!");
 
-      // Navigate to home or property listing page
+      // If there are images, upload them separately
+      if (hasImages) {
+        const imageFormData = new FormData();
+        formData.images.forEach((image) => {
+          if (image) {
+            imageFormData.append("images", image);
+          }
+        });
+
+        try {
+          await propertyService.uploadPropertyImages(response.id, imageFormData);
+          console.log("Images uploaded successfully");
+        } catch (imgErr) {
+          console.error("Error uploading images:", imgErr);
+          alert("Property created but some images failed to upload. You can edit the property to add them later.");
+        }
+      }
+
+      alert("Property added successfully!");
       navigate("/");
     } catch (err) {
       console.error("Error creating property:", err);

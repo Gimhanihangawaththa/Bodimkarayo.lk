@@ -37,7 +37,7 @@ const propertyService = {
   /**
    * Create a new property
    * Backend endpoint: POST /api/properties
-   * Accepts FormData for file uploads (images)
+   * Accepts JSON for property data
    */
   createProperty: async (propertyData) => {
     try {
@@ -45,6 +45,28 @@ const propertyService = {
       return response.data;
     } catch (error) {
       console.error('Error creating property:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Upload images for a property
+   * Backend endpoint: POST /api/properties/:id/images
+   * Accepts FormData with image files
+   */
+  uploadPropertyImages: async (propertyId, imageFormData) => {
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+      // For FormData, axios needs specific header config
+      // The browser will auto-generate the boundary
+      const response = await apiClient.post(`/properties/${propertyId}/images`, imageFormData, config);
+      return response.data;
+    } catch (error) {
+      console.error(`Error uploading images for property ${propertyId}:`, error);
       throw error;
     }
   },

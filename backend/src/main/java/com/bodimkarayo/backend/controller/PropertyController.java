@@ -86,24 +86,33 @@ public class PropertyController {
 
         Property savedProperty = propertyService.createProperty(property);
 
-        List<String> imageUrls = new ArrayList<>();
-        if (imageFiles != null) {
-            for (MultipartFile imageFile : imageFiles) {
-                if (imageFile == null || imageFile.isEmpty()) {
-                    continue;
-                }
-                String uploadedUrl = cloudinaryService.uploadPropertyImage(imageFile, savedProperty.getId());
-                imageUrls.add(uploadedUrl);
-            }
+        // Upload images asynchronously in background
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            propertyService.uploadPropertyImagesAsync(savedProperty.getId(), imageFiles);
         }
 
-        savedProperty.setImages(imageUrls);
-        return propertyService.createProperty(savedProperty);
+        return savedProperty;
     }
 
     @PutMapping("/{id}")
     public Property update(@PathVariable Long id, @RequestBody Property property) {
         return propertyService.updateProperty(id, property);
+    }
+
+    @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public Property uploadImages(
+            @PathVariable Long id,
+            @RequestParam(value = "images", required = false) List<MultipartFile> imageFiles
+    ) {
+        Property property = propertyService.getPropertyById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+
+        // Upload images asynchronously in background
+        if (imageFiles != null && !imageFiles.isEmpty()) {
+            propertyService.uploadPropertyImagesAsync(id, imageFiles);
+        }
+
+        return property;
     }
 
     @DeleteMapping("/{id}")

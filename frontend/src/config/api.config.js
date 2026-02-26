@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000
 // Create axios instance with default configuration
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000, // 15 seconds timeout
+  timeout: 60000, // 60 seconds timeout
 });
 
 // Request interceptor - runs before each request
