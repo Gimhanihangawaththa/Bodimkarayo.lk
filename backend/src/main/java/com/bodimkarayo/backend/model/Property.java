@@ -20,7 +20,6 @@ public class Property {
     private String description;
     private String location;
     private double rent;
-    private String imageUrl;
     private String propertyType;
     private String availableFrom;
     private String address;
@@ -28,13 +27,10 @@ public class Property {
     private Integer bedrooms;
     private Integer kitchens;
     private Integer bathrooms;
-    private String sizeSqft;
     private String floor;
     private String furnished;
     private String parking;
-    private String security;
     private String petsAllowed;
-    private String yearBuilt;
     private String mapEmbedUrl;
 
     @ElementCollection

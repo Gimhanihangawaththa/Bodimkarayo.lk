@@ -7,6 +7,7 @@ import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.Optional;
 
@@ -15,6 +16,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     public UserProfileResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -43,6 +47,17 @@ public class UserService {
         if (request.getProfilePictureUrl() != null) {
             user.setProfilePictureUrl(request.getProfilePictureUrl().trim());
         }
+
+        User updatedUser = userRepository.save(user);
+        return toProfileResponse(updatedUser);
+    }
+
+    public UserProfileResponse uploadProfileImage(Long userId, MultipartFile image) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String imageUrl = cloudinaryService.uploadUserProfileImage(image, userId);
+        user.setProfilePictureUrl(imageUrl);
 
         User updatedUser = userRepository.save(user);
         return toProfileResponse(updatedUser);

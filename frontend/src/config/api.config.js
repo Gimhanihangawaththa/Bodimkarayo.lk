@@ -11,21 +11,6 @@ const apiClient = axios.create({
 // Request interceptor - runs before each request
 apiClient.interceptors.request.use(
   (config) => {
-    if (config.data instanceof FormData) {
-      if (!config.headers) {
-        config.headers = {};
-      }
-
-      if (typeof config.headers.set === 'function') {
-        config.headers.set('Content-Type', undefined);
-      }
-
-      delete config.headers['Content-Type'];
-      delete config.headers['content-type'];
-    } else if (config.headers && !config.headers['Content-Type']) {
-      config.headers['Content-Type'] = 'application/json';
-    }
-
     // Add authentication token here when implemented
     // const token = localStorage.getItem('authToken');
     // if (token) {

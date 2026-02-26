@@ -41,9 +41,7 @@ const propertyService = {
    */
   createProperty: async (propertyData) => {
     try {
-      const response = await apiClient.post('/properties', propertyData, {
-        transformRequest: [(data) => data],
-      });
+      const response = await apiClient.post('/properties', propertyData);
       return response.data;
     } catch (error) {
       console.error('Error creating property:', error);
@@ -57,9 +55,7 @@ const propertyService = {
    */
   updateProperty: async (id, propertyData) => {
     try {
-      const response = await apiClient.put(`/properties/${id}`, propertyData, {
-        transformRequest: [(data) => data],
-      });
+      const response = await apiClient.put(`/properties/${id}`, propertyData);
       return response.data;
     } catch (error) {
       console.error(`Error updating property ${id}:`, error);

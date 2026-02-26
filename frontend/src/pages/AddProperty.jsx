@@ -5,6 +5,9 @@ import { FormInput } from "../components/FormInput";
 import { FormSection } from "../components/FormSection";
 import { propertyService } from "../services";
 
+const MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024;
+const MAX_TOTAL_IMAGE_SIZE_BYTES = 80 * 1024 * 1024;
+
 export default function AddProperty() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -22,13 +25,10 @@ export default function AddProperty() {
     bedrooms: "",
     kitchens: "",
     bathrooms: "",
-    sizeSqft: "",
     floor: "",
     furnished: "",
     parking: "",
-    security: "",
     petsAllowed: "",
-    yearBuilt: "",
     offers: ["", "", "", "", "", ""],
     highlights: ["", "", ""],
     rules: ["", "", ""],
@@ -94,8 +94,36 @@ export default function AddProperty() {
     input.onchange = (e) => {
       const file = e.target.files[0];
       if (file) {
+        if (!file.type.startsWith("image/")) {
+          const message = "Please select a valid image file.";
+          setError(message);
+          alert(message);
+          return;
+        }
+
+        if (file.size > MAX_IMAGE_SIZE_BYTES) {
+          const message = "Each image must be smaller than 15MB.";
+          setError(message);
+          alert(message);
+          return;
+        }
+
         const newImages = [...formData.images];
         newImages[index] = file;
+
+        const totalImageSize = newImages.reduce((total, image) => {
+          if (!image) {
+            return total;
+          }
+          return total + image.size;
+        }, 0);
+
+        if (totalImageSize > MAX_TOTAL_IMAGE_SIZE_BYTES) {
+          const message = "Total image upload size must be smaller than 80MB.";
+          setError(message);
+          alert(message);
+          return;
+        }
 
         setImagePreviews((prev) => {
           const next = [...prev];
@@ -110,6 +138,7 @@ export default function AddProperty() {
           ...prev,
           images: newImages,
         }));
+        setError(null);
       }
     };
     input.click();
@@ -140,13 +169,10 @@ export default function AddProperty() {
       formDataToSend.append("bedrooms", formData.bedrooms);
       formDataToSend.append("kitchens", formData.kitchens);
       formDataToSend.append("bathrooms", formData.bathrooms);
-      formDataToSend.append("sizeSqft", formData.sizeSqft);
       formDataToSend.append("floor", formData.floor);
       formDataToSend.append("furnished", formData.furnished);
       formDataToSend.append("parking", formData.parking);
-      formDataToSend.append("security", formData.security);
       formDataToSend.append("petsAllowed", formData.petsAllowed);
-      formDataToSend.append("yearBuilt", formData.yearBuilt);
       formDataToSend.append("mapEmbedUrl", formData.mapEmbedUrl);
 
       // Append arrays (filter out empty values)
@@ -326,13 +352,6 @@ export default function AddProperty() {
         <FormSection title="Property Details">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <FormInput
-              label="Size (sq ft)"
-              placeholder="1,150"
-              name="sizeSqft"
-              value={formData.sizeSqft}
-              onChange={handleInputChange}
-            />
-            <FormInput
               label="Floor"
               placeholder="6th floor"
               name="floor"
@@ -354,24 +373,10 @@ export default function AddProperty() {
               onChange={handleInputChange}
             />
             <FormInput
-              label="Security"
-              placeholder="24/7 security"
-              name="security"
-              value={formData.security}
-              onChange={handleInputChange}
-            />
-            <FormInput
               label="Pets Allowed"
               placeholder="No pets"
               name="petsAllowed"
               value={formData.petsAllowed}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Year Built"
-              placeholder="2019"
-              name="yearBuilt"
-              value={formData.yearBuilt}
               onChange={handleInputChange}
             />
           </div>

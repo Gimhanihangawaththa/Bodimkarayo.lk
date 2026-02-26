@@ -45,6 +45,7 @@ export default function ProfilePage() {
     email: user.email,
     avatarUrl: user.avatarUrl,
   });
+  const [profileImageFile, setProfileImageFile] = useState(null);
   const [previewImage, setPreviewImage] = useState(user.avatarUrl);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [applicationData, setApplicationData] = useState(createEmptyApplicationData(EMPTY_USER.interests));
@@ -158,6 +159,7 @@ export default function ProfilePage() {
   }, [authUser]);
 
   const handleEditProfile = () => {
+    setProfileImageFile(null);
     setPreviewImage(user.avatarUrl);
     setEditFormData({
       name: user.name,
@@ -176,10 +178,25 @@ export default function ProfilePage() {
     try {
       setIsSavingProfile(true);
 
+      let profilePictureUrl = editFormData.avatarUrl;
+
+      if (profileImageFile) {
+        const imageFormData = new FormData();
+        imageFormData.append("image", profileImageFile);
+
+        const imageUploadResponse = await apiClient.post(
+          `/users/${authUser.id}/profile-image`,
+          imageFormData
+        );
+
+        profilePictureUrl =
+          imageUploadResponse.data?.profilePictureUrl || profilePictureUrl;
+      }
+
       const payload = {
         fullName: editFormData.name,
         email: editFormData.email,
-        profilePictureUrl: editFormData.avatarUrl,
+        profilePictureUrl,
       };
 
       const response = await apiClient.put(`/users/${authUser.id}/profile`, payload);
@@ -204,6 +221,7 @@ export default function ProfilePage() {
       });
 
       setPreviewImage(updatedUser.avatarUrl);
+      setProfileImageFile(null);
       setIsEditModalOpen(false);
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -240,16 +258,10 @@ export default function ProfilePage() {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageUrl = event.target.result;
-        setPreviewImage(imageUrl);
-        setEditFormData((prev) => ({
-          ...prev,
-          avatarUrl: imageUrl,
-        }));
-      };
-      reader.readAsDataURL(file);
+      setProfileImageFile(file);
+
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewImage(objectUrl);
     }
   };
 
@@ -447,6 +459,12 @@ export default function ProfilePage() {
                   className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition"
                 >
                   Edit Profile
+                </button>
+                <button
+                  onClick={() => navigate("/add-property")}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition"
+                >
+                  + Add Property
                 </button>
                 {roommateStatus === "notApplied" && (
                   <button

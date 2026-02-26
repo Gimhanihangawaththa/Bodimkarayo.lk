@@ -4,7 +4,9 @@ import com.bodimkarayo.backend.dto.UserProfileResponse;
 import com.bodimkarayo.backend.dto.UserProfileUpdateRequest;
 import com.bodimkarayo.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/users")
@@ -21,5 +23,10 @@ public class UserController {
     @PutMapping("/{id}/profile")
     public UserProfileResponse updateUserProfile(@PathVariable Long id, @RequestBody UserProfileUpdateRequest request) {
         return userService.updateUserProfile(id, request);
+    }
+
+    @PostMapping(value = "/{id}/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public UserProfileResponse uploadProfileImage(@PathVariable Long id, @RequestParam("image") MultipartFile image) {
+        return userService.uploadProfileImage(id, image);
     }
 }
