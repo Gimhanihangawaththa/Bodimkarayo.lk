@@ -34,6 +34,27 @@ public class PropertyService {
         property.setLocation(updatedProperty.getLocation());
         property.setRent(updatedProperty.getRent());
         property.setDescription(updatedProperty.getDescription());
+        property.setImageUrl(updatedProperty.getImageUrl());
+        property.setPropertyType(updatedProperty.getPropertyType());
+        property.setAvailableFrom(updatedProperty.getAvailableFrom());
+        property.setAddress(updatedProperty.getAddress());
+        property.setNumberOfPeople(updatedProperty.getNumberOfPeople());
+        property.setBedrooms(updatedProperty.getBedrooms());
+        property.setKitchens(updatedProperty.getKitchens());
+        property.setBathrooms(updatedProperty.getBathrooms());
+        property.setSizeSqft(updatedProperty.getSizeSqft());
+        property.setFloor(updatedProperty.getFloor());
+        property.setFurnished(updatedProperty.getFurnished());
+        property.setParking(updatedProperty.getParking());
+        property.setSecurity(updatedProperty.getSecurity());
+        property.setPetsAllowed(updatedProperty.getPetsAllowed());
+        property.setYearBuilt(updatedProperty.getYearBuilt());
+        property.setMapEmbedUrl(updatedProperty.getMapEmbedUrl());
+        property.setOffers(updatedProperty.getOffers());
+        property.setHighlights(updatedProperty.getHighlights());
+        property.setRules(updatedProperty.getRules());
+        property.setNearby(updatedProperty.getNearby());
+        property.setImages(updatedProperty.getImages());
         property.setOwner(updatedProperty.getOwner());
 
         return propertyRepository.save(property);

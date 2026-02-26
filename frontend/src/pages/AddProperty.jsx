@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ImageUploadBox } from "../components/ImageUploadBox";
 import { FormInput } from "../components/FormInput";
@@ -9,6 +9,7 @@ export default function AddProperty() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [imagePreviews, setImagePreviews] = useState([null, null, null, null, null]);
   const [formData, setFormData] = useState({
     title: "",
     propertyType: "",
@@ -35,6 +36,16 @@ export default function AddProperty() {
     mapEmbedUrl: "",
     images: [null, null, null, null, null],
   });
+
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach((preview) => {
+        if (preview) {
+          URL.revokeObjectURL(preview);
+        }
+      });
+    };
+  }, [imagePreviews]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -85,6 +96,16 @@ export default function AddProperty() {
       if (file) {
         const newImages = [...formData.images];
         newImages[index] = file;
+
+        setImagePreviews((prev) => {
+          const next = [...prev];
+          if (next[index]) {
+            URL.revokeObjectURL(next[index]);
+          }
+          next[index] = URL.createObjectURL(file);
+          return next;
+        });
+
         setFormData((prev) => ({
           ...prev,
           images: newImages,
@@ -195,7 +216,11 @@ export default function AddProperty() {
         <FormSection title="Add Property" isMainTitle={true}>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {[0, 1, 2, 3, 4].map((idx) => (
-              <ImageUploadBox key={idx} onClick={() => handleImageClick(idx)} />
+              <ImageUploadBox
+                key={idx}
+                onClick={() => handleImageClick(idx)}
+                previewSrc={imagePreviews[idx]}
+              />
             ))}
           </div>
         </FormSection>

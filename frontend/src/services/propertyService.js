@@ -42,9 +42,7 @@ const propertyService = {
   createProperty: async (propertyData) => {
     try {
       const response = await apiClient.post('/properties', propertyData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        transformRequest: [(data) => data],
       });
       return response.data;
     } catch (error) {
@@ -60,9 +58,7 @@ const propertyService = {
   updateProperty: async (id, propertyData) => {
     try {
       const response = await apiClient.put(`/properties/${id}`, propertyData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        transformRequest: [(data) => data],
       });
       return response.data;
     } catch (error) {

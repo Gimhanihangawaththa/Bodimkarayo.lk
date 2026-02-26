@@ -6,7 +6,6 @@ import Properties from './pages/Properties'
 import Roommates from './pages/Roommates'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
-import ApplyRoommate from './pages/ApplyRoommate'
 import AddProperty from './pages/AddProperty'
 import PropertyView from './pages/PropertyView'
 import RoommateView from './pages/RoommateView'
@@ -21,7 +20,6 @@ function App() {
           <Route path="home" element={<Home />} />
           <Route path="properties" element={<Properties />} />
           <Route path="roommates" element={<Roommates />} />
-          <Route path="apply-roommate" element={<ApplyRoommate />} />
           <Route path="add-property" element={<AddProperty />} />
           <Route path="property/:propertyId" element={<PropertyView />} />
           <Route path="roommate/:roommateId" element={<RoommateView />} />
