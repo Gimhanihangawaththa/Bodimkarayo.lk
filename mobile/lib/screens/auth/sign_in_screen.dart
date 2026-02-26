@@ -190,7 +190,7 @@ class _SignInScreenState extends State<SignInScreen> {
             child: SingleChildScrollView(
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 600),
+                duration: const Duration(milliseconds: 1200),
                 curve: Curves.easeOutCubic,
                 builder: (context, value, child) {
                   return Transform.translate(

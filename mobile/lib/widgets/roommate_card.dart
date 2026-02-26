@@ -38,7 +38,7 @@ class _RoommateCardState extends State<RoommateCard> {
       },
       child: AnimatedScale(
         scale: _isPressed ? 0.96 : 1.0,
-        duration: const Duration(milliseconds: 150),
+        duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOutBack,
         child: Container(
           width: 250,

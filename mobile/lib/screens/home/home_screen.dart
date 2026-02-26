@@ -102,7 +102,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Animated Hero Section
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 800),
+              duration: const Duration(milliseconds: 1600),
               curve: Curves.easeOutCubic,
               builder: (context, value, child) {
                 return Transform.translate(
@@ -230,7 +230,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Featured Boardings with slide-in animation
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 800),
+              duration: const Duration(milliseconds: 1600),
               curve: Curves.easeOutCubic,
               builder: (context, value, child) {
                 return Transform.translate(
@@ -311,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
             // Roommates with slide-in animation
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 1000),
+              duration: const Duration(milliseconds: 2000),
               curve: Curves.easeOutCubic,
               builder: (context, value, child) {
                 return Transform.translate(
