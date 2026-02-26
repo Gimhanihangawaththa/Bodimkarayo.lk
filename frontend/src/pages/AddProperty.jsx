@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { ImageUploadBox } from "../components/ImageUploadBox";
 import { FormInput } from "../components/FormInput";
 import { FormSection } from "../components/FormSection";
@@ -11,8 +11,13 @@ const MAX_TOTAL_IMAGE_SIZE_BYTES = 80 * 1024 * 1024;
 
 export default function AddProperty() {
   const navigate = useNavigate();
+  const { propertyId } = useParams();
   const { user } = useAuth();
+  
+  const isEditMode = !!propertyId;
+  
   const [loading, setLoading] = useState(false);
+  const [isLoadingProperty, setIsLoadingProperty] = useState(isEditMode);
   const [error, setError] = useState(null);
   const [imagePreviews, setImagePreviews] = useState([null, null, null, null, null]);
   const [formData, setFormData] = useState({
@@ -48,6 +53,60 @@ export default function AddProperty() {
       });
     };
   }, [imagePreviews]);
+
+  // Load property data if in edit mode
+  useEffect(() => {
+    if (isEditMode && propertyId) {
+      const loadProperty = async () => {
+        try {
+          const property = await propertyService.getPropertyById(propertyId);
+          
+          // Populate form with property data
+          setFormData({
+            title: property.title || "",
+            propertyType: property.propertyType || "",
+            price: property.rent || "",
+            availableFrom: property.availableFrom || "",
+            location: property.location || "",
+            address: property.address || "",
+            numberOfPeople: property.numberOfPeople || "",
+            description: property.description || "",
+            bedrooms: property.bedrooms || "",
+            kitchens: property.kitchens || "",
+            bathrooms: property.bathrooms || "",
+            floor: property.floor || "",
+            furnished: property.furnished || "",
+            parking: property.parking || "",
+            petsAllowed: property.petsAllowed || "",
+            offers: property.offers || [],
+            highlights: property.highlights || [],
+            rules: property.rules || [],
+            nearby: property.nearby || [],
+            mapEmbedUrl: property.mapEmbedUrl || "",
+            images: [], // Don't pre-populate images for edit
+          });
+
+          // Load existing images as previews
+          if (property.images && property.images.length > 0) {
+            const newPreviews = [...imagePreviews];
+            property.images.slice(0, 5).forEach((url, index) => {
+              newPreviews[index] = url;
+            });
+            setImagePreviews(newPreviews);
+          }
+        } catch (err) {
+          console.error("Error loading property:", err);
+          setError("Failed to load property details");
+        } finally {
+          setIsLoadingProperty(false);
+        }
+      };
+
+      loadProperty();
+    } else {
+      setIsLoadingProperty(false);
+    }
+  }, [propertyId, isEditMode]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -157,7 +216,7 @@ export default function AddProperty() {
 
     try {
       // Separate images from other data
-      const hasImages = formData.images.some(img => img !== null);
+      const hasNewImages = formData.images.some(img => img !== null);
       
       // Create JSON payload for property data
       const propertyData = {
@@ -184,12 +243,22 @@ export default function AddProperty() {
         owner: user ? { id: user.id } : null,
       };
 
-      // Create property first (without images)
-      const response = await propertyService.createProperty(propertyData);
-      console.log("Property created successfully:", response);
+      let savedProperty;
+      let isNewProperty = false;
 
-      // If there are images, upload them separately
-      if (hasImages) {
+      if (isEditMode) {
+        // Update existing property
+        savedProperty = await propertyService.updateProperty(propertyId, propertyData);
+        console.log("Property updated successfully:", savedProperty);
+      } else {
+        // Create new property
+        savedProperty = await propertyService.createProperty(propertyData);
+        console.log("Property created successfully:", savedProperty);
+        isNewProperty = true;
+      }
+
+      // If there are new images, upload them separately
+      if (hasNewImages) {
         const imageFormData = new FormData();
         formData.images.forEach((image) => {
           if (image) {
@@ -198,22 +267,35 @@ export default function AddProperty() {
         });
 
         try {
-          await propertyService.uploadPropertyImages(response.id, imageFormData);
+          await propertyService.uploadPropertyImages(savedProperty.id, imageFormData);
           console.log("Images uploaded successfully");
         } catch (imgErr) {
           console.error("Error uploading images:", imgErr);
-          alert("Property created but some images failed to upload. You can edit the property to add them later.");
+          if (isNewProperty) {
+            alert("Property created but some images failed to upload. You can edit the property to add them later.");
+          } else {
+            alert("Property updated but some images failed to upload. You can try again later.");
+          }
         }
       }
 
-      alert("Property added successfully!");
-      navigate("/");
+      const successMessage = isEditMode
+        ? "Property updated successfully!"
+        : "Property added successfully!";
+      alert(successMessage);
+
+      // Navigate based on operation
+      if (isEditMode) {
+        navigate(`/property/${savedProperty.id}`);
+      } else {
+        navigate("/");
+      }
     } catch (err) {
-      console.error("Error creating property:", err);
+      console.error("Error saving property:", err);
       const errorMessage =
         err.response?.data?.message ||
         err.message ||
-        "Failed to create property. Please try again.";
+        `Failed to ${isEditMode ? "update" : "create"} property. Please try again.`;
       setError(errorMessage);
       alert(errorMessage);
     } finally {
@@ -237,15 +319,20 @@ export default function AddProperty() {
       )}
 
       {/* Main Content */}
-      <form onSubmit={handleSubmit} className="w-full lg:w-[80%] mx-auto px-4 py-8">
-        {/* Image Upload Section */}
-        <FormSection title="Add Property" isMainTitle={true}>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {[0, 1, 2, 3, 4].map((idx) => (
-              <ImageUploadBox
-                key={idx}
-                onClick={() => handleImageClick(idx)}
-                previewSrc={imagePreviews[idx]}
+      {isLoadingProperty ? (
+        <div className="w-full lg:w-[80%] mx-auto px-4 py-8 text-center">
+          <p className="text-gray-600">Loading property details...</p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="w-full lg:w-[80%] mx-auto px-4 py-8">
+          {/* Image Upload Section */}
+          <FormSection title={isEditMode ? "Edit Property" : "Add Property"} isMainTitle={true}>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {[0, 1, 2, 3, 4].map((idx) => (
+                <ImageUploadBox
+                  key={idx}
+                  onClick={() => handleImageClick(idx)}
+                  previewSrc={imagePreviews[idx]}
               />
             ))}
           </div>
@@ -519,6 +606,7 @@ export default function AddProperty() {
           </button>
         </div>
       </form>
+        )}
     </div>
   );
 }

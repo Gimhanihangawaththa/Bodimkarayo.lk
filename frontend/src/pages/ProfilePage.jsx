@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../config/api.config";
 import { useAuth } from "../context/AuthContext";
+import { propertyService } from "../services";
 
 const EMPTY_USER = {
   id: null,
@@ -158,6 +159,45 @@ export default function ProfilePage() {
     loadApplicationStatus();
   }, [authUser]);
 
+  useEffect(() => {
+    const loadUserProperties = async () => {
+      if (!authUser?.id) {
+        return;
+      }
+
+      try {
+        const allProperties = await propertyService.getAllProperties();
+        const userProps = Array.isArray(allProperties)
+          ? allProperties.filter((prop) => prop.owner && prop.owner.id === authUser.id)
+          : [];
+
+        // Transform properties for display
+        const transformedProperties = userProps.map((prop) => ({
+          id: prop.id,
+          image: prop.images && prop.images.length > 0 ? prop.images[0] : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400',
+          title: prop.title || 'Property',
+          location: prop.location || 'Location not specified',
+          price: prop.rent || 0,
+          type: prop.propertyType || 'Property',
+          bedrooms: prop.bedrooms || 0,
+          bathrooms: prop.bathrooms || 0,
+          available: prop.availableFrom || 'TBD',
+        }));
+
+        setUser((prev) => ({
+          ...prev,
+          userProperties: transformedProperties,
+          isPropertyOwner: transformedProperties.length > 0,
+        }));
+      } catch (error) {
+        console.error("Error loading user properties:", error);
+      }
+    };
+
+    loadUserProperties();
+  }, [authUser]);
+
+
   const handleEditProfile = () => {
     setProfileImageFile(null);
     setPreviewImage(user.avatarUrl);
@@ -307,6 +347,32 @@ export default function ProfilePage() {
         error?.response?.data?.message ||
         error?.message ||
         "Failed to remove application. Please try again.";
+      alert(message);
+    }
+  };
+
+  const handleDeleteProperty = async (propertyId, propertyTitle) => {
+    if (!window.confirm(`Are you sure you want to delete "${propertyTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await propertyService.deleteProperty(propertyId);
+      
+      // Remove property from the list
+      setUser((prev) => ({
+        ...prev,
+        userProperties: prev.userProperties.filter((prop) => prop.id !== propertyId),
+        isPropertyOwner: prev.userProperties.filter((prop) => prop.id !== propertyId).length > 0,
+      }));
+      
+      alert("Property deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting property:", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete property. Please try again.";
       alert(message);
     }
   };
@@ -546,10 +612,39 @@ export default function ProfilePage() {
                         </span>
                       </div>
 
-                      {/* Action Button */}
-                      <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-md font-medium transition">
-                        View Details
-                      </button>
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/property/${property.id}`);
+                          }}
+                          className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-md font-medium transition"
+                        >
+                          View Details
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/edit-property/${property.id}`);
+                          }}
+                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition"
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProperty(property.id, property.title);
+                          }}
+                          className="text-black hover:opacity-60 transition"
+                          title="Delete property"
+                        >
+                          <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-9l-1 1H5v2h14V4z"/>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

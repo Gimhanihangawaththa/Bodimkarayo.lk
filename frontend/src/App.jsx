@@ -21,6 +21,7 @@ function App() {
           <Route path="properties" element={<Properties />} />
           <Route path="roommates" element={<Roommates />} />
           <Route path="add-property" element={<AddProperty />} />
+          <Route path="edit-property/:propertyId" element={<AddProperty />} />
           <Route path="property/:propertyId" element={<PropertyView />} />
           <Route path="roommate/:roommateId" element={<RoommateView />} />
           <Route path="profile" element={<ProfilePage />} />
