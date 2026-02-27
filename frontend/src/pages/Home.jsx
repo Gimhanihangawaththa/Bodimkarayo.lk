@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { apiClient } from '../config/api.config'
 import { propertyService } from '../services'
 
-const PropertyCard = ({ image, title, location, price, available, offers, rating }) => (
-  <div className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition">
+const PropertyCard = ({ id, image, title, location, price, available, offers, rating, onCardClick }) => (
+  <div 
+    onClick={() => onCardClick(id)}
+    className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition cursor-pointer"
+  >
     <img src={image} alt={title} className="w-full h-48 object-cover" />
     <div className="p-4">
       <div className="flex items-center justify-between mb-2">
@@ -42,8 +45,11 @@ const PropertyCard = ({ image, title, location, price, available, offers, rating
   </div>
 )
 
-const RoommateCard = ({ image, name, age, location, bio, interests, verified }) => (
-  <div className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition">
+const RoommateCard = ({ id, image, name, age, location, bio, interests, verified, onCardClick }) => (
+  <div
+    onClick={() => onCardClick(id)}
+    className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition cursor-pointer"
+  >
     <img src={image} alt={name} className="w-full h-48 object-cover" />
     <div className="p-4">
       <div className="flex items-center justify-between mb-2">
@@ -122,6 +128,7 @@ const fallbackProperties = [
 
 
 export default function Home() {
+  const navigate = useNavigate()
   const [searchLocation, setSearchLocation] = useState('')
   const [properties, setProperties] = useState([])
   const [roommates, setRoommates] = useState([])
@@ -129,6 +136,14 @@ export default function Home() {
   const [isLoadingRoommates, setIsLoadingRoommates] = useState(false)
   const [propertiesError, setPropertiesError] = useState('')
   const [roommatesError, setRoommatesError] = useState('')
+
+  const handlePropertyCardClick = (propertyId) => {
+    navigate(`/property/${propertyId}`)
+  }
+
+  const handleRoommateCardClick = (roommateId) => {
+    navigate(`/roommate/${roommateId}`)
+  }
 
   const fetchFeatured = async (location) => {
     setIsLoadingProperties(true)
@@ -274,8 +289,8 @@ export default function Home() {
           )}
 
           <div className="grid grid-cols-4 gap-6 mb-8">
-            {displayedProperties.map((prop, i) => (
-              <PropertyCard key={i} {...prop} />
+            {displayedProperties.map((prop) => (
+              <PropertyCard key={prop.id} {...prop} onCardClick={handlePropertyCardClick} />
             ))}
           </div>
 
@@ -308,8 +323,8 @@ export default function Home() {
           )}
 
           <div className="grid grid-cols-4 gap-6 mb-8">
-            {displayedRoommates.map((roommate, i) => (
-              <RoommateCard key={i} {...roommate} />
+            {displayedRoommates.map((roommate) => (
+              <RoommateCard key={roommate.id} {...roommate} onCardClick={handleRoommateCardClick} />
             ))}
           </div>
 

@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { propertyService } from '../services'
 
-const PropertyCard = ({ image, title, location, price, available, offers, rating }) => (
-  <div className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition">
+const PropertyCard = ({ id, image, title, location, price, available, offers, rating, onCardClick }) => (
+  <div 
+    onClick={() => onCardClick(id)}
+    className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition cursor-pointer"
+  >
     <img src={image} alt={title} className="w-full h-48 object-cover" />
     <div className="p-4">
       <div className="flex items-center justify-between mb-2">
@@ -41,10 +45,15 @@ const PropertyCard = ({ image, title, location, price, available, offers, rating
 )
 
 export default function Properties() {
+  const navigate = useNavigate()
   const [searchLocation, setSearchLocation] = useState('')
   const [properties, setProperties] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+
+  const handlePropertyCardClick = (propertyId) => {
+    navigate(`/property/${propertyId}`)
+  }
 
   // Fetch all properties on component mount
   useEffect(() => {
@@ -142,8 +151,8 @@ export default function Properties() {
 
           {!isLoading && filteredProperties.length > 0 && (
             <div className="grid grid-cols-4 gap-6">
-              {filteredProperties.map((prop, i) => (
-                <PropertyCard key={prop.id || i} {...prop} />
+              {filteredProperties.map((prop) => (
+                <PropertyCard key={prop.id} {...prop} onCardClick={handlePropertyCardClick} />
               ))}
             </div>
           )}

@@ -526,12 +526,6 @@ export default function ProfilePage() {
                 >
                   Edit Profile
                 </button>
-                <button
-                  onClick={() => navigate("/add-property")}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition"
-                >
-                  + Add Property
-                </button>
                 {roommateStatus === "notApplied" && (
                   <button
                     onClick={handleOpenApplyModal}
@@ -544,7 +538,7 @@ export default function ProfilePage() {
                   <>
                     <button
                       onClick={handleEditApplication}
-                      className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-md font-medium transition"
+                      className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2 rounded-md font-medium transition"
                     >
                       Edit Application
                     </button>
@@ -561,9 +555,8 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* My Properties Section - Only visible for property owners */}
-        {user.isPropertyOwner && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        {/* My Properties Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">My Properties</h2>
               <button
@@ -652,16 +645,9 @@ export default function ProfilePage() {
             ) : (
               <div className="text-center py-8">
                 <p className="text-gray-600 mb-4">You haven't added any properties yet.</p>
-                <button
-                  onClick={() => navigate("/add-property")}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition"
-                >
-                  Add Your First Property
-                </button>
               </div>
             )}
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Edit Profile Modal */}
