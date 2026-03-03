@@ -7,6 +7,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -57,7 +58,8 @@ public class PropertyService {
         property.setHighlights(updatedProperty.getHighlights());
         property.setRules(updatedProperty.getRules());
         property.setNearby(updatedProperty.getNearby());
-        property.setImages(updatedProperty.getImages());
+        // Don't update images here - images are only updated via the separate POST /{id}/images endpoint
+        // property.setImages(updatedProperty.getImages());
         property.setOwner(updatedProperty.getOwner());
 
         return propertyRepository.save(property);
@@ -67,15 +69,34 @@ public class PropertyService {
         propertyRepository.deleteById(id);
     }
 
+    public Property removePropertyImage(Long propertyId, String imageUrl) {
+        Property property = propertyRepository.findById(propertyId)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+
+        List<String> existingImages = property.getImages();
+        if (existingImages == null || existingImages.isEmpty()) {
+            return property;
+        }
+
+        boolean removed = existingImages.removeIf(url -> url != null && url.equals(imageUrl));
+        if (removed) {
+            property.setImages(existingImages);
+            property = propertyRepository.save(property);
+            cloudinaryService.deleteImageByUrl(imageUrl);
+        }
+
+        return property;
+    }
+
     /**
-     * Async method to upload images and update property
-     * Runs in background thread pool - doesn't block the response
+     * Synchronous method to upload images and update property
+     * Returns the updated property with images
      */
-    @Async
-    public void uploadPropertyImagesAsync(Long propertyId, List<MultipartFile> imageFiles) {
+    public Property uploadPropertyImages(Long propertyId, List<MultipartFile> imageFiles) {
         try {
             if (imageFiles == null || imageFiles.isEmpty()) {
-                return;
+                return propertyRepository.findById(propertyId)
+                        .orElseThrow(() -> new RuntimeException("Property not found"));
             }
 
             // Upload images in parallel
@@ -94,13 +115,34 @@ public class PropertyService {
             Property property = propertyRepository.findById(propertyId)
                     .orElseThrow(() -> new RuntimeException("Property not found"));
             
-            property.setImages(imageUrls);
+            // Append new images to existing images (don't replace)
+            List<String> existingImages = property.getImages();
+            if (existingImages == null) {
+                existingImages = new ArrayList<>();
+            }
+            existingImages.addAll(imageUrls);
+            property.setImages(existingImages);
             propertyRepository.save(property);
             
-            System.out.println("Property " + propertyId + " images uploaded successfully: " + imageUrls.size() + " images");
+            System.out.println("Property " + propertyId + " images uploaded successfully: " + imageUrls.size() + " new images added");
+            return property;
         } catch (Exception e) {
             System.err.println("Error uploading images for property " + propertyId + ": " + e.getMessage());
             e.printStackTrace();
+            throw new RuntimeException("Failed to upload images", e);
+        }
+    }
+
+    /**
+     * Async method to upload images and update property
+     * Runs in background thread pool - doesn't block the response
+     */
+    @Async
+    public void uploadPropertyImagesAsync(Long propertyId, List<MultipartFile> imageFiles) {
+        try {
+            uploadPropertyImages(propertyId, imageFiles);
+        } catch (Exception e) {
+            System.err.println("Error in async upload for property " + propertyId + ": " + e.getMessage());
         }
     }
 }

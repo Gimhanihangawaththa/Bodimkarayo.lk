@@ -10,11 +10,15 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class CloudinaryService {
 
     private static final long MAX_PROFILE_IMAGE_SIZE_BYTES = 5L * 1024L * 1024L;
+    private static final Pattern CLOUDINARY_PUBLIC_ID_PATTERN =
+            Pattern.compile(".*/upload/(?:v\\d+/)?(.+)\\.[a-zA-Z0-9]+$");
 
     @Autowired
     private Cloudinary cloudinary;
@@ -58,6 +62,35 @@ public class CloudinaryService {
         } catch (IOException ex) {
             throw new RuntimeException("Failed to upload profile image", ex);
         }
+    }
+
+    public void deleteImageByUrl(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) {
+            return;
+        }
+
+        String publicId = extractPublicIdFromUrl(imageUrl);
+        if (publicId == null || publicId.isBlank()) {
+            return;
+        }
+
+        try {
+            cloudinary.uploader().destroy(publicId, ObjectUtils.asMap(
+                    "resource_type", "image",
+                    "invalidate", true
+            ));
+        } catch (Exception ex) {
+            System.err.println("Failed to delete image from Cloudinary for publicId " + publicId + ": " + ex.getMessage());
+        }
+    }
+
+    private String extractPublicIdFromUrl(String imageUrl) {
+        String sanitized = imageUrl.split("\\?")[0];
+        Matcher matcher = CLOUDINARY_PUBLIC_ID_PATTERN.matcher(sanitized);
+        if (matcher.matches()) {
+            return matcher.group(1);
+        }
+        return null;
     }
 
     private void validateImage(MultipartFile file, long maxSizeBytes) {

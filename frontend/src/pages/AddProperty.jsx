@@ -20,6 +20,7 @@ export default function AddProperty() {
   const [isLoadingProperty, setIsLoadingProperty] = useState(isEditMode);
   const [error, setError] = useState(null);
   const [imagePreviews, setImagePreviews] = useState([null, null, null, null, null]);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
     propertyType: "",
@@ -83,7 +84,7 @@ export default function AddProperty() {
             rules: property.rules || [],
             nearby: property.nearby || [],
             mapEmbedUrl: property.mapEmbedUrl || "",
-            images: [], // Don't pre-populate images for edit
+            images: [null, null, null, null, null], // Initialize with nulls for new image uploads
           });
 
           // Load existing images as previews
@@ -94,6 +95,7 @@ export default function AddProperty() {
             });
             setImagePreviews(newPreviews);
           }
+          setImagesToDelete([]);
         } catch (err) {
           console.error("Error loading property:", err);
           setError("Failed to load property details");
@@ -107,6 +109,21 @@ export default function AddProperty() {
       setIsLoadingProperty(false);
     }
   }, [propertyId, isEditMode]);
+
+  const isExistingImageUrl = (value) => typeof value === "string" && value.startsWith("http");
+
+  const queueImageForDeletion = (imageUrl) => {
+    if (!isExistingImageUrl(imageUrl)) {
+      return;
+    }
+
+    setImagesToDelete((prev) => {
+      if (prev.includes(imageUrl)) {
+        return prev;
+      }
+      return [...prev, imageUrl];
+    });
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -188,8 +205,13 @@ export default function AddProperty() {
 
         setImagePreviews((prev) => {
           const next = [...prev];
+          if (isExistingImageUrl(next[index])) {
+            queueImageForDeletion(next[index]);
+          }
           if (next[index]) {
-            URL.revokeObjectURL(next[index]);
+            if (typeof next[index] === "string" && next[index].startsWith("blob:")) {
+              URL.revokeObjectURL(next[index]);
+            }
           }
           next[index] = URL.createObjectURL(file);
           return next;
@@ -205,6 +227,33 @@ export default function AddProperty() {
     input.click();
   };
 
+  const handleRemoveImage = (index) => {
+    setImagePreviews((prev) => {
+      const next = [...prev];
+      const currentPreview = next[index];
+
+      if (isExistingImageUrl(currentPreview)) {
+        queueImageForDeletion(currentPreview);
+      }
+
+      if (typeof currentPreview === "string" && currentPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(currentPreview);
+      }
+
+      next[index] = null;
+      return next;
+    });
+
+    setFormData((prev) => {
+      const nextImages = [...prev.images];
+      nextImages[index] = null;
+      return {
+        ...prev,
+        images: nextImages,
+      };
+    });
+  };
+
   const handleMapClick = () => {
     alert("Map functionality will open here");
   };
@@ -217,6 +266,7 @@ export default function AddProperty() {
     try {
       // Separate images from other data
       const hasNewImages = formData.images.some(img => img !== null);
+      const hasImagesToDelete = imagesToDelete.length > 0;
       
       // Create JSON payload for property data
       const propertyData = {
@@ -250,6 +300,16 @@ export default function AddProperty() {
         // Update existing property
         savedProperty = await propertyService.updateProperty(propertyId, propertyData);
         console.log("Property updated successfully:", savedProperty);
+
+        if (hasImagesToDelete) {
+          console.log("Deleting existing images:", imagesToDelete.length);
+          await Promise.all(
+            imagesToDelete.map((imageUrl) =>
+              propertyService.deletePropertyImage(savedProperty.id, imageUrl)
+            )
+          );
+          console.log("Selected images deleted successfully");
+        }
       } else {
         // Create new property
         savedProperty = await propertyService.createProperty(propertyData);
@@ -258,25 +318,33 @@ export default function AddProperty() {
       }
 
       // If there are new images, upload them separately
+      console.log("hasNewImages:", hasNewImages);
+      console.log("formData.images:", formData.images);
+      
       if (hasNewImages) {
         const imageFormData = new FormData();
-        formData.images.forEach((image) => {
+        formData.images.forEach((image, index) => {
           if (image) {
+            console.log(`Appending image ${index}:`, image.name, image.size);
             imageFormData.append("images", image);
           }
         });
 
+        console.log("Uploading images for property ID:", savedProperty.id);
         try {
-          await propertyService.uploadPropertyImages(savedProperty.id, imageFormData);
-          console.log("Images uploaded successfully");
+          const uploadResponse = await propertyService.uploadPropertyImages(savedProperty.id, imageFormData);
+          console.log("Images uploaded successfully:", uploadResponse);
         } catch (imgErr) {
           console.error("Error uploading images:", imgErr);
+          console.error("Error details:", imgErr.response?.data);
           if (isNewProperty) {
             alert("Property created but some images failed to upload. You can edit the property to add them later.");
           } else {
             alert("Property updated but some images failed to upload. You can try again later.");
           }
         }
+      } else {
+        console.log("No new images to upload");
       }
 
       const successMessage = isEditMode
@@ -329,11 +397,24 @@ export default function AddProperty() {
           <FormSection title={isEditMode ? "Edit Property" : "Add Property"} isMainTitle={true}>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {[0, 1, 2, 3, 4].map((idx) => (
-                <ImageUploadBox
-                  key={idx}
-                  onClick={() => handleImageClick(idx)}
-                  previewSrc={imagePreviews[idx]}
-              />
+                <div key={idx} className="relative">
+                  <ImageUploadBox
+                    onClick={() => handleImageClick(idx)}
+                    previewSrc={imagePreviews[idx]}
+                  />
+                  {imagePreviews[idx] && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveImage(idx);
+                      }}
+                      className="absolute top-2 right-2 bg-white text-gray-700 text-xs px-2 py-1 rounded hover:bg-gray-100 border"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
             ))}
           </div>
         </FormSection>

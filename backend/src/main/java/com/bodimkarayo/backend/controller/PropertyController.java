@@ -104,15 +104,16 @@ public class PropertyController {
             @PathVariable Long id,
             @RequestParam(value = "images", required = false) List<MultipartFile> imageFiles
     ) {
-        Property property = propertyService.getPropertyById(id)
-                .orElseThrow(() -> new RuntimeException("Property not found"));
+        // Upload images synchronously and return updated property
+        return propertyService.uploadPropertyImages(id, imageFiles);
+    }
 
-        // Upload images asynchronously in background
-        if (imageFiles != null && !imageFiles.isEmpty()) {
-            propertyService.uploadPropertyImagesAsync(id, imageFiles);
-        }
-
-        return property;
+    @DeleteMapping("/{id}/images")
+    public Property deleteImage(
+            @PathVariable Long id,
+            @RequestParam("imageUrl") String imageUrl
+    ) {
+        return propertyService.removePropertyImage(id, imageUrl);
     }
 
     @DeleteMapping("/{id}")

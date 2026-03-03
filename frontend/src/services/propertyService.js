@@ -72,6 +72,22 @@ const propertyService = {
   },
 
   /**
+   * Delete one image from a property
+   * Backend endpoint: DELETE /api/properties/:id/images?imageUrl=...
+   */
+  deletePropertyImage: async (propertyId, imageUrl) => {
+    try {
+      const response = await apiClient.delete(`/properties/${propertyId}/images`, {
+        params: { imageUrl },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting image for property ${propertyId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
    * Update an existing property
    * Backend endpoint: PUT /api/properties/:id
    */

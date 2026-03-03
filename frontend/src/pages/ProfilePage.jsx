@@ -455,8 +455,8 @@ export default function ProfilePage() {
 
       alert(
         isEditingApplication
-          ? "✅ Your roommate application was updated."
-          : "🎉 You are now applied as a roommate and visible in the roommate section."
+          ? "Your roommate application was updated."
+          : "You are now applied as a roommate and visible in the roommate section."
       );
     } catch (error) {
       console.error("Error creating roommate application:", error);
