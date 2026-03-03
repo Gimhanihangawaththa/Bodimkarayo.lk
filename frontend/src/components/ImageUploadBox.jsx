@@ -2,7 +2,7 @@ export function ImageUploadBox({ onClick, previewSrc }) {
   return (
     <div
       onClick={onClick}
-      className="w-full aspect-square min-h-[130px] bg-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-400 transition overflow-hidden relative"
+      className="w-full h-full min-h-[130px] bg-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-400 transition overflow-hidden relative"
     >
       {previewSrc ? (
         <img

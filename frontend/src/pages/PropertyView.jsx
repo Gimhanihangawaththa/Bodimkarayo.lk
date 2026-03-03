@@ -299,7 +299,6 @@ export default function PropertyView() {
             <div className="w-full max-w-sm rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur">
               <p className="text-sm uppercase tracking-[0.2em] text-slate-200">Monthly rent</p>
               <p className="mt-2 text-4xl font-bold text-white">Rs {property.price}</p>
-              <p className="mt-1 text-sm text-slate-300">/{property.priceRange}</p>
               <div className="mt-5 space-y-3">
                 <button
                   type="button"

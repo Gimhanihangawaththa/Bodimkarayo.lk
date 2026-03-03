@@ -371,6 +371,27 @@ export default function AddProperty() {
     }
   };
 
+  const renderImageTile = (idx, tileClassName) => (
+    <div key={idx} className={tileClassName}>
+      <ImageUploadBox
+        onClick={() => handleImageClick(idx)}
+        previewSrc={imagePreviews[idx]}
+      />
+      {imagePreviews[idx] && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRemoveImage(idx);
+          }}
+          className="absolute top-2 right-2 bg-white text-gray-700 text-xs px-2 py-1 rounded hover:bg-gray-100 border"
+        >
+          Remove
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header - to be implemented by another developer */}
@@ -395,29 +416,10 @@ export default function AddProperty() {
         <form onSubmit={handleSubmit} className="w-full lg:w-[80%] mx-auto px-4 py-8">
           {/* Image Upload Section */}
           <FormSection title={isEditMode ? "Edit Property" : "Add Property"} isMainTitle={true}>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              {[0, 1, 2, 3, 4].map((idx) => (
-                <div key={idx} className="relative">
-                  <ImageUploadBox
-                    onClick={() => handleImageClick(idx)}
-                    previewSrc={imagePreviews[idx]}
-                  />
-                  {imagePreviews[idx] && (
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveImage(idx);
-                      }}
-                      className="absolute top-2 right-2 bg-white text-gray-700 text-xs px-2 py-1 rounded hover:bg-gray-100 border"
-                    >
-                      Remove
-                    </button>
-                  )}
-                </div>
-            ))}
-          </div>
-        </FormSection>
+            <div className="flex gap-4 overflow-x-auto">
+              {[0, 1, 2, 3, 4].map((idx) => renderImageTile(idx, "relative aspect-square flex-1 min-w-[150px]"))}
+            </div>
+          </FormSection>
 
         {/* Basic Information */}
         <FormSection>
