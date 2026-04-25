@@ -19,8 +19,11 @@ public class RoommatePost {
     private String occupation;
     private String location;
     private String bio;
+    private String about;
     private String interests; // Comma-separated
     private String preferences;
+    private String preferredLocation;
+    private String moveInDate;
     private Double budget;
 
     @ManyToOne

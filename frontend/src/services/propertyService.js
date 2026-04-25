@@ -37,18 +37,52 @@ const propertyService = {
   /**
    * Create a new property
    * Backend endpoint: POST /api/properties
-   * Accepts FormData for file uploads (images)
+   * Accepts JSON for property data
    */
   createProperty: async (propertyData) => {
     try {
-      const response = await apiClient.post('/properties', propertyData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await apiClient.post('/properties', propertyData);
       return response.data;
     } catch (error) {
       console.error('Error creating property:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Upload images for a property
+   * Backend endpoint: POST /api/properties/:id/images
+   * Accepts FormData with image files
+   */
+  uploadPropertyImages: async (propertyId, imageFormData) => {
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+      // For FormData, axios needs specific header config
+      // The browser will auto-generate the boundary
+      const response = await apiClient.post(`/properties/${propertyId}/images`, imageFormData, config);
+      return response.data;
+    } catch (error) {
+      console.error(`Error uploading images for property ${propertyId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Delete one image from a property
+   * Backend endpoint: DELETE /api/properties/:id/images?imageUrl=...
+   */
+  deletePropertyImage: async (propertyId, imageUrl) => {
+    try {
+      const response = await apiClient.delete(`/properties/${propertyId}/images`, {
+        params: { imageUrl },
+      });
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting image for property ${propertyId}:`, error);
       throw error;
     }
   },
@@ -59,11 +93,7 @@ const propertyService = {
    */
   updateProperty: async (id, propertyData) => {
     try {
-      const response = await apiClient.put(`/properties/${id}`, propertyData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await apiClient.put(`/properties/${id}`, propertyData);
       return response.data;
     } catch (error) {
       console.error(`Error updating property ${id}:`, error);
