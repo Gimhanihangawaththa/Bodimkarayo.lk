@@ -35,8 +35,11 @@ public class RoommateService {
         post.setOccupation(updatedPost.getOccupation());
         post.setLocation(updatedPost.getLocation());
         post.setBio(updatedPost.getBio());
+        post.setAbout(updatedPost.getAbout());
         post.setInterests(updatedPost.getInterests());
         post.setPreferences(updatedPost.getPreferences());
+        post.setPreferredLocation(updatedPost.getPreferredLocation());
+        post.setMoveInDate(updatedPost.getMoveInDate());
         post.setBudget(updatedPost.getBudget());
         post.setPoster(updatedPost.getPoster());
 

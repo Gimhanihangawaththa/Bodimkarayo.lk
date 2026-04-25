@@ -89,6 +89,27 @@ const sampleProperty = {
   },
 };
 
+const normalizeProperty = (propertyData) => {
+  if (!propertyData) return null;
+
+  const normalizedImages = Array.isArray(propertyData.images) && propertyData.images.length > 0
+    ? propertyData.images
+    : propertyData.imageUrl
+    ? [propertyData.imageUrl]
+    : [];
+
+  return {
+    ...propertyData,
+    images: normalizedImages,
+    price: propertyData.price ?? propertyData.rent ?? 0,
+    type: propertyData.type ?? propertyData.propertyType ?? "Property",
+    offers: propertyData.offers ?? [],
+    highlights: propertyData.highlights ?? [],
+    rules: propertyData.rules ?? [],
+    nearby: propertyData.nearby ?? [],
+  };
+};
+
 export default function PropertyView() {
   const { propertyId } = useParams();
   const [property, setProperty] = useState(null);
@@ -106,7 +127,7 @@ export default function PropertyView() {
 
         // Fetch property data from backend
         const propertyData = await propertyService.getPropertyById(propertyId);
-        setProperty(propertyData);
+        setProperty(normalizeProperty(propertyData));
 
         // Fetch reviews for this property
         setReviewsLoading(true);
@@ -278,7 +299,6 @@ export default function PropertyView() {
             <div className="w-full max-w-sm rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur">
               <p className="text-sm uppercase tracking-[0.2em] text-slate-200">Monthly rent</p>
               <p className="mt-2 text-4xl font-bold text-white">Rs {property.price}</p>
-              <p className="mt-1 text-sm text-slate-300">/{property.priceRange}</p>
               <div className="mt-5 space-y-3">
                 <button
                   type="button"
@@ -315,7 +335,7 @@ export default function PropertyView() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <SectionCard title="Gallery" subtitle="Swipe through images" icon={<span>🖼️</span>}>
-              <PropertyImageViewer images={property.images} title={property.title} />
+              <PropertyImageViewer images={property.images || []} title={property.title} />
             </SectionCard>
 
             <SectionCard title="Overview" subtitle="Everything you need to know" icon={<span>✨</span>}>
@@ -339,12 +359,12 @@ export default function PropertyView() {
             </SectionCard>
 
             <SectionCard title="Amenities" subtitle="Comforts and extras" icon={<span>🛋️</span>}>
-              <PropertyOffers offers={property.offers} />
+              <PropertyOffers offers={property.offers || []} />
             </SectionCard>
 
             <SectionCard title="Highlights" icon={<span>🎯</span>}>
               <ul className="space-y-3 text-sm text-slate-600">
-                {property.highlights.map((highlight) => (
+                {(property.highlights || []).map((highlight) => (
                   <li key={highlight} className="flex items-center gap-2">
                     <span className="text-emerald-500">●</span>
                     <span>{highlight}</span>
@@ -355,7 +375,7 @@ export default function PropertyView() {
 
             <SectionCard title="House Rules" icon={<span>📌</span>}>
               <div className="flex flex-wrap gap-2">
-                {property.rules.map((rule) => (
+                {(property.rules || []).map((rule) => (
                   <InfoPill key={rule} label={rule} />
                 ))}
               </div>
@@ -363,7 +383,7 @@ export default function PropertyView() {
 
             <SectionCard title="Nearby" subtitle="Popular places around" icon={<span>🧭</span>}>
               <div className="grid gap-3 sm:grid-cols-2">
-                {property.nearby.map((spot) => (
+                {(property.nearby || []).map((spot) => (
                   <div key={spot} className="rounded-xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
                     {spot}
                   </div>

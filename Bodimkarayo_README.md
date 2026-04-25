@@ -20,7 +20,7 @@ The platform will connect tenants, landlords, and potential roommates through an
 - Deliver first a fully functional web application, followed by a mobile application built
   with Flutter for broader accessibility.
 
-## 🧠 System Architecture (High-Level)
+##  System Architecture (High-Level)
 
 Frontend (React + Tailwind CSS)  
 ⇄ Backend (Spring Boot REST API)  
