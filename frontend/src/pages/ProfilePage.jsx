@@ -555,8 +555,9 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* My Properties Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        {/* My Properties Section - Only visible for property owners */}
+        {user.isPropertyOwner && (
+          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">My Properties</h2>
               <button
@@ -568,7 +569,7 @@ export default function ProfilePage() {
             </div>
 
             {user.userProperties && user.userProperties.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 w-full">
                 {user.userProperties.map((property) => (
                   <div
                     key={property.id}
@@ -607,7 +608,7 @@ export default function ProfilePage() {
 
                       {/* Action Buttons */}
                       <div className="flex gap-2">
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/property/${property.id}`);
@@ -616,7 +617,7 @@ export default function ProfilePage() {
                         >
                           View Details
                         </button>
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             navigate(`/edit-property/${property.id}`);
@@ -625,7 +626,7 @@ export default function ProfilePage() {
                         >
                           Edit
                         </button>
-                        <button 
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteProperty(property.id, property.title);
@@ -645,9 +646,16 @@ export default function ProfilePage() {
             ) : (
               <div className="text-center py-8">
                 <p className="text-gray-600 mb-4">You haven't added any properties yet.</p>
+                <button
+                  onClick={() => navigate("/add-property")}
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition"
+                >
+                  Add Your First Property
+                </button>
               </div>
             )}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Edit Profile Modal */}

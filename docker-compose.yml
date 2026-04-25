@@ -1,0 +1,54 @@
+services:
+  db:
+    image: mariadb:11.4
+    container_name: bodimkarayo-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MARIADB_DATABASE: ${DB_NAME:-bodimkarayo_db}
+      MARIADB_USER: ${DB_USER:-bodim_user}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-StrongPassword123!}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    container_name: bodimkarayo-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/${DB_NAME:-bodimkarayo_db}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-bodim_user}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-StrongPassword123!}
+      SERVER_PORT: 4000
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-should-be-at-least-32-characters-long-for-security}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+    ports:
+      - "4000:4000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: bodimkarayo-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  mariadb_data:
