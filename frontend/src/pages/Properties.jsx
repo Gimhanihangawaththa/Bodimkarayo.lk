@@ -1,143 +1,95 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { propertyService } from '../services'
 
-const PropertyCard = ({ image, title, location, rating, reviews, amenities, price, available }) => (
-  <div className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition">
+const PropertyCard = ({ id, image, title, location, price, available, offers, rating, onCardClick }) => (
+  <div 
+    onClick={() => onCardClick(id)}
+    className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition cursor-pointer"
+  >
     <img src={image} alt={title} className="w-full h-48 object-cover" />
     <div className="p-4">
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-2">
         <h3 className="font-semibold text-gray-900">{title}</h3>
-        <div className="flex items-center gap-1">
-          <span className="text-yellow-400">⭐</span>
-          <span className="text-sm font-medium">{rating}</span>
-        </div>
+        {rating > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-yellow-400">⭐</span>
+            <span className="text-sm font-medium">{rating}</span>
+          </div>
+        )}
       </div>
       <p className="text-sm text-gray-600 mb-2">{location}</p>
-      <p className="text-xs text-gray-500 mb-3">({reviews} reviews)</p>
-      <div className="flex gap-2 mb-3 text-xs text-gray-600">
-        {amenities.map((a, i) => (
-          <span key={i} className="flex items-center gap-1">
-            <span>{a.icon}</span>
-            {a.label}
-          </span>
-        ))}
-      </div>
+      
+      {/* Offers */}
+      {offers && offers.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-3">
+          {offers.slice(0, 2).map((offer, i) => (
+            <span key={i} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+              {offer}
+            </span>
+          ))}
+          {offers.length > 2 && (
+            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+              +{offers.length - 2} more
+            </span>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <p className="font-bold text-gray-900">Rs {price.toLocaleString()}<span className="text-xs font-normal text-gray-500">/month</span></p>
       </div>
-      <p className="text-xs text-gray-500 mt-1">Available: {available}</p>
+      {available && <p className="text-xs text-gray-500 mt-1">Available: {available}</p>}
     </div>
   </div>
 )
 
 export default function Properties() {
+  const navigate = useNavigate()
   const [searchLocation, setSearchLocation] = useState('')
+  const [properties, setProperties] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  const properties = [
-    {
-      image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400',
-      title: 'Cinnamon Gardens, Colombo',
-      location: 'Queen Anne\'s Court (Colombo 7)',
-      rating: 4.8,
-      reviews: 124,
-      price: 40000,
-      available: 'Nov 1',
-      amenities: [
-        { icon: '📶', label: 'WiFi' },
-        { icon: '❄️', label: 'AC' },
-      ],
-    },
-    {
-      image: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=400',
-      title: 'Cinnamon Gardens, Colombo',
-      location: 'Queen Anne\'s Court (Colombo 7)',
-      rating: 4.8,
-      reviews: 124,
-      price: 45000,
-      available: 'Nov 1',
-      amenities: [
-        { icon: '📶', label: 'WiFi' },
-        { icon: '❄️', label: 'AC' },
-      ],
-    },
-    {
-      image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400',
-      title: 'Cinnamon Gardens, Colombo',
-      location: 'Queen Anne\'s Court (Colombo 7)',
-      rating: 4.8,
-      reviews: 124,
-      price: 40000,
-      available: 'Nov 1',
-      amenities: [
-        { icon: '📶', label: 'WiFi' },
-        { icon: '❄️', label: 'AC' },
-      ],
-    },
-    {
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400',
-      title: 'Cinnamon Gardens, Colombo',
-      location: 'Queen Anne\'s Court (Colombo 7)',
-      rating: 4.8,
-      reviews: 124,
-      price: 60000,
-      available: 'Nov 1',
-      amenities: [
-        { icon: '📶', label: 'WiFi' },
-        { icon: '❄️', label: 'AC' },
-      ],
-    },
-    {
-      image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400',
-      title: 'Cinnamon Gardens, Colombo',
-      location: 'Queen Anne\'s Court (Colombo 7)',
-      rating: 4.7,
-      reviews: 98,
-      price: 38000,
-      available: 'Dec 1',
-      amenities: [
-        { icon: '📶', label: 'WiFi' },
-        { icon: '❄️', label: 'AC' },
-      ],
-    },
-    {
-      image: 'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=400',
-      title: 'Cinnamon Gardens, Colombo',
-      location: 'Queen Anne\'s Court (Colombo 7)',
-      rating: 4.9,
-      reviews: 156,
-      price: 52000,
-      available: 'Nov 15',
-      amenities: [
-        { icon: '📶', label: 'WiFi' },
-        { icon: '❄️', label: 'AC' },
-      ],
-    },
-    {
-      image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400',
-      title: 'Cinnamon Gardens, Colombo',
-      location: 'Queen Anne\'s Court (Colombo 7)',
-      rating: 4.6,
-      reviews: 112,
-      price: 42000,
-      available: 'Oct 20',
-      amenities: [
-        { icon: '📶', label: 'WiFi' },
-        { icon: '❄️', label: 'AC' },
-      ],
-    },
-    {
-      image: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400',
-      title: 'Cinnamon Gardens, Colombo',
-      location: 'Queen Anne\'s Court (Colombo 7)',
-      rating: 4.8,
-      reviews: 135,
-      price: 48000,
-      available: 'Nov 5',
-      amenities: [
-        { icon: '📶', label: 'WiFi' },
-        { icon: '❄️', label: 'AC' },
-      ],
-    },
-  ]
+  const handlePropertyCardClick = (propertyId) => {
+    navigate(`/property/${propertyId}`)
+  }
+
+  // Fetch all properties on component mount
+  useEffect(() => {
+    const fetchProperties = async () => {
+      setIsLoading(true)
+      setError('')
+      try {
+        const data = await propertyService.getAllProperties()
+        const transformed = Array.isArray(data) 
+          ? data.map(prop => ({
+              id: prop.id,
+              image: prop.images && prop.images.length > 0 ? prop.images[0] : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400',
+              title: prop.title || 'Property',
+              location: prop.location || 'Location not specified',
+              price: prop.rent || 0,
+              available: prop.availableFrom || 'TBD',
+              offers: prop.offers || [],
+              rating: 0,
+            }))
+          : []
+        setProperties(transformed)
+      } catch (err) {
+        setError(err?.message || 'Failed to load properties')
+        setProperties([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProperties()
+  }, [])
+
+  // Filter properties based on search location
+  const filteredProperties = properties.filter(prop =>
+    prop.location.toLowerCase().includes(searchLocation.toLowerCase())
+  )
 
   return (
     <>
@@ -161,7 +113,11 @@ export default function Properties() {
               onChange={(e) => setSearchLocation(e.target.value)}
               className="flex-1 px-3 py-3 text-gray-900 outline-none bg-white"
             />
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-medium transition flex items-center gap-2">
+            <button 
+              type="button"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-medium transition flex items-center gap-2"
+              onClick={() => {}}
+            >
               <span>🔍</span>
               Search
             </button>
@@ -174,14 +130,32 @@ export default function Properties() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900">All Properties</h2>
-            <p className="text-gray-600 mt-1">Showing {properties.length} properties</p>
+            <p className="text-gray-600 mt-1">
+              {isLoading ? 'Loading...' : `Showing ${filteredProperties.length} properties`}
+            </p>
           </div>
-          
-          <div className="grid grid-cols-4 gap-6">
-            {properties.map((prop, i) => (
-              <PropertyCard key={i} {...prop} />
-            ))}
-          </div>
+
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+              {error}
+            </div>
+          )}
+
+          {isLoading && (
+            <div className="text-center text-gray-500">Loading properties...</div>
+          )}
+
+          {!isLoading && filteredProperties.length === 0 && (
+            <div className="text-center text-gray-500">No properties found.</div>
+          )}
+
+          {!isLoading && filteredProperties.length > 0 && (
+            <div className="grid grid-cols-4 gap-6">
+              {filteredProperties.map((prop) => (
+                <PropertyCard key={prop.id} {...prop} onCardClick={handlePropertyCardClick} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
     </>

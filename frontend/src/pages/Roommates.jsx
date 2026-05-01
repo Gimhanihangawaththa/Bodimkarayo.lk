@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const API_URL = 'http://localhost:4000/api'
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'
 
-const RoommateCard = ({ post }) => {
+const RoommateCard = ({ post, onCardClick }) => {
   const name = post.poster?.fullName || post.poster?.email || 'Anonymous'
   const avatar = post.poster?.profilePictureUrl || DEFAULT_AVATAR
   const interests = post.interests ? post.interests.split(',').map(i => i.trim()).filter(Boolean) : []
@@ -12,7 +13,10 @@ const RoommateCard = ({ post }) => {
   const gender = post.gender || post.poster?.gender
 
   return (
-    <div className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition w-full">
+    <div
+      onClick={() => onCardClick(post.id)}
+      className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition w-full cursor-pointer"
+    >
       <div className="relative w-full" style={{ paddingBottom: '75%' }}>
         <img 
           src={avatar} 
@@ -62,11 +66,16 @@ const RoommateCard = ({ post }) => {
 }
 
 export default function Roommates() {
+  const navigate = useNavigate()
   const { token } = useAuth()
   const [roommates, setRoommates] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchLocation, setSearchLocation] = useState('')
   const [filteredRoommates, setFilteredRoommates] = useState([])
+
+  const handleRoommateClick = (roommateId) => {
+    navigate(`/roommate/${roommateId}`)
+  }
 
   useEffect(() => {
     fetchRoommates()
@@ -154,7 +163,7 @@ export default function Roommates() {
           ) : (
             <div className="grid grid-cols-4 gap-6">
               {filteredRoommates.map((roommate) => (
-                <RoommateCard key={roommate.id} post={roommate} />
+                <RoommateCard key={roommate.id} post={roommate} onCardClick={handleRoommateClick} />
               ))}
             </div>
           )}

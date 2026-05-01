@@ -1,14 +1,26 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { ImageUploadBox } from "../components/ImageUploadBox";
 import { FormInput } from "../components/FormInput";
 import { FormSection } from "../components/FormSection";
 import { propertyService } from "../services";
+import { useAuth } from "../context/AuthContext";
+
+const MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024;
+const MAX_TOTAL_IMAGE_SIZE_BYTES = 80 * 1024 * 1024;
 
 export default function AddProperty() {
   const navigate = useNavigate();
+  const { propertyId } = useParams();
+  const { user } = useAuth();
+  
+  const isEditMode = !!propertyId;
+  
   const [loading, setLoading] = useState(false);
+  const [isLoadingProperty, setIsLoadingProperty] = useState(isEditMode);
   const [error, setError] = useState(null);
+  const [imagePreviews, setImagePreviews] = useState([null, null, null, null, null]);
+  const [imagesToDelete, setImagesToDelete] = useState([]);
   const [formData, setFormData] = useState({
     title: "",
     propertyType: "",
@@ -21,13 +33,10 @@ export default function AddProperty() {
     bedrooms: "",
     kitchens: "",
     bathrooms: "",
-    sizeSqft: "",
     floor: "",
     furnished: "",
     parking: "",
-    security: "",
     petsAllowed: "",
-    yearBuilt: "",
     offers: ["", "", "", "", "", ""],
     highlights: ["", "", ""],
     rules: ["", "", ""],
@@ -35,6 +44,86 @@ export default function AddProperty() {
     mapEmbedUrl: "",
     images: [null, null, null, null, null],
   });
+
+  useEffect(() => {
+    return () => {
+      imagePreviews.forEach((preview) => {
+        if (preview) {
+          URL.revokeObjectURL(preview);
+        }
+      });
+    };
+  }, [imagePreviews]);
+
+  // Load property data if in edit mode
+  useEffect(() => {
+    if (isEditMode && propertyId) {
+      const loadProperty = async () => {
+        try {
+          const property = await propertyService.getPropertyById(propertyId);
+          
+          // Populate form with property data
+          setFormData({
+            title: property.title || "",
+            propertyType: property.propertyType || "",
+            price: property.rent || "",
+            availableFrom: property.availableFrom || "",
+            location: property.location || "",
+            address: property.address || "",
+            numberOfPeople: property.numberOfPeople || "",
+            description: property.description || "",
+            bedrooms: property.bedrooms || "",
+            kitchens: property.kitchens || "",
+            bathrooms: property.bathrooms || "",
+            floor: property.floor || "",
+            furnished: property.furnished || "",
+            parking: property.parking || "",
+            petsAllowed: property.petsAllowed || "",
+            offers: property.offers || [],
+            highlights: property.highlights || [],
+            rules: property.rules || [],
+            nearby: property.nearby || [],
+            mapEmbedUrl: property.mapEmbedUrl || "",
+            images: [null, null, null, null, null], // Initialize with nulls for new image uploads
+          });
+
+          // Load existing images as previews
+          if (property.images && property.images.length > 0) {
+            const newPreviews = [...imagePreviews];
+            property.images.slice(0, 5).forEach((url, index) => {
+              newPreviews[index] = url;
+            });
+            setImagePreviews(newPreviews);
+          }
+          setImagesToDelete([]);
+        } catch (err) {
+          console.error("Error loading property:", err);
+          setError("Failed to load property details");
+        } finally {
+          setIsLoadingProperty(false);
+        }
+      };
+
+      loadProperty();
+    } else {
+      setIsLoadingProperty(false);
+    }
+  }, [propertyId, isEditMode]);
+
+  const isExistingImageUrl = (value) => typeof value === "string" && value.startsWith("http");
+
+  const queueImageForDeletion = (imageUrl) => {
+    if (!isExistingImageUrl(imageUrl)) {
+      return;
+    }
+
+    setImagesToDelete((prev) => {
+      if (prev.includes(imageUrl)) {
+        return prev;
+      }
+      return [...prev, imageUrl];
+    });
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -83,15 +172,86 @@ export default function AddProperty() {
     input.onchange = (e) => {
       const file = e.target.files[0];
       if (file) {
+        if (!file.type.startsWith("image/")) {
+          const message = "Please select a valid image file.";
+          setError(message);
+          alert(message);
+          return;
+        }
+
+        if (file.size > MAX_IMAGE_SIZE_BYTES) {
+          const message = "Each image must be smaller than 15MB.";
+          setError(message);
+          alert(message);
+          return;
+        }
+
         const newImages = [...formData.images];
         newImages[index] = file;
+
+        const totalImageSize = newImages.reduce((total, image) => {
+          if (!image) {
+            return total;
+          }
+          return total + image.size;
+        }, 0);
+
+        if (totalImageSize > MAX_TOTAL_IMAGE_SIZE_BYTES) {
+          const message = "Total image upload size must be smaller than 80MB.";
+          setError(message);
+          alert(message);
+          return;
+        }
+
+        setImagePreviews((prev) => {
+          const next = [...prev];
+          if (isExistingImageUrl(next[index])) {
+            queueImageForDeletion(next[index]);
+          }
+          if (next[index]) {
+            if (typeof next[index] === "string" && next[index].startsWith("blob:")) {
+              URL.revokeObjectURL(next[index]);
+            }
+          }
+          next[index] = URL.createObjectURL(file);
+          return next;
+        });
+
         setFormData((prev) => ({
           ...prev,
           images: newImages,
         }));
+        setError(null);
       }
     };
     input.click();
+  };
+
+  const handleRemoveImage = (index) => {
+    setImagePreviews((prev) => {
+      const next = [...prev];
+      const currentPreview = next[index];
+
+      if (isExistingImageUrl(currentPreview)) {
+        queueImageForDeletion(currentPreview);
+      }
+
+      if (typeof currentPreview === "string" && currentPreview.startsWith("blob:")) {
+        URL.revokeObjectURL(currentPreview);
+      }
+
+      next[index] = null;
+      return next;
+    });
+
+    setFormData((prev) => {
+      const nextImages = [...prev.images];
+      nextImages[index] = null;
+      return {
+        ...prev,
+        images: nextImages,
+      };
+    });
   };
 
   const handleMapClick = () => {
@@ -104,75 +264,133 @@ export default function AddProperty() {
     setError(null);
 
     try {
-      // Create FormData for multipart/form-data submission (supports file uploads)
-      const formDataToSend = new FormData();
+      // Separate images from other data
+      const hasNewImages = formData.images.some(img => img !== null);
+      const hasImagesToDelete = imagesToDelete.length > 0;
+      
+      // Create JSON payload for property data
+      const propertyData = {
+        title: formData.title,
+        propertyType: formData.propertyType,
+        rent: parseFloat(formData.price) || 0,
+        availableFrom: formData.availableFrom,
+        location: formData.location,
+        address: formData.address,
+        numberOfPeople: formData.numberOfPeople,
+        description: formData.description,
+        bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
+        kitchens: formData.kitchens ? parseInt(formData.kitchens) : null,
+        bathrooms: formData.bathrooms ? parseInt(formData.bathrooms) : null,
+        floor: formData.floor,
+        furnished: formData.furnished,
+        parking: formData.parking,
+        petsAllowed: formData.petsAllowed,
+        mapEmbedUrl: formData.mapEmbedUrl,
+        offers: formData.offers.filter((o) => o.trim() !== ""),
+        highlights: formData.highlights.filter((h) => h.trim() !== ""),
+        rules: formData.rules.filter((r) => r.trim() !== ""),
+        nearby: formData.nearby.filter((n) => n.trim() !== ""),
+        owner: user ? { id: user.id } : null,
+      };
 
-      // Append all form fields
-      formDataToSend.append("title", formData.title);
-      formDataToSend.append("propertyType", formData.propertyType);
-      formDataToSend.append("price", formData.price);
-      formDataToSend.append("availableFrom", formData.availableFrom);
-      formDataToSend.append("location", formData.location);
-      formDataToSend.append("address", formData.address);
-      formDataToSend.append("numberOfPeople", formData.numberOfPeople);
-      formDataToSend.append("description", formData.description);
-      formDataToSend.append("bedrooms", formData.bedrooms);
-      formDataToSend.append("kitchens", formData.kitchens);
-      formDataToSend.append("bathrooms", formData.bathrooms);
-      formDataToSend.append("sizeSqft", formData.sizeSqft);
-      formDataToSend.append("floor", formData.floor);
-      formDataToSend.append("furnished", formData.furnished);
-      formDataToSend.append("parking", formData.parking);
-      formDataToSend.append("security", formData.security);
-      formDataToSend.append("petsAllowed", formData.petsAllowed);
-      formDataToSend.append("yearBuilt", formData.yearBuilt);
-      formDataToSend.append("mapEmbedUrl", formData.mapEmbedUrl);
+      let savedProperty;
+      let isNewProperty = false;
 
-      // Append arrays (filter out empty values)
-      formDataToSend.append(
-        "offers",
-        JSON.stringify(formData.offers.filter((o) => o.trim() !== ""))
-      );
-      formDataToSend.append(
-        "highlights",
-        JSON.stringify(formData.highlights.filter((h) => h.trim() !== ""))
-      );
-      formDataToSend.append(
-        "rules",
-        JSON.stringify(formData.rules.filter((r) => r.trim() !== ""))
-      );
-      formDataToSend.append(
-        "nearby",
-        JSON.stringify(formData.nearby.filter((n) => n.trim() !== ""))
-      );
+      if (isEditMode) {
+        // Update existing property
+        savedProperty = await propertyService.updateProperty(propertyId, propertyData);
+        console.log("Property updated successfully:", savedProperty);
 
-      // Append image files
-      formData.images.forEach((image) => {
-        if (image) {
-          formDataToSend.append("images", image);
+        if (hasImagesToDelete) {
+          console.log("Deleting existing images:", imagesToDelete.length);
+          await Promise.all(
+            imagesToDelete.map((imageUrl) =>
+              propertyService.deletePropertyImage(savedProperty.id, imageUrl)
+            )
+          );
+          console.log("Selected images deleted successfully");
         }
-      });
+      } else {
+        // Create new property
+        savedProperty = await propertyService.createProperty(propertyData);
+        console.log("Property created successfully:", savedProperty);
+        isNewProperty = true;
+      }
 
-      // Call the backend API
-      const response = await propertyService.createProperty(formDataToSend);
+      // If there are new images, upload them separately
+      console.log("hasNewImages:", hasNewImages);
+      console.log("formData.images:", formData.images);
+      
+      if (hasNewImages) {
+        const imageFormData = new FormData();
+        formData.images.forEach((image, index) => {
+          if (image) {
+            console.log(`Appending image ${index}:`, image.name, image.size);
+            imageFormData.append("images", image);
+          }
+        });
 
-      console.log("Property created successfully:", response);
-      alert("Property added successfully!");
+        console.log("Uploading images for property ID:", savedProperty.id);
+        try {
+          const uploadResponse = await propertyService.uploadPropertyImages(savedProperty.id, imageFormData);
+          console.log("Images uploaded successfully:", uploadResponse);
+        } catch (imgErr) {
+          console.error("Error uploading images:", imgErr);
+          console.error("Error details:", imgErr.response?.data);
+          if (isNewProperty) {
+            alert("Property created but some images failed to upload. You can edit the property to add them later.");
+          } else {
+            alert("Property updated but some images failed to upload. You can try again later.");
+          }
+        }
+      } else {
+        console.log("No new images to upload");
+      }
 
-      // Navigate to home or property listing page
-      navigate("/");
+      const successMessage = isEditMode
+        ? "Property updated successfully!"
+        : "Property added successfully!";
+      alert(successMessage);
+
+      // Navigate based on operation
+      if (isEditMode) {
+        navigate(`/property/${savedProperty.id}`);
+      } else {
+        navigate("/");
+      }
     } catch (err) {
-      console.error("Error creating property:", err);
+      console.error("Error saving property:", err);
       const errorMessage =
         err.response?.data?.message ||
         err.message ||
-        "Failed to create property. Please try again.";
+        `Failed to ${isEditMode ? "update" : "create"} property. Please try again.`;
       setError(errorMessage);
       alert(errorMessage);
     } finally {
       setLoading(false);
     }
   };
+
+  const renderImageTile = (idx, tileClassName) => (
+    <div key={idx} className={tileClassName}>
+      <ImageUploadBox
+        onClick={() => handleImageClick(idx)}
+        previewSrc={imagePreviews[idx]}
+      />
+      {imagePreviews[idx] && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleRemoveImage(idx);
+          }}
+          className="absolute top-2 right-2 bg-white text-gray-700 text-xs px-2 py-1 rounded hover:bg-gray-100 border"
+        >
+          Remove
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -190,15 +408,18 @@ export default function AddProperty() {
       )}
 
       {/* Main Content */}
-      <form onSubmit={handleSubmit} className="w-full lg:w-[80%] mx-auto px-4 py-8">
-        {/* Image Upload Section */}
-        <FormSection title="Add Property" isMainTitle={true}>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            {[0, 1, 2, 3, 4].map((idx) => (
-              <ImageUploadBox key={idx} onClick={() => handleImageClick(idx)} />
-            ))}
-          </div>
-        </FormSection>
+      {isLoadingProperty ? (
+        <div className="w-full lg:w-[80%] mx-auto px-4 py-8 text-center">
+          <p className="text-gray-600">Loading property details...</p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="w-full lg:w-[80%] mx-auto px-4 py-8">
+          {/* Image Upload Section */}
+          <FormSection title={isEditMode ? "Edit Property" : "Add Property"} isMainTitle={true}>
+            <div className="flex gap-4 overflow-x-auto">
+              {[0, 1, 2, 3, 4].map((idx) => renderImageTile(idx, "relative aspect-square flex-1 min-w-[150px]"))}
+            </div>
+          </FormSection>
 
         {/* Basic Information */}
         <FormSection>
@@ -301,13 +522,6 @@ export default function AddProperty() {
         <FormSection title="Property Details">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <FormInput
-              label="Size (sq ft)"
-              placeholder="1,150"
-              name="sizeSqft"
-              value={formData.sizeSqft}
-              onChange={handleInputChange}
-            />
-            <FormInput
               label="Floor"
               placeholder="6th floor"
               name="floor"
@@ -329,24 +543,10 @@ export default function AddProperty() {
               onChange={handleInputChange}
             />
             <FormInput
-              label="Security"
-              placeholder="24/7 security"
-              name="security"
-              value={formData.security}
-              onChange={handleInputChange}
-            />
-            <FormInput
               label="Pets Allowed"
               placeholder="No pets"
               name="petsAllowed"
               value={formData.petsAllowed}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Year Built"
-              placeholder="2019"
-              name="yearBuilt"
-              value={formData.yearBuilt}
               onChange={handleInputChange}
             />
           </div>
@@ -489,6 +689,7 @@ export default function AddProperty() {
           </button>
         </div>
       </form>
+        )}
     </div>
   );
 }

@@ -1,105 +1,278 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiClient } from "../config/api.config";
+import { useAuth } from "../context/AuthContext";
+import { propertyService } from "../services";
 
-const sampleUser = {
-  id: 1,
-  name: "John Doe",
-  age: 28,
-  occupation: "Software Engineer",
-  location: "Colombo 3",
-  bio: "Friendly and professional. Looking for a comfortable living space.",
-  avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
-  about: "I'm a software engineer with a passion for building great products. I'm organized, clean, and respectful of shared spaces. Currently looking for a roommate to share a 2-3 bedroom apartment.",
-  email: "john.doe@example.com",
-  phone: "+94 71 234 5678",
-  interests: ["Technology", "Cooking", "Reading", "Fitness", "Travel"],
-  roommateApplicationStatus: "notApplied", // "notApplied", "applied", "pending", "approved", "rejected"
-  isPropertyOwner: true,
-  userProperties: [
-    {
-      id: 1,
-      title: "Cozy Apartment Near University",
-      price: "35,000",
-      location: "Colombo 5",
-      type: "Apartment",
-      image: "https://images.unsplash.com/photo-1453227427063-bf47ddb8af6f?w=400&h=300&fit=crop",
-      bedrooms: 2,
-      bathrooms: 1,
-    },
-    {
-      id: 2,
-      title: "Modern Studio with City View",
-      price: "28,000",
-      location: "Colombo 7",
-      type: "Studio",
-      image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop",
-      bedrooms: 1,
-      bathrooms: 1,
-    },
-    {
-      id: 3,
-      title: "Spacious Family House",
-      price: "75,000",
-      location: "Colombo 4",
-      type: "House",
-      image: "https://images.unsplash.com/photo-1564013799919-ab600027e384?w=400&h=300&fit=crop",
-      bedrooms: 4,
-      bathrooms: 2,
-    },
-  ],
+const EMPTY_USER = {
+  id: null,
+  name: "",
+  avatarUrl: "",
+  email: "",
+  role: null,
+  interests: [],
+  roommateApplicationStatus: "notApplied",
+  isPropertyOwner: false,
+  userProperties: [],
 };
+
+const createEmptyApplicationData = (interests = []) => ({
+  gender: "",
+  age: "",
+  occupation: "",
+  location: "",
+  bio: "",
+  about: "",
+  interests,
+  preferredLocation: "",
+  moveInDate: "",
+  budget: "",
+  preferences: "",
+  additionalInfo: "",
+});
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const [user, setUser] = useState(sampleUser);
+  const { user: authUser } = useAuth();
+  const [user, setUser] = useState(EMPTY_USER);
   const [roommateStatus, setRoommateStatus] = useState(user.roommateApplicationStatus);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [currentApplicationId, setCurrentApplicationId] = useState(null);
+  const [currentApplication, setCurrentApplication] = useState(null);
+  const [isEditingApplication, setIsEditingApplication] = useState(false);
   const [editFormData, setEditFormData] = useState({
     name: user.name,
-    age: user.age,
-    occupation: user.occupation,
-    location: user.location,
-    bio: user.bio,
     email: user.email,
-    phone: user.phone,
-    about: user.about,
     avatarUrl: user.avatarUrl,
   });
+  const [profileImageFile, setProfileImageFile] = useState(null);
   const [previewImage, setPreviewImage] = useState(user.avatarUrl);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
-  const [applicationData, setApplicationData] = useState({
-    occupation: user.occupation,
-    location: user.location,
-    about: user.about,
-    interests: user.interests || [],
-    moveInDate: "",
-    budget: "",
-    preferences: "",
+  const [applicationData, setApplicationData] = useState(createEmptyApplicationData(EMPTY_USER.interests));
+
+  const mapPostToApplicationData = (post) => ({
+    gender: post?.gender ?? "",
+    age: post?.age != null ? String(post.age) : "",
+    occupation: post?.occupation ?? "",
+    location: post?.location ?? "",
+    bio: post?.bio ?? "",
+    about: post?.about ?? "",
+    interests: post?.interests
+      ? post.interests.split(",").map((value) => value.trim()).filter(Boolean)
+      : user.interests || [],
+    preferredLocation: post?.preferredLocation ?? "",
+    moveInDate: post?.moveInDate ?? "",
+    budget: post?.budget != null ? String(post.budget) : "",
+    preferences: post?.preferences ?? "",
     additionalInfo: "",
   });
 
+  useEffect(() => {
+    if (!authUser) {
+      return;
+    }
+
+    setUser((prev) => ({
+      ...prev,
+      id: authUser.id ?? prev.id,
+      name: authUser.fullName ?? authUser.name ?? prev.name,
+      email: authUser.email ?? prev.email,
+      role: authUser.role ?? prev.role,
+      avatarUrl: authUser.profilePictureUrl ?? prev.avatarUrl,
+    }));
+  }, [authUser]);
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      if (!authUser?.id) {
+        return;
+      }
+
+      try {
+        const response = await apiClient.get(`/users/${authUser.id}/profile`);
+        const profile = response.data;
+
+        const mappedUser = {
+          id: profile.id,
+          name: profile.fullName ?? "",
+          email: profile.email ?? "",
+          role: profile.role ?? authUser?.role ?? null,
+          avatarUrl: profile.profilePictureUrl ?? "",
+        };
+
+        setUser((prev) => ({
+          ...prev,
+          ...mappedUser,
+        }));
+
+        setEditFormData({
+          name: mappedUser.name,
+          email: mappedUser.email,
+          avatarUrl: mappedUser.avatarUrl,
+        });
+
+        setPreviewImage(mappedUser.avatarUrl);
+      } catch (error) {
+        console.error("Error loading profile details:", error);
+      }
+    };
+
+    loadUserProfile();
+  }, [authUser]);
+
+  useEffect(() => {
+    const loadApplicationStatus = async () => {
+      try {
+        const response = await apiClient.get("/roommates");
+        const posts = Array.isArray(response.data) ? response.data : [];
+
+        const matchedPost = posts.find((post) => {
+          const poster = post?.poster;
+          if (!poster) return false;
+
+          if (authUser?.id && poster.id === authUser.id) {
+            return true;
+          }
+
+          if (authUser?.email && poster.email === authUser.email) {
+            return true;
+          }
+
+          return false;
+        });
+
+        if (matchedPost) {
+          setRoommateStatus("applied");
+          setCurrentApplicationId(matchedPost.id ?? null);
+          setCurrentApplication(matchedPost);
+        } else {
+          setRoommateStatus("notApplied");
+          setCurrentApplicationId(null);
+          setCurrentApplication(null);
+        }
+      } catch (error) {
+        console.error("Error loading roommate application status:", error);
+      }
+    };
+
+    loadApplicationStatus();
+  }, [authUser]);
+
+  useEffect(() => {
+    const loadUserProperties = async () => {
+      if (!authUser?.id) {
+        return;
+      }
+
+      try {
+        const allProperties = await propertyService.getAllProperties();
+        const userProps = Array.isArray(allProperties)
+          ? allProperties.filter((prop) => prop.owner && prop.owner.id === authUser.id)
+          : [];
+
+        // Transform properties for display
+        const transformedProperties = userProps.map((prop) => ({
+          id: prop.id,
+          image: prop.images && prop.images.length > 0 ? prop.images[0] : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400',
+          title: prop.title || 'Property',
+          location: prop.location || 'Location not specified',
+          price: prop.rent || 0,
+          type: prop.propertyType || 'Property',
+          bedrooms: prop.bedrooms || 0,
+          bathrooms: prop.bathrooms || 0,
+          available: prop.availableFrom || 'TBD',
+        }));
+
+        setUser((prev) => ({
+          ...prev,
+          userProperties: transformedProperties,
+          isPropertyOwner: transformedProperties.length > 0,
+        }));
+      } catch (error) {
+        console.error("Error loading user properties:", error);
+      }
+    };
+
+    loadUserProperties();
+  }, [authUser]);
+
+
   const handleEditProfile = () => {
+    setProfileImageFile(null);
     setPreviewImage(user.avatarUrl);
     setEditFormData({
       name: user.name,
-      age: user.age,
-      occupation: user.occupation,
-      location: user.location,
-      bio: user.bio,
       email: user.email,
-      phone: user.phone,
-      about: user.about,
       avatarUrl: user.avatarUrl,
     });
     setIsEditModalOpen(true);
   };
 
-  const handleSaveProfile = () => {
-    setUser((prev) => ({
-      ...prev,
-      ...editFormData,
-    }));
-    setIsEditModalOpen(false);
+  const handleSaveProfile = async () => {
+    if (!authUser?.id) {
+      alert("Unable to update profile. Please sign in again.");
+      return;
+    }
+
+    try {
+      setIsSavingProfile(true);
+
+      let profilePictureUrl = editFormData.avatarUrl;
+
+      if (profileImageFile) {
+        const imageFormData = new FormData();
+        imageFormData.append("image", profileImageFile);
+
+        const imageUploadResponse = await apiClient.post(
+          `/users/${authUser.id}/profile-image`,
+          imageFormData
+        );
+
+        profilePictureUrl =
+          imageUploadResponse.data?.profilePictureUrl || profilePictureUrl;
+      }
+
+      const payload = {
+        fullName: editFormData.name,
+        email: editFormData.email,
+        profilePictureUrl,
+      };
+
+      const response = await apiClient.put(`/users/${authUser.id}/profile`, payload);
+      const updatedProfile = response.data;
+
+      const updatedUser = {
+        id: updatedProfile.id,
+        name: updatedProfile.fullName ?? editFormData.name,
+        email: updatedProfile.email ?? editFormData.email,
+        avatarUrl: updatedProfile.profilePictureUrl ?? editFormData.avatarUrl,
+      };
+
+      setUser((prev) => ({
+        ...prev,
+        ...updatedUser,
+      }));
+
+      setEditFormData({
+        name: updatedUser.name,
+        email: updatedUser.email,
+        avatarUrl: updatedUser.avatarUrl,
+      });
+
+      setPreviewImage(updatedUser.avatarUrl);
+      setProfileImageFile(null);
+      setIsEditModalOpen(false);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update profile. Please try again.";
+      alert(message);
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -125,22 +298,82 @@ export default function ProfilePage() {
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageUrl = event.target.result;
-        setPreviewImage(imageUrl);
-        setEditFormData((prev) => ({
-          ...prev,
-          avatarUrl: imageUrl,
-        }));
-      };
-      reader.readAsDataURL(file);
+      setProfileImageFile(file);
+
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewImage(objectUrl);
     }
   };
 
   const handleOpenApplyModal = () => {
     if (roommateStatus === "notApplied") {
+      setApplicationData(createEmptyApplicationData(user.interests || []));
+      setIsEditingApplication(false);
       setIsApplyModalOpen(true);
+    }
+  };
+
+  const handleEditApplication = () => {
+    if (!currentApplication) {
+      return;
+    }
+
+    setApplicationData(mapPostToApplicationData(currentApplication));
+    setIsEditingApplication(true);
+    setIsApplyModalOpen(true);
+  };
+
+  const handleRemoveApplication = async () => {
+    if (!currentApplicationId) {
+      alert("No submitted application found.");
+      return;
+    }
+
+    if (!window.confirm("Are you sure you want to remove your roommate application?")) {
+      return;
+    }
+
+    try {
+      await apiClient.delete(`/roommates/${currentApplicationId}`);
+      setRoommateStatus("notApplied");
+      setCurrentApplicationId(null);
+      setCurrentApplication(null);
+      setIsEditingApplication(false);
+      setApplicationData(createEmptyApplicationData(user.interests || []));
+      alert("Your roommate application was removed.");
+    } catch (error) {
+      console.error("Error removing roommate application:", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to remove application. Please try again.";
+      alert(message);
+    }
+  };
+
+  const handleDeleteProperty = async (propertyId, propertyTitle) => {
+    if (!window.confirm(`Are you sure you want to delete "${propertyTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await propertyService.deleteProperty(propertyId);
+      
+      // Remove property from the list
+      setUser((prev) => ({
+        ...prev,
+        userProperties: prev.userProperties.filter((prop) => prop.id !== propertyId),
+        isPropertyOwner: prev.userProperties.filter((prop) => prop.id !== propertyId).length > 0,
+      }));
+      
+      alert("Property deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting property:", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete property. Please try again.";
+      alert(message);
     }
   };
 
@@ -161,8 +394,18 @@ export default function ProfilePage() {
     }));
   };
 
-  const handleSubmitApplication = () => {
-    if (!applicationData.moveInDate || !applicationData.budget || !applicationData.about) {
+  const handleSubmitApplication = async () => {
+    if (
+      !applicationData.gender ||
+      !applicationData.age ||
+      !applicationData.occupation ||
+      !applicationData.location ||
+      !applicationData.bio ||
+      !applicationData.about ||
+      !applicationData.preferredLocation ||
+      !applicationData.moveInDate ||
+      !applicationData.budget
+    ) {
       alert("Please fill in all required fields marked with *");
       return;
     }
@@ -172,35 +415,63 @@ export default function ProfilePage() {
       return;
     }
 
-    setRoommateStatus("pending");
-    setIsApplyModalOpen(false);
-    setApplicationData({
-      occupation: user.occupation,
-      location: user.location,
-      about: user.about,
-      interests: user.interests || [],
-      moveInDate: "",
-      budget: "",
-      preferences: "",
-      additionalInfo: "",
-    });
-    alert("🎉 Your roommate application has been submitted! We'll review your profile and get back to you soon.");
-  };
+    try {
+      const preferenceParts = [applicationData.preferences, applicationData.additionalInfo]
+        .map((value) => value?.trim())
+        .filter(Boolean);
 
-  const handleApplyRoommate = () => {
-    if (roommateStatus === "notApplied") {
-      setRoommateStatus("pending");
-      alert("Roommate application submitted! We'll review your profile.");
+      const payload = {
+        gender: applicationData.gender,
+        age: applicationData.age ? Number(applicationData.age) : null,
+        occupation: applicationData.occupation,
+        location: applicationData.location,
+        bio: applicationData.bio,
+        about: applicationData.about,
+        interests: applicationData.interests.join(", "),
+        preferences: preferenceParts.join(" | "),
+        preferredLocation: applicationData.preferredLocation,
+        moveInDate: applicationData.moveInDate,
+        budget: applicationData.budget ? Number(applicationData.budget) : null,
+      };
+
+      if (authUser?.id) {
+        payload.poster = { id: authUser.id };
+      }
+
+      const response = isEditingApplication && currentApplicationId
+        ? await apiClient.put(`/roommates/${currentApplicationId}`, payload)
+        : await apiClient.post("/roommates", payload);
+
+      const savedPost = response?.data;
+
+      setRoommateStatus("applied");
+      setCurrentApplication(savedPost || null);
+      if (savedPost?.id) {
+        setCurrentApplicationId(savedPost.id);
+      }
+      setIsApplyModalOpen(false);
+      setIsEditingApplication(false);
+      setApplicationData(createEmptyApplicationData(user.interests || []));
+
+      alert(
+        isEditingApplication
+          ? "Your roommate application was updated."
+          : "You are now applied as a roommate and visible in the roommate section."
+      );
+    } catch (error) {
+      console.error("Error creating roommate application:", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to apply as roommate. Please try again.";
+      alert(message);
     }
   };
 
   const getStatusBadge = () => {
     const statusConfig = {
       notApplied: { text: "Not Applied", color: "bg-gray-100 text-gray-800" },
-      pending: { text: "Application Pending", color: "bg-yellow-100 text-yellow-800" },
-      applied: { text: "Registered as Roommate", color: "bg-blue-100 text-blue-800" },
-      approved: { text: "Approved", color: "bg-green-100 text-green-800" },
-      rejected: { text: "Rejected", color: "bg-red-100 text-red-800" },
+      applied: { text: "Applied", color: "bg-blue-100 text-blue-800" },
     };
 
     const config = statusConfig[roommateStatus] || statusConfig.notApplied;
@@ -209,6 +480,11 @@ export default function ProfilePage() {
         {config.text}
       </span>
     );
+  };
+
+  const getRoleLabel = (role) => {
+    if (!role) return "User";
+    return role.charAt(0).toUpperCase() + role.slice(1).toLowerCase();
   };
 
   return (
@@ -229,10 +505,12 @@ export default function ProfilePage() {
             {/* Basic Info */}
             <div className="flex-grow">
               <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
-              <p className="text-gray-600 mt-2">{user.occupation}</p>
-              <p className="text-gray-500 text-sm">📍 {user.location}</p>
               <p className="text-gray-600 mt-2">{user.email}</p>
-              <p className="text-gray-600">{user.phone}</p>
+              <div className="mt-2">
+                <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
+                  {getRoleLabel(user.role)}
+                </span>
+              </div>
 
               {/* Roommate Status Badge */}
               <div className="mt-4 mb-4">
@@ -257,45 +535,23 @@ export default function ProfilePage() {
                   </button>
                 )}
                 {roommateStatus === "applied" && (
-                  <button
-                    disabled
-                    className="bg-gray-400 text-white px-6 py-2 rounded-md font-medium cursor-not-allowed"
-                  >
-                    Applied
-                  </button>
-                )}
-                {roommateStatus === "pending" && (
-                  <button
-                    disabled
-                    className="bg-yellow-500 text-white px-6 py-2 rounded-md font-medium cursor-not-allowed"
-                  >
-                    Application Pending
-                  </button>
+                  <>
+                    <button
+                      onClick={handleEditApplication}
+                      className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2 rounded-md font-medium transition"
+                    >
+                      Edit Application
+                    </button>
+                    <button
+                      onClick={handleRemoveApplication}
+                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md font-medium transition"
+                    >
+                      Remove Application
+                    </button>
+                  </>
                 )}
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* About Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">About</h2>
-          <p className="text-gray-700 leading-relaxed mb-4">{user.about}</p>
-          <p className="text-gray-700">{user.bio}</p>
-        </div>
-
-        {/* Interests */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Interests</h2>
-          <div className="flex flex-wrap gap-2">
-            {user.interests.map((interest) => (
-              <span
-                key={interest}
-                className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium"
-              >
-                {interest}
-              </span>
-            ))}
           </div>
         </div>
 
@@ -313,7 +569,7 @@ export default function ProfilePage() {
             </div>
 
             {user.userProperties && user.userProperties.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 gap-6 w-full">
                 {user.userProperties.map((property) => (
                   <div
                     key={property.id}
@@ -350,10 +606,39 @@ export default function ProfilePage() {
                         </span>
                       </div>
 
-                      {/* Action Button */}
-                      <button className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-md font-medium transition">
-                        View Details
-                      </button>
+                      {/* Action Buttons */}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/property/${property.id}`);
+                          }}
+                          className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-md font-medium transition"
+                        >
+                          View Details
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/edit-property/${property.id}`);
+                          }}
+                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProperty(property.id, property.title);
+                          }}
+                          className="text-black hover:opacity-60 transition"
+                          title="Delete property"
+                        >
+                          <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-9l-1 1H5v2h14V4z"/>
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -432,42 +717,6 @@ export default function ProfilePage() {
                   />
                 </div>
 
-                {/* Age */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Age</label>
-                  <input
-                    type="number"
-                    name="age"
-                    value={editFormData.age}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* Occupation */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Occupation</label>
-                  <input
-                    type="text"
-                    name="occupation"
-                    value={editFormData.occupation}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* Location */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Location</label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={editFormData.location}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
                 {/* Email */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
@@ -476,42 +725,6 @@ export default function ProfilePage() {
                     name="email"
                     value={editFormData.email}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={editFormData.phone}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* Bio */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Bio (Short Description)</label>
-                  <textarea
-                    name="bio"
-                    value={editFormData.bio}
-                    onChange={handleInputChange}
-                    rows="3"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
-
-                {/* About */}
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">About (Detailed Description)</label>
-                  <textarea
-                    name="about"
-                    value={editFormData.about}
-                    onChange={handleInputChange}
-                    rows="4"
                     className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -528,9 +741,10 @@ export default function ProfilePage() {
               </button>
               <button
                 onClick={handleSaveProfile}
+                disabled={isSavingProfile}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition"
               >
-                Save Changes
+                {isSavingProfile ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </div>
@@ -544,7 +758,7 @@ export default function ProfilePage() {
             {/* Modal Header */}
             <div className="p-6 border-b bg-gradient-to-r from-green-50 to-emerald-50">
               <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <span>🏠</span> Apply as a Roommate
+                <span>🏠</span> {isEditingApplication ? "Edit Roommate Application" : "Apply as a Roommate"}
               </h3>
               <p className="text-gray-600 text-sm mt-2">Complete your roommate profile to start finding compatible roommates</p>
             </div>
@@ -562,9 +776,45 @@ export default function ProfilePage() {
               <div className="mb-6 pb-6 border-b">
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Gender */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Gender <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      name="gender"
+                      value={applicationData.gender}
+                      onChange={handleApplicationChange}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                      <option value="Prefer not to say">Prefer not to say</option>
+                    </select>
+                  </div>
+
+                  {/* Age */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Age <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      name="age"
+                      value={applicationData.age}
+                      onChange={handleApplicationChange}
+                      placeholder="e.g., 24"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+
                   {/* Occupation */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Occupation</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Occupation <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="occupation"
@@ -577,7 +827,9 @@ export default function ProfilePage() {
 
                   {/* Location */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Location</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Current Location <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="location"
@@ -595,7 +847,19 @@ export default function ProfilePage() {
                 <h4 className="text-lg font-semibold text-gray-900 mb-4">About You</h4>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tell us about yourself <span className="text-red-500">*</span>
+                    Short bio <span className="text-red-500">*</span>
+                  </label>
+                  <textarea
+                    name="bio"
+                    value={applicationData.bio}
+                    onChange={handleApplicationChange}
+                    placeholder="A short description about you"
+                    rows="2"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none mb-4"
+                  />
+
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Detailed about <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     name="about"
@@ -694,6 +958,20 @@ export default function ProfilePage() {
 
               {/* Preferences Section */}
               <div className="space-y-5">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Preferred boarding location <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="preferredLocation"
+                    value={applicationData.preferredLocation}
+                    onChange={handleApplicationChange}
+                    placeholder="e.g., Colombo 4-7"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+
                 {/* Preferences */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -731,16 +1009,12 @@ export default function ProfilePage() {
               <button
                 onClick={() => {
                   setIsApplyModalOpen(false);
-                  setApplicationData({
-                    occupation: user.occupation,
-                    location: user.location,
-                    about: user.about,
-                    interests: user.interests || [],
-                    moveInDate: "",
-                    budget: "",
-                    preferences: "",
-                    additionalInfo: "",
-                  });
+                  if (isEditingApplication && currentApplication) {
+                    setApplicationData(mapPostToApplicationData(currentApplication));
+                  } else {
+                    setApplicationData(createEmptyApplicationData(user.interests || []));
+                  }
+                  setIsEditingApplication(false);
                 }}
                 className="px-6 py-2 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-100 transition"
               >
@@ -750,7 +1024,7 @@ export default function ProfilePage() {
                 onClick={handleSubmitApplication}
                 className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition flex items-center gap-2"
               >
-                <span>✓</span> Submit Application
+                <span>✓</span> {isEditingApplication ? "Save Changes" : "Submit Application"}
               </button>
             </div>
           </div>

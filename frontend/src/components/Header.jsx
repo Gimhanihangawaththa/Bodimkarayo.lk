@@ -59,9 +59,13 @@ export default function Header() {
               <Link to="/profile" className="text-gray-600 hover:text-blue-600 font-semibold transition">
                 My Profile
               </Link>
-              <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold cursor-pointer hover:bg-gray-400 transition">
-                {user && user.username ? user.username.charAt(0).toUpperCase() : '👤'}
-              </div>
+              <Link to="/profile" className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center text-gray-600 font-semibold cursor-pointer hover:bg-gray-400 transition overflow-hidden">
+                {user && user.profilePictureUrl ? (
+                  <img src={user.profilePictureUrl} alt="Profile" className="h-full w-full object-cover" />
+                ) : (
+                  <span>{user && user.fullName ? user.fullName.charAt(0).toUpperCase() : '👤'}</span>
+                )}
+              </Link>
               <button onClick={handleLogout} className="text-gray-600 hover:text-red-600 font-semibold transition">
                 Logout
               </button>

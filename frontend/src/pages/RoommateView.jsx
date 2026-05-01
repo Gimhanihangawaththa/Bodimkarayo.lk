@@ -1,58 +1,97 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { apiClient } from "../config/api.config";
 
-const sampleRoommate = {
-  id: 1,
-  name: "Priya Perera",
-  age: 24,
-  occupation: "Software Engineer",
-  location: "Colombo 7",
-  rating: 4.8,
-  tags: ["Cooking", "Reading", "Yoga", "Writing"],
-  bio: "Friendly and tidy. Loves quiet evenings, good food, and weekend hikes. Looking for a respectful roommate.",
-  avatarUrl: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop",
-  about: "I'm a software engineer working at a tech company. I value cleanliness and respect for shared spaces. I enjoy cooking and often prepare meals for myself.",
-  interests: ["Cooking", "Reading", "Yoga", "Writing", "Hiking", "Photography"],
-  preferences: {
-    lookingFor: "1-2 roommates",
-    budget: "Rs. 15,000 - 20,000",
-    preferredLocation: "Colombo 3-7",
-    moveInDate: "Flexible",
-  },
-  reviews: [
-    {
-      id: 1,
-      author: "Samith Kumar",
-      rating: 5,
-      text: "Great roommate! Very respectful and clean. Highly recommended!",
-    },
-    {
-      id: 2,
-      author: "Jessica Wong",
-      rating: 4.5,
-      text: "Nice person, good to live with. Communication could be better but overall positive experience.",
-    },
-  ],
-};
+const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400";
 
 export default function RoommateView() {
   const { roommateId } = useParams();
-  const [roommate, setRoommate] = useState(sampleRoommate);
+  const [roommate, setRoommate] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    // TODO: Fetch roommate data based on roommateId from backend
-    console.log("Loading roommate:", roommateId);
+    const loadRoommate = async () => {
+      if (!roommateId) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      setError("");
+
+      try {
+        const response = await apiClient.get(`/roommates/${roommateId}`);
+        const post = response?.data;
+
+        if (!post) {
+          setRoommate(null);
+          setError("Roommate not found.");
+          return;
+        }
+
+        const interests = post.interests
+          ? post.interests.split(",").map((interest) => interest.trim()).filter(Boolean)
+          : [];
+
+        setRoommate({
+          id: post.id,
+          name: post.poster?.fullName || post.poster?.email || "Anonymous",
+          age: post.age || null,
+          occupation: post.occupation || "",
+          location: post.location || "",
+          rating: post.rating || 0,
+          bio: post.bio || "",
+          about: post.about || post.bio || "",
+          avatarUrl: post.poster?.profilePictureUrl || DEFAULT_AVATAR,
+          interests,
+          preferences: {
+            lookingFor: post.preferences || "",
+            budget: post.budget ? `Rs. ${post.budget.toLocaleString()}` : "",
+            preferredLocation: post.preferredLocation || "",
+            moveInDate: post.moveInDate || "",
+          },
+          reviews: Array.isArray(post.reviews) ? post.reviews : [],
+        });
+      } catch (err) {
+        console.error("Error loading roommate:", err);
+        const message = err?.response?.data?.message || err?.message || "Failed to load roommate.";
+        setError(message);
+        setRoommate(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRoommate();
   }, [roommateId]);
 
   const handleConnect = () => {
+    if (!roommate) {
+      return;
+    }
     alert(`Connection request sent to ${roommate.name}`);
   };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto max-w-4xl px-4">
-        {/* Header Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        {isLoading && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">Loading roommate...</p>
+          </div>
+        )}
+
+        {!isLoading && error && (
+          <div className="text-center py-12">
+            <p className="text-gray-500">{error}</p>
+          </div>
+        )}
+
+        {!isLoading && !error && roommate && (
+          <>
+            {/* Header Section */}
+            <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="flex gap-6">
             {/* Avatar */}
             <div className="flex-shrink-0">
@@ -157,6 +196,8 @@ export default function RoommateView() {
             ))}
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

@@ -47,70 +47,71 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
               children: [
                 // Image Upload Placeholder
                 Container(
-                height: 150,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey[300]!, style: BorderStyle.solid),
+                  height: 150,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey[300]!, style: BorderStyle.solid),
+                  ),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_photo_alternate, size: 48, color: Colors.grey),
+                      SizedBox(height: 8),
+                      Text('Tap to add photos', style: TextStyle(color: Colors.grey)),
+                    ],
+                  ),
                 ),
-                child: const Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                const SizedBox(height: 24),
+
+                _buildSectionTitle('Basic Information'),
+                _buildTextField('Title', 'Property title'),
+                _buildTextField('Type', 'Property type (e.g., Apartment)'),
+                _buildTextField('Price', 'Monthly Price', keyboardType: TextInputType.number),
+                _buildTextField('Location', 'City/Area'),
+                _buildTextField('Full Address', 'Detailed address', maxLines: 2),
+
+                const SizedBox(height: 24),
+                _buildSectionTitle('Specifications'),
+                Row(
                   children: [
-                    Icon(Icons.add_photo_alternate, size: 48, color: Colors.grey),
-                    SizedBox(height: 8),
-                    Text('Tap to add photos', style: TextStyle(color: Colors.grey)),
+                    Expanded(child: _buildTextField('Bedrooms', '0', keyboardType: TextInputType.number)),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildTextField('Bathrooms', '0', keyboardType: TextInputType.number)),
+                    const SizedBox(width: 16),
+                    Expanded(child: _buildTextField('Kitchens', '0', keyboardType: TextInputType.number)),
                   ],
                 ),
-              ),
-              const SizedBox(height: 24),
+                _buildTextField('Size (sq ft)', 'e.g., 1150'),
 
-              _buildSectionTitle('Basic Information'),
-              _buildTextField('Title', 'Property title'),
-              _buildTextField('Type', 'Property type (e.g., Apartment)'),
-              _buildTextField('Price', 'Monthly Price', keyboardType: TextInputType.number),
-              _buildTextField('Location', 'City/Area'),
-              _buildTextField('Full Address', 'Detailed address', maxLines: 2),
+                const SizedBox(height: 24),
+                _buildSectionTitle('Description'),
+                _buildTextField('Details', 'Write a detailed description', maxLines: 4),
 
-              const SizedBox(height: 24),
-              _buildSectionTitle('Specifications'),
-              Row(
-                children: [
-                  Expanded(child: _buildTextField('Bedrooms', '0', keyboardType: TextInputType.number)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildTextField('Bathrooms', '0', keyboardType: TextInputType.number)),
-                  const SizedBox(width: 16),
-                  Expanded(child: _buildTextField('Kitchens', '0', keyboardType: TextInputType.number)),
-                ],
-              ),
-              _buildTextField('Size (sq ft)', 'e.g., 1150'),
-
-              const SizedBox(height: 24),
-              _buildSectionTitle('Description'),
-              _buildTextField('Details', 'Write a detailed description', maxLines: 4),
-
-              const SizedBox(height: 32),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.pop(context);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.pop(context);
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text('Publish Property', style: TextStyle(fontSize: 16)),
                 ),
-                child: const Text('Publish Property', style: TextStyle(fontSize: 16)),
-              ),
-              const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: () => Navigator.pop(context),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                  child: const Text('Cancel'),
                 ),
-                child: const Text('Cancel'),
-              ),
-              const SizedBox(height: 32),
-            ],
+                const SizedBox(height: 32),
+              ],
+            ),
           ),
         ),
       ),
