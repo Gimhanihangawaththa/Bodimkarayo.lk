@@ -10,6 +10,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.bodimkarayo.backend.repository.PropertyRepository;
+import com.bodimkarayo.backend.repository.RoommateRepository;
+import com.bodimkarayo.backend.repository.ReviewRepository;
+import com.bodimkarayo.backend.model.Property;
+import com.bodimkarayo.backend.model.RoommatePost;
+import com.bodimkarayo.backend.model.Review;
+
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -20,6 +28,15 @@ public class UserService {
 
     @Autowired
     private CloudinaryService cloudinaryService;
+
+    @Autowired
+    private PropertyRepository propertyRepository;
+
+    @Autowired
+    private RoommateRepository roommateRepository;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
 
     public UserProfileResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -72,6 +89,30 @@ public class UserService {
 
         User updatedUser = userRepository.save(user);
         return toProfileResponse(updatedUser);
+    }
+
+    public void deleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Delete reviews made by the user
+        List<Review> userReviews = reviewRepository.findByReviewer(user);
+        reviewRepository.deleteAll(userReviews);
+
+        // Delete user's properties (and their reviews)
+        List<Property> userProperties = propertyRepository.findByOwner(user);
+        for (Property property : userProperties) {
+            List<Review> propertyReviews = reviewRepository.findByProperty(property);
+            reviewRepository.deleteAll(propertyReviews);
+        }
+        propertyRepository.deleteAll(userProperties);
+
+        // Delete user's roommate posts
+        List<RoommatePost> userRoommatePosts = roommateRepository.findByPoster(user);
+        roommateRepository.deleteAll(userRoommatePosts);
+
+        // Finally, delete the user
+        userRepository.delete(user);
     }
 
     private UserProfileResponse toProfileResponse(User user) {

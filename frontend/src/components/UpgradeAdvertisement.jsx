@@ -41,15 +41,15 @@ export function UpgradeAdvertisement() {
   return (
     <>
       {/* Advertisement Banner */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg shadow-lg overflow-hidden my-8">
-        <div className="px-6 py-8 md:p-10 text-center text-white">
-          <h2 className="text-3xl font-bold mb-4 drop-shadow-md">Have a property to rent?</h2>
-          <p className="text-lg text-blue-100 mb-6 max-w-2xl mx-auto">
+      <div className="bg-blue-50 border border-blue-200 rounded-xl shadow-sm overflow-hidden my-8">
+        <div className="px-6 py-8 md:p-10 text-center">
+          <h2 className="text-3xl font-bold mb-4 text-blue-900">Have a property to rent?</h2>
+          <p className="text-lg text-blue-800 mb-6 max-w-2xl mx-auto">
             Join thousands of property owners on Bodimkarayo.lk. List your properties, find great tenants, and manage everything in one place.
           </p>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-white text-blue-700 hover:bg-blue-50 font-bold py-3 px-8 rounded-full shadow-md transition transform hover:-translate-y-1"
+            className="bg-blue-600 text-white hover:bg-blue-700 font-bold py-3 px-8 rounded-full shadow-md transition transform hover:-translate-y-1"
           >
             Join us as Property Owner
           </button>

@@ -34,4 +34,9 @@ public class UserController {
     public UserProfileResponse upgradeUserRole(@PathVariable Long id) {
         return userService.upgradeUserRole(id);
     }
+
+    @DeleteMapping("/{id}")
+    public void deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+    }
 }
