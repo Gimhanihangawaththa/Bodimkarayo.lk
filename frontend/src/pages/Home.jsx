@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { apiClient } from '../config/api.config'
 import { propertyService } from '../services'
+import { UpgradeAdvertisement } from '../components/UpgradeAdvertisement'
 
 const PropertyCard = ({ id, image, title, location, price, available, offers, rating, onCardClick }) => (
   <div 
@@ -335,6 +336,11 @@ export default function Home() {
           </div>
         </div>
       </section>
+      
+      {/* Upgrade Advertisement */}
+      <div className="max-w-6xl mx-auto px-4">
+        <UpgradeAdvertisement />
+      </div>
     </>
   )
 }

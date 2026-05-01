@@ -1,7 +1,7 @@
 package com.bodimkarayo.backend.controller;
 
 import com.bodimkarayo.backend.model.Property;
-import com.bodimkarayo.backend.service.CloudinaryService;
+
 import com.bodimkarayo.backend.service.PropertyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -18,8 +18,7 @@ public class PropertyController {
     @Autowired
     private PropertyService propertyService;
 
-    @Autowired
-    private CloudinaryService cloudinaryService;
+
 
     @GetMapping
     public List<Property> getAll() {

@@ -34,9 +34,10 @@ public class AuthService {
         // Hash password
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // Set default role and verification status
+        // Set default role, verification status and active flag
         user.setRole("USER");
         user.setVerified(false);
+        user.setIsActive(true);
 
         // Save new user
         return userRepository.save(user);

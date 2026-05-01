@@ -29,4 +29,9 @@ public class UserController {
     public UserProfileResponse uploadProfileImage(@PathVariable Long id, @RequestParam("image") MultipartFile image) {
         return userService.uploadProfileImage(id, image);
     }
+
+    @PutMapping("/{id}/upgrade-role")
+    public UserProfileResponse upgradeUserRole(@PathVariable Long id) {
+        return userService.upgradeUserRole(id);
+    }
 }

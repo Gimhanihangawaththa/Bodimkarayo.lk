@@ -5,6 +5,16 @@ import { FormInput } from "../components/FormInput";
 import { FormSection } from "../components/FormSection";
 import { propertyService } from "../services";
 import { useAuth } from "../context/AuthContext";
+import { MapSelector } from "../components/MapSelector";
+
+const extractCoordinates = (url) => {
+  if (!url) return null;
+  const match = url.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (match) {
+    return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+  }
+  return null;
+};
 
 const MAX_IMAGE_SIZE_BYTES = 15 * 1024 * 1024;
 const MAX_TOTAL_IMAGE_SIZE_BYTES = 80 * 1024 * 1024;
@@ -252,10 +262,6 @@ export default function AddProperty() {
         images: nextImages,
       };
     });
-  };
-
-  const handleMapClick = () => {
-    alert("Map functionality will open here");
   };
 
   const handleSubmit = async (e) => {
@@ -647,26 +653,21 @@ export default function AddProperty() {
         {/* Map Section */}
         <FormSection title="Add location Pin">
           <FormInput
-            label="Map Embed URL"
-            placeholder="Paste Google Maps embed URL"
+            label="Map Embed URL (Auto-generated)"
+            placeholder="Click on the map to generate URL"
             name="mapEmbedUrl"
             value={formData.mapEmbedUrl}
             onChange={handleInputChange}
           />
-          <div
-            onClick={handleMapClick}
-            className="w-full h-64 bg-gray-300 rounded-lg flex items-center justify-center cursor-pointer hover:bg-gray-400 transition"
-          >
-            <div className="text-center">
-              <svg
-                className="w-12 h-12 text-gray-500 mx-auto mb-2"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 8 13 8 13s8-7.75 8-13c0-4.42-3.58-8-8-8zm0 11c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z" />
-              </svg>
-              <p className="text-gray-600">Map View</p>
-            </div>
+          <div className="mt-4">
+            <p className="text-sm text-gray-600 mb-2">Click on the map to pin your property location:</p>
+            <MapSelector 
+              initialPosition={extractCoordinates(formData.mapEmbedUrl)}
+              onLocationSelect={(lat, lng) => {
+                const embedUrl = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+                setFormData(prev => ({ ...prev, mapEmbedUrl: embedUrl }));
+              }}
+            />
           </div>
         </FormSection>
 

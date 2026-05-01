@@ -3,6 +3,7 @@ package com.bodimkarayo.backend.service;
 import com.bodimkarayo.backend.dto.UserProfileResponse;
 import com.bodimkarayo.backend.dto.UserProfileUpdateRequest;
 import com.bodimkarayo.backend.exception.BadRequestException;
+import com.bodimkarayo.backend.model.Role;
 import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,6 +59,16 @@ public class UserService {
 
         String imageUrl = cloudinaryService.uploadUserProfileImage(image, userId);
         user.setProfilePictureUrl(imageUrl);
+
+        User updatedUser = userRepository.save(user);
+        return toProfileResponse(updatedUser);
+    }
+
+    public UserProfileResponse upgradeUserRole(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setRole(Role.OWNER.name());
 
         User updatedUser = userRepository.save(user);
         return toProfileResponse(updatedUser);

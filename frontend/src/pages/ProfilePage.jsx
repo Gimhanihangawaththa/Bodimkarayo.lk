@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { apiClient } from "../config/api.config";
 import { useAuth } from "../context/AuthContext";
 import { propertyService } from "../services";
+import { UpgradeAdvertisement } from "../components/UpgradeAdvertisement";
 
 const EMPTY_USER = {
   id: null,
@@ -12,7 +13,6 @@ const EMPTY_USER = {
   role: null,
   interests: [],
   roommateApplicationStatus: "notApplied",
-  isPropertyOwner: false,
   userProperties: [],
 };
 
@@ -187,7 +187,6 @@ export default function ProfilePage() {
         setUser((prev) => ({
           ...prev,
           userProperties: transformedProperties,
-          isPropertyOwner: transformedProperties.length > 0,
         }));
       } catch (error) {
         console.error("Error loading user properties:", error);
@@ -363,7 +362,6 @@ export default function ProfilePage() {
       setUser((prev) => ({
         ...prev,
         userProperties: prev.userProperties.filter((prop) => prop.id !== propertyId),
-        isPropertyOwner: prev.userProperties.filter((prop) => prop.id !== propertyId).length > 0,
       }));
       
       alert("Property deleted successfully.");
@@ -556,7 +554,7 @@ export default function ProfilePage() {
         </div>
 
         {/* My Properties Section - Only visible for property owners */}
-        {user.isPropertyOwner && (
+        {user.role === 'OWNER' && (
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-gray-900">My Properties</h2>
@@ -657,6 +655,8 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      <UpgradeAdvertisement />
 
       {/* Edit Profile Modal */}
       {isEditModalOpen && (
