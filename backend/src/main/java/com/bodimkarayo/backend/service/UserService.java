@@ -1,0 +1,79 @@
+package com.bodimkarayo.backend.service;
+
+import com.bodimkarayo.backend.dto.UserProfileResponse;
+import com.bodimkarayo.backend.dto.UserProfileUpdateRequest;
+import com.bodimkarayo.backend.exception.BadRequestException;
+import com.bodimkarayo.backend.model.User;
+import com.bodimkarayo.backend.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Optional;
+
+@Service
+public class UserService {
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    public UserProfileResponse getUserProfile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return toProfileResponse(user);
+    }
+
+    public UserProfileResponse updateUserProfile(Long userId, UserProfileUpdateRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String requestedEmail = request.getEmail() == null ? null : request.getEmail().trim();
+        if (requestedEmail != null && !requestedEmail.equalsIgnoreCase(user.getEmail())) {
+            Optional<User> existing = userRepository.findByEmail(requestedEmail);
+            if (existing.isPresent() && !existing.get().getId().equals(userId)) {
+                throw new BadRequestException("Email already registered");
+            }
+            user.setEmail(requestedEmail);
+        }
+
+        if (request.getFullName() != null) {
+            user.setFullName(request.getFullName().trim());
+        }
+
+        if (request.getProfilePictureUrl() != null) {
+            user.setProfilePictureUrl(request.getProfilePictureUrl().trim());
+        }
+
+        User updatedUser = userRepository.save(user);
+        return toProfileResponse(updatedUser);
+    }
+
+    public UserProfileResponse uploadProfileImage(Long userId, MultipartFile image) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String imageUrl = cloudinaryService.uploadUserProfileImage(image, userId);
+        user.setProfilePictureUrl(imageUrl);
+
+        User updatedUser = userRepository.save(user);
+        return toProfileResponse(updatedUser);
+    }
+
+    private UserProfileResponse toProfileResponse(User user) {
+        return UserProfileResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .email(user.getEmail())
+                .profilePictureUrl(user.getProfilePictureUrl())
+                .role(user.getRole())
+                .verified(user.getVerified())
+                .isActive(user.getIsActive())
+                .createdAt(user.getCreatedAt())
+                .updatedAt(user.getUpdatedAt())
+                .build();
+    }
+}
