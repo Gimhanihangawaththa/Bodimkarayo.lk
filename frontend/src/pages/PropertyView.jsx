@@ -10,6 +10,7 @@ import { AddReview } from "../components/AddReview";
 import { InfoPill } from "../components/ui/InfoPill";
 import { SectionCard } from "../components/ui/SectionCard";
 import { propertyService, reviewService } from "../services";
+import { useAuth } from "../context/AuthContext";
 
 const sampleProperty = {
   id: 1,
@@ -119,10 +120,12 @@ const normalizeProperty = (propertyData) => {
 
 export default function PropertyView() {
   const { propertyId } = useParams();
+  const { user: authUser } = useAuth();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
 
@@ -135,6 +138,18 @@ export default function PropertyView() {
         // Fetch property data from backend
         const propertyData = await propertyService.getPropertyById(propertyId);
         setProperty(normalizeProperty(propertyData));
+
+        if (authUser?.id) {
+          try {
+            const status = await propertyService.getFavoriteStatus(authUser.id, propertyId);
+            setIsFavorite(Boolean(status?.favorited));
+          } catch (favErr) {
+            console.error("Error loading favorite status:", favErr);
+            setIsFavorite(false);
+          }
+        } else {
+          setIsFavorite(false);
+        }
 
         // Fetch reviews for this property
         setReviewsLoading(true);
@@ -157,6 +172,7 @@ export default function PropertyView() {
           // Use sample data without showing error
           setProperty(sampleProperty);
           setReviews(sampleProperty.reviews);
+          setIsFavorite(false);
           setError(null); // Clear error when using fallback
         } else {
           // Show error for other types of errors
@@ -174,7 +190,7 @@ export default function PropertyView() {
     if (propertyId) {
       fetchProperty();
     }
-  }, [propertyId]);
+  }, [propertyId, authUser?.id]);
 
   const handleMessageOwner = () => {
     alert(`Message sent to ${property?.owner.name}`);
@@ -184,8 +200,34 @@ export default function PropertyView() {
     alert("Visit scheduled! The owner will confirm a time.");
   };
 
-  const handleFavorite = () => {
-    setIsFavorite((prev) => !prev);
+  const handleFavorite = async () => {
+    if (!authUser?.id) {
+      alert("Please sign in to save properties to your profile.");
+      return;
+    }
+    if (!propertyId || favoriteLoading) {
+      return;
+    }
+
+    const next = !isFavorite;
+    setFavoriteLoading(true);
+    try {
+      if (next) {
+        await propertyService.addFavoriteProperty(authUser.id, propertyId);
+      } else {
+        await propertyService.removeFavoriteProperty(authUser.id, propertyId);
+      }
+      setIsFavorite(next);
+    } catch (err) {
+      console.error("Error updating favorite:", err);
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        "Could not update favorites. Please try again.";
+      alert(message);
+    } finally {
+      setFavoriteLoading(false);
+    }
   };
 
   const handleAddReview = async (newReview) => {
@@ -325,13 +367,18 @@ export default function PropertyView() {
                 <button
                   type="button"
                   onClick={handleFavorite}
-                  className={`w-full rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                  disabled={favoriteLoading}
+                  className={`w-full rounded-xl px-4 py-3 text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed ${
                     isFavorite
                       ? "bg-rose-500 text-white hover:bg-rose-600"
                       : "bg-white/20 text-white hover:bg-white/30"
                   }`}
                 >
-                  {isFavorite ? "Saved to Favorites" : "Save to Favorites"}
+                  {favoriteLoading
+                    ? "Saving..."
+                    : isFavorite
+                      ? "Saved to Favorites"
+                      : "Save to Favorites"}
                 </button>
               </div>
             </div>

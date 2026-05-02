@@ -160,6 +160,62 @@ const propertyService = {
       throw error;
     }
   },
+
+  /**
+   * List saved favorite properties for the signed-in user
+   * Backend: GET /api/users/:userId/favorites/properties
+   */
+  getFavoriteProperties: async (userId) => {
+    try {
+      const response = await apiClient.get(`/users/${userId}/favorites/properties`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching favorite properties for user ${userId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Whether a property is in the user's favorites
+   * Backend: GET /api/users/:userId/favorites/properties/:propertyId/status
+   */
+  getFavoriteStatus: async (userId, propertyId) => {
+    try {
+      const response = await apiClient.get(
+        `/users/${userId}/favorites/properties/${propertyId}/status`
+      );
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching favorite status:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Save property to favorites
+   * Backend: POST /api/users/:userId/favorites/properties/:propertyId
+   */
+  addFavoriteProperty: async (userId, propertyId) => {
+    try {
+      await apiClient.post(`/users/${userId}/favorites/properties/${propertyId}`);
+    } catch (error) {
+      console.error('Error adding favorite property:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Remove property from favorites
+   * Backend: DELETE /api/users/:userId/favorites/properties/:propertyId
+   */
+  removeFavoriteProperty: async (userId, propertyId) => {
+    try {
+      await apiClient.delete(`/users/${userId}/favorites/properties/${propertyId}`);
+    } catch (error) {
+      console.error('Error removing favorite property:', error);
+      throw error;
+    }
+  },
 };
 
 export default propertyService;
