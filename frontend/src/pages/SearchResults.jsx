@@ -107,17 +107,12 @@ const RoommateResult = ({ roommate, onRoommateClick }) => {
 export default function SearchResults() {
   const navigate = useNavigate()
   const location = useLocation()
-  const [searchQuery, setSearchQuery] = useState('')
   const [properties, setProperties] = useState([])
   const [roommates, setRoommates] = useState([])
   const [loading, setLoading] = useState(false)
   const [hasSearched, setHasSearched] = useState(false)
 
   const keyword = new URLSearchParams(location.search).get('keyword') || ''
-
-  useEffect(() => {
-    setSearchQuery(keyword)
-  }, [keyword])
 
   useEffect(() => {
     if (keyword.trim()) {
@@ -148,12 +143,6 @@ export default function SearchResults() {
     }
   }
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault()
-    const trimmed = searchQuery.trim()
-    navigate(trimmed ? `/search?keyword=${encodeURIComponent(trimmed)}` : '/search')
-  }
-
   const handlePropertyClick = (propertyId) => {
     navigate(`/property/${propertyId}`)
   }
@@ -166,29 +155,15 @@ export default function SearchResults() {
 
   return (
     <>
-      {/* Hero Section */}
-      <section style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }} className="py-12 text-white">
+      <section className="bg-white border-b border-gray-200 py-10">
         <div className="max-w-6xl mx-auto px-4">
-          <h1 className="text-4xl font-bold mb-2">Global Search</h1>
-          <p className="text-base text-gray-100 mb-6">
-            Search across properties and roommates
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Search Results</h1>
+          <p className="text-base text-gray-700 mb-3">
+            Results for <span className="font-semibold">"{keyword || 'your search'}"</span>
           </p>
-          
-          {/* Search Box */}
-          <form onSubmit={handleSearchSubmit} className="bg-white rounded-full p-1 flex items-center max-w-2xl shadow-lg overflow-hidden">
-            <span className="pl-4 text-gray-400">🔍</span>
-            <input
-              type="text"
-              placeholder="Search properties, roommates, locations..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1 px-3 py-3 text-gray-900 outline-none bg-white"
-              autoFocus
-            />
-            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-medium transition flex items-center gap-2">
-              <span>Search</span>
-            </button>
-          </form>
+          <p className="text-sm text-gray-500">
+            Use the header search bar to refine your query anytime.
+          </p>
         </div>
       </section>
 
