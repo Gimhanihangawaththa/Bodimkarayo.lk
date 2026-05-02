@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { apiClient } from '../config/api.config'
 import { propertyService } from '../services'
 import { UpgradeAdvertisement } from '../components/UpgradeAdvertisement'
+import AIRecommendations from '../components/AIRecommendations'
 
 const PropertyCard = ({ id, image, title, location, price, available, offers, rating, onCardClick }) => (
   <div 
@@ -263,6 +264,8 @@ export default function Home() {
         </div>
       </section>
 
+      
+
       {/* Featured Boardings */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
@@ -336,11 +339,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
-      {/* Upgrade Advertisement */}
-      <div className="max-w-6xl mx-auto px-4">
-        <UpgradeAdvertisement />
-      </div>
     </>
   )
 }
