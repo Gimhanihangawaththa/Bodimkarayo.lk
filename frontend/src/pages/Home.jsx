@@ -130,7 +130,7 @@ const fallbackProperties = [
 
 export default function Home() {
   const navigate = useNavigate()
-  const [searchLocation, setSearchLocation] = useState('')
+  const [searchKeyword, setSearchKeyword] = useState('')
   const [properties, setProperties] = useState([])
   const [roommates, setRoommates] = useState([])
   const [isLoadingProperties, setIsLoadingProperties] = useState(false)
@@ -222,10 +222,14 @@ export default function Home() {
 
   const handleSearch = (e) => {
     e.preventDefault()
-    fetchFeatured(searchLocation.trim())
+    const keyword = searchKeyword.trim()
+    if (keyword) {
+      // Navigate to Properties page with search keyword
+      navigate(`/properties?keyword=${encodeURIComponent(keyword)}`)
+    }
   }
 
-  const isSearching = !!searchLocation.trim()
+  const isSearching = !!searchKeyword.trim()
   const showFallbackProperties = !isSearching && (propertiesError || (!isLoadingProperties && properties.length === 0))
   const displayedProperties = showFallbackProperties ? fallbackProperties : properties
   const displayedRoommates = roommates
@@ -248,8 +252,8 @@ export default function Home() {
             <input
               type="text"
               placeholder="where do you want to stay ?"
-              value={searchLocation}
-              onChange={(e) => setSearchLocation(e.target.value)}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
               className="flex-1 px-3 py-3 text-gray-900 outline-none bg-white"
             />
             <button
