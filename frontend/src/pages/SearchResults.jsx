@@ -5,8 +5,26 @@ import { searchService } from '../services'
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'
 const DEFAULT_PROPERTY_IMAGE = 'https://images.unsplash.com/photo-1570129477492-45a003537e1f?w=600'
 
+const resolvePropertyImage = (property) => {
+  if (!property) return DEFAULT_PROPERTY_IMAGE
+
+  if (Array.isArray(property.images) && property.images.length > 0 && property.images[0]) {
+    return property.images[0]
+  }
+
+  if (Array.isArray(property.imageUrls) && property.imageUrls.length > 0 && property.imageUrls[0]) {
+    return property.imageUrls[0]
+  }
+
+  if (property.imageUrl) {
+    return property.imageUrl
+  }
+
+  return DEFAULT_PROPERTY_IMAGE
+}
+
 const PropertyResult = ({ property, onPropertyClick }) => {
-  const image = property.imageUrls?.[0] || DEFAULT_PROPERTY_IMAGE
+  const image = resolvePropertyImage(property)
   
   return (
     <div
@@ -19,6 +37,7 @@ const PropertyResult = ({ property, onPropertyClick }) => {
           alt={property.title} 
           className="absolute inset-0 w-full h-full object-cover"
           onError={(e) => {
+            e.target.onerror = null
             e.target.src = DEFAULT_PROPERTY_IMAGE
           }}
         />
