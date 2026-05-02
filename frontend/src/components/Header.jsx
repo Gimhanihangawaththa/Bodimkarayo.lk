@@ -1,4 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import logo from '../assets/logo.jpg'
 import { useAuth } from '../context/AuthContext'
 
@@ -7,10 +8,23 @@ export default function Header() {
   const navigate = useNavigate()
   const { user, token, logout } = useAuth()
   const isLoggedIn = Boolean(token)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    setSearchQuery(params.get('keyword') || '')
+  }, [location.search])
 
   const handleLogout = () => {
     logout()
     navigate('/signin')
+  }
+
+  const handleSearchSubmit = (event) => {
+    event.preventDefault()
+    const keyword = searchQuery.trim()
+    const targetPath = location.pathname.startsWith('/roommates') ? '/roommates' : '/properties'
+    navigate(keyword ? `${targetPath}?keyword=${encodeURIComponent(keyword)}` : targetPath)
   }
 
   return (
@@ -40,17 +54,22 @@ export default function Header() {
             </Link>
           </nav>
 
-          <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-2 shadow-sm w-full max-w-md ml-auto">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-2 shadow-sm w-full max-w-md ml-auto"
+          >
             <span className="text-gray-400">🔍</span>
             <input
               type="text"
               placeholder="Search anything"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="flex-1 px-3 py-2 text-gray-800 placeholder-gray-400 bg-transparent focus:outline-none"
             />
-            <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition">
+            <button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition">
               Search
             </button>
-          </div>
+          </form>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">

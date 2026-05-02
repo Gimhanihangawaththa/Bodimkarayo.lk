@@ -6,3 +6,4 @@
 
 export { default as propertyService } from './propertyService';
 export { default as reviewService } from './reviewService';
+export { default as roommateService } from './roommateService';
