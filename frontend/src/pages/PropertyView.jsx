@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { LocationMap } from "../components/LocationMap";
 import { OwnerCard } from "../components/OwnerCard";
 import { PropertyImageViewer } from "../components/PropertyImageViewer";
@@ -119,6 +120,8 @@ const normalizeProperty = (propertyData) => {
 
 export default function PropertyView() {
   const { propertyId } = useParams();
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -177,7 +180,16 @@ export default function PropertyView() {
   }, [propertyId]);
 
   const handleMessageOwner = () => {
-    alert(`Message sent to ${property?.owner.name}`);
+    if (!currentUser) {
+      navigate('/signin');
+      return;
+    }
+    
+    if (property?.owner?.id) {
+      navigate('/chat', { state: { recipientId: property.owner.id } });
+    } else {
+      alert("Owner information not available.");
+    }
   };
 
   const handleScheduleVisit = () => {

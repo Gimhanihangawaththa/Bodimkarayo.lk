@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { apiClient } from "../config/api.config";
 
 const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400";
 
 export default function RoommateView() {
   const { roommateId } = useParams();
+  const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const [roommate, setRoommate] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -37,6 +40,7 @@ export default function RoommateView() {
         setRoommate({
           id: post.id,
           name: post.poster?.fullName || post.poster?.email || "Anonymous",
+          posterId: post.poster?.id,
           age: post.age || null,
           occupation: post.occupation || "",
           location: post.location || "",
@@ -67,10 +71,16 @@ export default function RoommateView() {
   }, [roommateId]);
 
   const handleConnect = () => {
-    if (!roommate) {
+    if (!currentUser) {
+      navigate('/signin');
       return;
     }
-    alert(`Connection request sent to ${roommate.name}`);
+    
+    if (roommate?.posterId) {
+      navigate('/chat', { state: { recipientId: roommate.posterId } });
+    } else {
+      alert("Poster information not available.");
+    }
   };
 
   return (
