@@ -19,6 +19,7 @@ import com.bodimkarayo.backend.model.Review;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -43,6 +44,12 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return toProfileResponse(user);
+    }
+
+    public List<UserProfileResponse> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(this::toProfileResponse)
+                .collect(Collectors.toList());
     }
 
     public UserProfileResponse updateUserProfile(Long userId, UserProfileUpdateRequest request) {

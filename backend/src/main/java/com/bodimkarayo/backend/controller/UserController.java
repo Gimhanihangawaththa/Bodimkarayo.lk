@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/users")
@@ -18,6 +19,11 @@ public class UserController {
     @GetMapping("/{id}/profile")
     public UserProfileResponse getUserProfile(@PathVariable Long id) {
         return userService.getUserProfile(id);
+    }
+
+    @GetMapping
+    public List<UserProfileResponse> getAllUsers() {
+        return userService.getAllUsers();
     }
 
     @PutMapping("/{id}/profile")
