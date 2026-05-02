@@ -41,10 +41,10 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-3 py-2 shadow-sm w-full max-w-md ml-auto">
-            <span className="text-gray-400">📍</span>
+            <span className="text-gray-400">🔍</span>
             <input
               type="text"
-              placeholder="Search locations"
+              placeholder="Search anything"
               className="flex-1 px-3 py-2 text-gray-800 placeholder-gray-400 bg-transparent focus:outline-none"
             />
             <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-semibold transition">

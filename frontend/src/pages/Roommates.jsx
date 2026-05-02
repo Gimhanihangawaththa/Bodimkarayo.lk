@@ -126,7 +126,7 @@ export default function Roommates() {
           
           {/* Search Box */}
           <div className="bg-white rounded-full p-1 flex items-center max-w-2xl shadow-lg overflow-hidden">
-            <span className="pl-4 text-gray-400">📍</span>
+            <span className="pl-4 text-gray-400">�</span>
             <input
               type="text"
               placeholder="Search by location"

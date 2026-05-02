@@ -220,16 +220,20 @@ export default function ProfilePage() {
       let profilePictureUrl = editFormData.avatarUrl;
 
       if (profileImageFile) {
-        const imageFormData = new FormData();
-        imageFormData.append("image", profileImageFile);
+        try {
+          const imageFormData = new FormData();
+          imageFormData.append("image", profileImageFile);
 
-        const imageUploadResponse = await apiClient.post(
-          `/users/${authUser.id}/profile-image`,
-          imageFormData
-        );
+          const imageUploadResponse = await apiClient.post(
+            `/users/${authUser.id}/profile-image`,
+            imageFormData
+          );
 
-        profilePictureUrl =
-          imageUploadResponse.data?.profilePictureUrl || profilePictureUrl;
+          profilePictureUrl =
+            imageUploadResponse.data?.profilePictureUrl || profilePictureUrl;
+        } catch (imageError) {
+          console.error("Error uploading profile image:", imageError);
+        }
       }
 
       const payload = {
