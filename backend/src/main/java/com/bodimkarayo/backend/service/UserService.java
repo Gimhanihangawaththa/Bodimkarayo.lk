@@ -2,11 +2,13 @@ package com.bodimkarayo.backend.service;
 
 import com.bodimkarayo.backend.dto.UserProfileResponse;
 import com.bodimkarayo.backend.dto.UserProfileUpdateRequest;
+import com.bodimkarayo.backend.dto.ChangePasswordRequest;
 import com.bodimkarayo.backend.exception.BadRequestException;
 import com.bodimkarayo.backend.model.Role;
 import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -38,6 +40,9 @@ public class UserService {
 
     @Autowired
     private ReviewRepository reviewRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     public UserProfileResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
@@ -120,6 +125,20 @@ public class UserService {
 
         // Finally, delete the user
         userRepository.delete(user);
+    }
+
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new BadRequestException("Current password is incorrect");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
     }
 
     private UserProfileResponse toProfileResponse(User user) {

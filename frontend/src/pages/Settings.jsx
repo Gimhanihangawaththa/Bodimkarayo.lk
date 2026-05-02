@@ -9,10 +9,77 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState('account');
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Password change state
+  const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+
   // If user is not logged in, redirect to sign in
   if (!token) {
     navigate('/signin');
     return null;
+  }
+
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordForm({
+      ...passwordForm,
+      [name]: value,
+    });
+  };
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+    setPasswordSuccess('');
+
+    // Validation
+    if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+      setPasswordError('All fields are required');
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters long');
+      return;
+    }
+
+    if (passwordForm.currentPassword === passwordForm.newPassword) {
+      setPasswordError('New password must be different from current password');
+      return;
+    }
+
+    setPasswordLoading(true);
+
+    try {
+      await apiClient.put(`/users/${user.id}/change-password`, {
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+
+      setPasswordSuccess('Password changed successfully!');
+      setPasswordForm({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      });
+    } catch (error) {
+      setPasswordError(
+        error.response?.data?.message || 'Failed to change password. Please try again.'
+      );
+    } finally {
+      setPasswordLoading(false);
+    }
   }
 
   const handleDeleteAccount = async () => {
@@ -99,22 +166,74 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Security Tab (Dummy) */}
+          {/* Security Tab (Functional) */}
           {activeTab === 'security' && (
             <div className="p-6 md:p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Password & Security</h2>
-              <p className="text-gray-500 mb-8">Manage your password and security preferences. (Coming soon)</p>
+              <p className="text-gray-500 mb-8">Manage your password and security preferences.</p>
               
-              <div className="space-y-6 max-w-lg opacity-60 pointer-events-none">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
-                  <input type="password" value="********" className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50" readOnly />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">New Password</label>
-                  <input type="password" placeholder="Enter new password" className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50" readOnly />
-                </div>
-                <button className="bg-blue-600 text-white px-6 py-2 rounded-md font-medium">Update Password</button>
+              <div className="max-w-lg">
+                {passwordSuccess && (
+                  <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                    {passwordSuccess}
+                  </div>
+                )}
+
+                {passwordError && (
+                  <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                    {passwordError}
+                  </div>
+                )}
+
+                <form onSubmit={handlePasswordSubmit} className="space-y-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                    <input 
+                      type="password" 
+                      name="currentPassword"
+                      value={passwordForm.currentPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Enter your current password"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={passwordLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                    <input 
+                      type="password" 
+                      name="newPassword"
+                      value={passwordForm.newPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Enter your new password (min. 6 characters)"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={passwordLoading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                    <input 
+                      type="password" 
+                      name="confirmPassword"
+                      value={passwordForm.confirmPassword}
+                      onChange={handlePasswordChange}
+                      placeholder="Confirm your new password"
+                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={passwordLoading}
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={passwordLoading}
+                    className={`w-full py-2 px-4 rounded-md font-medium text-white transition ${
+                      passwordLoading
+                        ? 'bg-gray-400 cursor-not-allowed'
+                        : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
+                    }`}
+                  >
+                    {passwordLoading ? 'Updating Password...' : 'Update Password'}
+                  </button>
+                </form>
               </div>
             </div>
           )}

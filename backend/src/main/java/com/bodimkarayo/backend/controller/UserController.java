@@ -2,6 +2,7 @@ package com.bodimkarayo.backend.controller;
 
 import com.bodimkarayo.backend.dto.UserProfileResponse;
 import com.bodimkarayo.backend.dto.UserProfileUpdateRequest;
+import com.bodimkarayo.backend.dto.ChangePasswordRequest;
 import com.bodimkarayo.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -44,5 +45,10 @@ public class UserController {
     @DeleteMapping("/{id}")
     public void deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
+    }
+
+    @PutMapping("/{id}/change-password")
+    public void changePassword(@PathVariable Long id, @RequestBody ChangePasswordRequest request) {
+        userService.changePassword(id, request);
     }
 }
