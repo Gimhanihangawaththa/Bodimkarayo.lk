@@ -230,13 +230,17 @@ export default function PropertyView() {
     }
   };
 
-  const handleAddReview = async (newReview) => {
+  const handleAddReview = async ({ rating, text }) => {
+    if (!authUser?.id) {
+      alert("Please sign in to post a review.");
+      return;
+    }
     try {
-      // Submit review to backend
-      const createdReview = await reviewService.createReview(propertyId, newReview);
-
-      // Add the new review to the list
-      setReviews((prevReviews) => [createdReview, ...prevReviews]);
+      const createdReview = await reviewService.createReview(propertyId, { rating, text });
+      setReviews((prevReviews) => {
+        const withoutDup = prevReviews.filter((r) => r.reviewerId !== authUser.id);
+        return [createdReview, ...withoutDup];
+      });
       alert("Thank you for your review!");
     } catch (err) {
       console.error("Error adding review:", err);
@@ -303,6 +307,17 @@ export default function PropertyView() {
     );
   }
 
+  const reviewAverage =
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : null;
+  const roundedStarCount =
+    reviewAverage != null ? Math.min(5, Math.max(0, Math.round(reviewAverage))) : 0;
+  const ratingLabel =
+    reviews.length === 0
+      ? "No reviews yet"
+      : `${reviewAverage.toFixed(1)} average · ${reviews.length} review${reviews.length !== 1 ? "s" : ""}`;
+
   const detailItems = [
     { label: "Bedrooms", value: property.bedrooms },
     { label: "Bathrooms", value: property.bathrooms },
@@ -334,12 +349,12 @@ export default function PropertyView() {
               <div className="mt-3 flex items-center gap-3 text-sm text-slate-200">
                 <span className="flex items-center gap-1 text-yellow-400">
                   {Array.from({ length: 5 }).map((_, index) => (
-                    <span key={index} className={index < Math.round(property.rating) ? "" : "opacity-30"}>
+                    <span key={index} className={index < roundedStarCount ? "" : "opacity-30"}>
                       ★
                     </span>
                   ))}
                 </span>
-                <span className="text-slate-300">{property.rating} rating</span>
+                <span className="text-slate-300">{ratingLabel}</span>
                 <span className="text-slate-400">•</span>
                 <span className="text-slate-300">{property.location}</span>
               </div>
@@ -451,11 +466,18 @@ export default function PropertyView() {
             </SectionCard>
 
             <SectionCard title={`Reviews (${reviews.length})`} icon={<span>⭐</span>}>
-              <AddReview onSubmit={handleAddReview} userName="Current User" />
+              {authUser?.id ? (
+                <AddReview onSubmit={handleAddReview} />
+              ) : (
+                <p className="mb-6 text-sm text-slate-600">
+                  Sign in to share your experience and rate this property.
+                </p>
+              )}
               <ReviewsList
                 reviews={reviews}
                 reviewCount={reviews.length}
                 onDeleteReview={handleDeleteReview}
+                currentUserId={authUser?.id}
               />
             </SectionCard>
           </div>

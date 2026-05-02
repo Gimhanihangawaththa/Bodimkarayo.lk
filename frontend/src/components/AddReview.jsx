@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export function AddReview({ onSubmit, userName = "You" }) {
+export function AddReview({ onSubmit }) {
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,20 +16,7 @@ export function AddReview({ onSubmit, userName = "You" }) {
     setIsSubmitting(true);
 
     try {
-      const newReview = {
-        id: Date.now(),
-        author: userName,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userName}`,
-        rating: rating,
-        text: reviewText,
-        date: new Date().toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        }),
-      };
-
-      await onSubmit(newReview);
+      await onSubmit({ rating, text: reviewText.trim() });
       setReviewText("");
       setRating(5);
     } finally {
