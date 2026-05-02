@@ -73,9 +73,11 @@ export default function Roommates() {
   const [searchLocation, setSearchLocation] = useState('')
   const [filters, setFilters] = useState({
     budgetRange: 80000,
+    minAge: 18,
+    maxAge: 65,
+    location: '',
     genderPreference: 'Any',
     occupation: 'Any',
-    universityOrWorkplace: '',
     roomType: 'Any',
     smokingPreference: false,
     petFriendly: false,
@@ -103,11 +105,11 @@ export default function Roommates() {
         setLoading(true)
         const data = await roommateService.searchRoommates({
           keyword,
-          location: keyword || undefined,
-          preferredLocation: filters.universityOrWorkplace || undefined,
+          location: filters.location || undefined,
           gender: filters.genderPreference !== 'Any' ? filters.genderPreference : undefined,
+          minAge: filters.minAge || undefined,
+          maxAge: filters.maxAge || undefined,
           occupation: filters.occupation !== 'Any' ? filters.occupation : undefined,
-          universityOrWorkplace: filters.universityOrWorkplace || undefined,
           roomTypePreference: filters.roomType !== 'Any' ? filters.roomType : undefined,
           smokingPreference: filters.smokingPreference || undefined,
           petFriendly: filters.petFriendly || undefined,

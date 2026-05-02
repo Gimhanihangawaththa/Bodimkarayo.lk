@@ -56,10 +56,10 @@ public class RoommateService {
     public List<RoommatePost> searchRoommates(
             String keyword,
             String location,
-            String preferredLocation,
             String gender,
+            Integer minAge,
+            Integer maxAge,
             String occupation,
-            String universityOrWorkplace,
             String roomTypePreference,
             Boolean smokingPreference,
             Boolean petFriendly,
@@ -68,7 +68,7 @@ public class RoommateService {
             Double maxBudget
     ) {
         return roommateRepository.findAll().stream()
-                .filter(post -> matchesRoommate(post, keyword, location, preferredLocation, gender, occupation, universityOrWorkplace, roomTypePreference, smokingPreference, petFriendly, foodPreference, minBudget, maxBudget))
+                .filter(post -> matchesRoommate(post, keyword, location, gender, minAge, maxAge, occupation, roomTypePreference, smokingPreference, petFriendly, foodPreference, minBudget, maxBudget))
                 .toList();
     }
 
@@ -76,10 +76,10 @@ public class RoommateService {
             RoommatePost post,
             String keyword,
             String location,
-            String preferredLocation,
             String gender,
+            Integer minAge,
+            Integer maxAge,
             String occupation,
-            String universityOrWorkplace,
             String roomTypePreference,
             Boolean smokingPreference,
             Boolean petFriendly,
@@ -101,10 +101,9 @@ public class RoommateService {
 
         return matchesKeyword(searchableText, keyword)
                 && matchesText(post.getLocation(), location)
-                && matchesText(post.getPreferredLocation(), preferredLocation)
-                && matchesText(post.getGender(), gender)
+                && matchesGender(post.getGender(), gender)
+                && matchesAge(post.getAge(), minAge, maxAge)
                 && matchesText(post.getOccupation(), occupation)
-                && matchesText(searchableText, universityOrWorkplace)
                 && matchesText(post.getPreferences(), roomTypePreference)
                 && matchesBooleanText(post.getPreferences(), smokingPreference)
                 && matchesBooleanText(post.getPreferences(), petFriendly)
@@ -118,6 +117,22 @@ public class RoommateService {
 
     private boolean matchesText(String source, String expected) {
         return expected == null || expected.isBlank() || containsIgnoreCase(source, expected);
+    }
+
+    private boolean matchesGender(String source, String expected) {
+        if (expected == null || expected.isBlank()) {
+            return true;
+        }
+        return source != null && source.trim().equalsIgnoreCase(expected.trim());
+    }
+
+    private boolean matchesAge(Integer age, Integer minAge, Integer maxAge) {
+        if (age == null) {
+            return true;
+        }
+        boolean aboveMin = minAge == null || age >= minAge;
+        boolean belowMax = maxAge == null || age <= maxAge;
+        return aboveMin && belowMax;
     }
 
     private boolean matchesPrice(Double actual, Double minBudget, Double maxBudget) {

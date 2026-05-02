@@ -23,8 +23,7 @@ export default function Header() {
   const handleSearchSubmit = (event) => {
     event.preventDefault()
     const keyword = searchQuery.trim()
-    const targetPath = location.pathname.startsWith('/roommates') ? '/roommates' : '/properties'
-    navigate(keyword ? `${targetPath}?keyword=${encodeURIComponent(keyword)}` : targetPath)
+    navigate(keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : '/search')
   }
 
   return (
