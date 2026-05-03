@@ -2,15 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { LocationMap } from "../components/LocationMap";
-import { OwnerCard } from "../components/OwnerCard";
-import { PropertyImageViewer } from "../components/PropertyImageViewer";
-import { PropertyOffers } from "../components/PropertyOffers";
-import { PropertySpecifications } from "../components/PropertySpecifications";
-import { ReviewsList } from "../components/ReviewsList";
-import { AddReview } from "../components/AddReview";
-import { InfoPill } from "../components/ui/InfoPill";
-import { SectionCard } from "../components/ui/SectionCard";
-import { propertyService, reviewService } from "../services";
 
 const sampleProperty = {
   id: 1,
@@ -121,11 +112,12 @@ const normalizeProperty = (propertyData) => {
 export default function PropertyView() {
   const { propertyId } = useParams();
   const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
+  const { user: authUser } = useAuth();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
 
@@ -138,6 +130,18 @@ export default function PropertyView() {
         // Fetch property data from backend
         const propertyData = await propertyService.getPropertyById(propertyId);
         setProperty(normalizeProperty(propertyData));
+
+        if (authUser?.id) {
+          try {
+            const status = await propertyService.getFavoriteStatus(authUser.id, propertyId);
+            setIsFavorite(Boolean(status?.favorited));
+          } catch (favErr) {
+            console.error("Error loading favorite status:", favErr);
+            setIsFavorite(false);
+          }
+        } else {
+          setIsFavorite(false);
+        }
 
         // Fetch reviews for this property
         setReviewsLoading(true);
@@ -160,6 +164,7 @@ export default function PropertyView() {
           // Use sample data without showing error
           setProperty(sampleProperty);
           setReviews(sampleProperty.reviews);
+          setIsFavorite(false);
           setError(null); // Clear error when using fallback
         } else {
           // Show error for other types of errors
@@ -177,7 +182,7 @@ export default function PropertyView() {
     if (propertyId) {
       fetchProperty();
     }
-  }, [propertyId]);
+  }, [propertyId, authUser?.id]);
 
   const handleMessageOwner = () => {
     if (!currentUser) {
@@ -196,17 +201,47 @@ export default function PropertyView() {
     alert("Visit scheduled! The owner will confirm a time.");
   };
 
-  const handleFavorite = () => {
-    setIsFavorite((prev) => !prev);
+  const handleFavorite = async () => {
+    if (!authUser?.id) {
+      alert("Please sign in to save properties to your profile.");
+      return;
+    }
+    if (!propertyId || favoriteLoading) {
+      return;
+    }
+
+    const next = !isFavorite;
+    setFavoriteLoading(true);
+    try {
+      if (next) {
+        await propertyService.addFavoriteProperty(authUser.id, propertyId);
+      } else {
+        await propertyService.removeFavoriteProperty(authUser.id, propertyId);
+      }
+      setIsFavorite(next);
+    } catch (err) {
+      console.error("Error updating favorite:", err);
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        "Could not update favorites. Please try again.";
+      alert(message);
+    } finally {
+      setFavoriteLoading(false);
+    }
   };
 
-  const handleAddReview = async (newReview) => {
+  const handleAddReview = async ({ rating, text }) => {
+    if (!authUser?.id) {
+      alert("Please sign in to post a review.");
+      return;
+    }
     try {
-      // Submit review to backend
-      const createdReview = await reviewService.createReview(propertyId, newReview);
-
-      // Add the new review to the list
-      setReviews((prevReviews) => [createdReview, ...prevReviews]);
+      const createdReview = await reviewService.createReview(propertyId, { rating, text });
+      setReviews((prevReviews) => {
+        const withoutDup = prevReviews.filter((r) => r.reviewerId !== authUser.id);
+        return [createdReview, ...withoutDup];
+      });
       alert("Thank you for your review!");
     } catch (err) {
       console.error("Error adding review:", err);
@@ -273,6 +308,17 @@ export default function PropertyView() {
     );
   }
 
+  const reviewAverage =
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : null;
+  const roundedStarCount =
+    reviewAverage != null ? Math.min(5, Math.max(0, Math.round(reviewAverage))) : 0;
+  const ratingLabel =
+    reviews.length === 0
+      ? "No reviews yet"
+      : `${reviewAverage.toFixed(1)} average · ${reviews.length} review${reviews.length !== 1 ? "s" : ""}`;
+
   const detailItems = [
     { label: "Bedrooms", value: property.bedrooms },
     { label: "Bathrooms", value: property.bathrooms },
@@ -304,12 +350,12 @@ export default function PropertyView() {
               <div className="mt-3 flex items-center gap-3 text-sm text-slate-200">
                 <span className="flex items-center gap-1 text-yellow-400">
                   {Array.from({ length: 5 }).map((_, index) => (
-                    <span key={index} className={index < Math.round(property.rating) ? "" : "opacity-30"}>
+                    <span key={index} className={index < roundedStarCount ? "" : "opacity-30"}>
                       ★
                     </span>
                   ))}
                 </span>
-                <span className="text-slate-300">{property.rating} rating</span>
+                <span className="text-slate-300">{ratingLabel}</span>
                 <span className="text-slate-400">•</span>
                 <span className="text-slate-300">{property.location}</span>
               </div>
@@ -337,13 +383,18 @@ export default function PropertyView() {
                 <button
                   type="button"
                   onClick={handleFavorite}
-                  className={`w-full rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                  disabled={favoriteLoading}
+                  className={`w-full rounded-xl px-4 py-3 text-sm font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed ${
                     isFavorite
                       ? "bg-rose-500 text-white hover:bg-rose-600"
                       : "bg-white/20 text-white hover:bg-white/30"
                   }`}
                 >
-                  {isFavorite ? "Saved to Favorites" : "Save to Favorites"}
+                  {favoriteLoading
+                    ? "Saving..."
+                    : isFavorite
+                      ? "Saved to Favorites"
+                      : "Save to Favorites"}
                 </button>
               </div>
             </div>
@@ -416,11 +467,18 @@ export default function PropertyView() {
             </SectionCard>
 
             <SectionCard title={`Reviews (${reviews.length})`} icon={<span>⭐</span>}>
-              <AddReview onSubmit={handleAddReview} userName="Current User" />
+              {authUser?.id ? (
+                <AddReview onSubmit={handleAddReview} />
+              ) : (
+                <p className="mb-6 text-sm text-slate-600">
+                  Sign in to share your experience and rate this property.
+                </p>
+              )}
               <ReviewsList
                 reviews={reviews}
                 reviewCount={reviews.length}
                 onDeleteReview={handleDeleteReview}
+                currentUserId={authUser?.id}
               />
             </SectionCard>
           </div>

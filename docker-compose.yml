@@ -18,6 +18,24 @@ services:
       timeout: 5s
       retries: 10
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.15.3
+    container_name: bodimkarayo-elasticsearch
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "false"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health > /dev/null || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
   backend:
     build:
       context: ./backend
@@ -26,10 +44,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/${DB_NAME:-bodimkarayo_db}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-bodim_user}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-StrongPassword123!}
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
       SERVER_PORT: 4000
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-should-be-at-least-32-characters-long-for-security}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
@@ -52,3 +73,4 @@ services:
 
 volumes:
   mariadb_data:
+  elasticsearch_data:

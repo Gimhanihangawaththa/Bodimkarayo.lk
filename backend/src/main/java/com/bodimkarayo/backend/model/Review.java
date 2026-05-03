@@ -2,6 +2,9 @@ package com.bodimkarayo.backend.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -22,4 +25,8 @@ public class Review {
 
     @ManyToOne
     private Property property;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 }

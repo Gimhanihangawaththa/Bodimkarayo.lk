@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { roommateService } from '../services'
 import { apiClient } from '../config/api.config'
+import RoommateFilterSidebar from '../components/RoommateFilterSidebar'
 
-const API_URL = 'http://localhost:4000/api'
 const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400'
 
 const RoommateCard = ({ post, onCardClick, matchIndex, matchExplanation }) => {
@@ -83,55 +84,75 @@ const RoommateCard = ({ post, onCardClick, matchIndex, matchExplanation }) => {
 
 export default function Roommates() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { token, user } = useAuth()
+  
   const [roommates, setRoommates] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchLocation, setSearchLocation] = useState('')
   const [filteredRoommates, setFilteredRoommates] = useState([])
+  
+  // Filter State
+  const [filters, setFilters] = useState({
+    budgetRange: 80000,
+    minAge: 18,
+    maxAge: 65,
+    location: '',
+    genderPreference: 'Any',
+    occupation: 'Any',
+    roomType: 'Any',
+    smokingPreference: false,
+    petFriendly: false,
+    foodPreference: 'Any',
+  })
   
   // AI Match State
   const [aiMatches, setAiMatches] = useState([])
   const [matchingLoading, setMatchingLoading] = useState(false)
   const [matchError, setMatchError] = useState('')
 
+  const keyword = new URLSearchParams(location.search).get('keyword') || ''
+
+  const handleSearchSubmit = () => {
+    const trimmed = searchLocation.trim()
+    navigate(trimmed ? `/roommates?keyword=${encodeURIComponent(trimmed)}` : '/roommates')
+  }
+
   const handleRoommateClick = (roommateId) => {
     navigate(`/roommate/${roommateId}`)
   }
 
   useEffect(() => {
-    fetchRoommates()
-  }, [])
+    setSearchLocation(keyword)
+  }, [keyword])
 
   useEffect(() => {
-    if (searchLocation.trim()) {
-      const filtered = roommates.filter(r => 
-        r.location?.toLowerCase().includes(searchLocation.toLowerCase())
-      )
-      setFilteredRoommates(filtered)
-    } else {
-      setFilteredRoommates(roommates)
+    const fetchRoommates = async () => {
+      try {
+        setLoading(true)
+        const data = await roommateService.searchRoommates({
+          keyword,
+          location: filters.location || undefined,
+          gender: filters.genderPreference !== 'Any' ? filters.genderPreference : undefined,
+          minAge: filters.minAge || undefined,
+          maxAge: filters.maxAge || undefined,
+          occupation: filters.occupation !== 'Any' ? filters.occupation : undefined,
+          roomTypePreference: filters.roomType !== 'Any' ? filters.roomType : undefined,
+          smokingPreference: filters.smokingPreference || undefined,
+          petFriendly: filters.petFriendly || undefined,
+          foodPreference: filters.foodPreference !== 'Any' ? filters.foodPreference : undefined,
+          maxBudget: filters.budgetRange,
+        })
+        setRoommates(Array.isArray(data) ? data : [])
+      } catch (error) {
+        console.error('Error fetching roommates:', error)
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [searchLocation, roommates])
 
-  const fetchRoommates = async () => {
-    try {
-      const headers = {}
-      if (token) {
-        headers.Authorization = `Bearer ${token}`
-      }
-      
-      const res = await fetch(`${API_URL}/roommates`, { headers })
-      if (res.ok) {
-        const data = await res.json()
-        setRoommates(data)
-        setFilteredRoommates(data)
-      }
-    } catch (error) {
-      console.error('Error fetching roommates:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+    fetchRoommates()
+  }, [keyword, filters])
 
   const handleAutoMatch = async () => {
     if (!user) {
@@ -205,13 +226,13 @@ export default function Roommates() {
                 onChange={(e) => setSearchLocation(e.target.value)}
                 className="flex-1 px-3 py-3 text-gray-900 outline-none bg-white"
               />
-              <button className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-medium transition flex items-center gap-2">
+              <button onClick={handleSearchSubmit} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-medium transition flex items-center gap-2">
                 <span>🔍</span>
                 Search
               </button>
             </div>
             
-            {/* Match Me Button */}
+            {/* AI Match Button */}
             <button 
               onClick={handleAutoMatch}
               disabled={matchingLoading}
@@ -276,25 +297,33 @@ export default function Roommates() {
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900">Available Roommates</h2>
             <p className="text-gray-600 mt-1">
-              {loading ? 'Loading...' : `Showing ${filteredRoommates.length} roommate${filteredRoommates.length !== 1 ? 's' : ''}`}
+              {loading ? 'Loading...' : `Showing ${roommates.length} roommate${roommates.length !== 1 ? 's' : ''}`}
             </p>
           </div>
           
-          {loading ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">Loading roommates...</p>
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-1">
+              <RoommateFilterSidebar onFiltersChange={setFilters} />
             </div>
-          ) : filteredRoommates.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500">No roommates found. Be the first to apply!</p>
+
+            <div className="lg:col-span-3">
+              {loading ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">Loading roommates...</p>
+                </div>
+              ) : roommates.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">No roommates found. Be the first to apply!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {roommates.map((roommate) => (
+                    <RoommateCard key={roommate.id} post={roommate} onCardClick={handleRoommateClick} />
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              {filteredRoommates.map((roommate) => (
-                <RoommateCard key={roommate.id} post={roommate} onCardClick={handleRoommateClick} />
-              ))}
-            </div>
-          )}
+          </div>
         </div>
       </section>
     </>

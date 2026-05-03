@@ -22,6 +22,7 @@ docker compose up --build -d
 - Frontend: http://localhost:5173
 - Backend API: http://localhost:4000/api
 - MariaDB: localhost:3307
+- Elasticsearch: http://localhost:9200
 
 ### 4) View logs
 

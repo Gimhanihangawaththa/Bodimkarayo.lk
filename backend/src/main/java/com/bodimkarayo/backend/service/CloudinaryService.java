@@ -3,11 +3,13 @@ package com.bodimkarayo.backend.service;
 import com.bodimkarayo.backend.exception.BadRequestException;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -23,8 +25,21 @@ public class CloudinaryService {
     @Autowired
     private Cloudinary cloudinary;
 
+    @Value("${cloudinary.cloud-name:}")
+    private String cloudName;
+
+    @Value("${cloudinary.api-key:}")
+    private String apiKey;
+
+    @Value("${cloudinary.api-secret:}")
+    private String apiSecret;
+
     public String uploadPropertyImage(MultipartFile file, Long propertyId) {
         validateImage(file, 15L * 1024L * 1024L);
+        if (!isCloudinaryConfigured()) {
+            return toDataUrl(file);
+        }
+
         try {
             String publicId = "bodimkarayo/properties/" + propertyId + "/" + UUID.randomUUID();
             Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
@@ -45,6 +60,10 @@ public class CloudinaryService {
 
     public String uploadUserProfileImage(MultipartFile file, Long userId) {
         validateImage(file, MAX_PROFILE_IMAGE_SIZE_BYTES);
+        if (!isCloudinaryConfigured()) {
+            return toDataUrl(file);
+        }
+
         try {
             String publicId = "bodimkarayo/users/" + userId + "/profile";
             Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
@@ -105,6 +124,26 @@ public class CloudinaryService {
 
         if (file.getSize() > maxSizeBytes) {
             throw new BadRequestException("Image size exceeds allowed limit");
+        }
+    }
+
+    private boolean isCloudinaryConfigured() {
+        return cloudName != null && !cloudName.isBlank()
+                && apiKey != null && !apiKey.isBlank()
+                && apiSecret != null && !apiSecret.isBlank();
+    }
+
+    private String toDataUrl(MultipartFile file) {
+        try {
+            String contentType = file.getContentType();
+            if (contentType == null || contentType.isBlank()) {
+                contentType = "image/png";
+            }
+
+            String encoded = Base64.getEncoder().encodeToString(file.getBytes());
+            return "data:" + contentType + ";base64," + encoded;
+        } catch (IOException ex) {
+            throw new RuntimeException("Failed to process image upload", ex);
         }
     }
 }
