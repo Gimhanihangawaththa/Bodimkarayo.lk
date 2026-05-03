@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../theme/app_theme.dart';
 import '../../widgets/roommate_card.dart';
+import '../../widgets/glass_card.dart';
 
 class RoommatesScreen extends StatefulWidget {
   const RoommatesScreen({super.key});
@@ -60,6 +60,7 @@ class _RoommatesScreenState extends State<RoommatesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.transparent, // Show main screen gradient
       body: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0.0, end: 1.0),
         duration: const Duration(milliseconds: 1200),
@@ -77,123 +78,127 @@ class _RoommatesScreenState extends State<RoommatesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-            // Hero Section
-            Container(
-              decoration: const BoxDecoration(
-                gradient: AppTheme.primaryGradient,
-              ),
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top + 32,
-                bottom: 40,
-                left: 24,
-                right: 24,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  Text(
-                    'Find your perfect roommate',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+              // Hero Section - Dark Glass Card
+              Container(
+                margin: EdgeInsets.only(
+                  top: MediaQuery.of(context).padding.top + 16,
+                  left: 24,
+                  right: 24,
+                ),
+                child: GlassCard(
+                  isDark: true,
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Find your perfect roommate',
+                        style: TextStyle(
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Connect with verified roommates across Sri Lanka',
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: Colors.white70,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Connect with verified roommates across Sri Lanka',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.8),
                         ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Search Box
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        )
-                      ],
-                    ),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    child: Row(
-                      children: [
-                        const Text('📍', style: TextStyle(fontSize: 20)),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: const InputDecoration(
-                              hintText: 'Search by location',
-                              border: InputBorder.none,
+                      ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2), // Outer glass effect
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+                        ),
+                        child: Row(
+                          children: [
+                            const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 8),
+                              child: Icon(Icons.location_on, color: Colors.white, size: 24),
                             ),
-                          ),
+                            Expanded(
+                              child: Container(
+                                height: 40,
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.white, // Inner solid white box
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: TextField(
+                                  controller: _searchController,
+                                  style: const TextStyle(color: Color(0xFF0A2463)),
+                                  decoration: const InputDecoration(
+                                    hintText: 'Search by location',
+                                    hintStyle: TextStyle(color: Colors.grey, fontSize: 14),
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.only(bottom: 12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              height: 40,
+                              width: 40,
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: IconButton(
+                                padding: EdgeInsets.zero,
+                                icon: const Icon(Icons.search, color: Color(0xFF0A2463), size: 22),
+                                onPressed: () {},
+                              ),
+                            )
+                          ],
                         ),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: const Icon(Icons.search, color: Colors.white),
-                            onPressed: () {},
-                          ),
-                        )
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            
-            const SizedBox(height: 32),
-            
-            // All Roommates
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Available Roommates',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Showing ${fallbackRoommates.length} roommates',
-                    style: TextStyle(color: Colors.grey[600]),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            
-            // Roommates Grid
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2, // 1 for narrow phones might be better, let's keep it responsive if possible, or stick to 2
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.75, // Adjust for RoommateCard height
                 ),
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // All Roommates
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Available Roommates',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF0A2463),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Showing ${fallbackRoommates.length} roommates',
+                      style: TextStyle(color: const Color(0xFF0A2463).withOpacity(0.6)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              
+              // Roommates List
+              ListView.builder(
+                shrinkWrap: true,
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                physics: const NeverScrollableScrollPhysics(),
                 itemCount: fallbackRoommates.length,
                 itemBuilder: (context, index) {
                   final roommate = fallbackRoommates[index];
-                  return GestureDetector(
-                    onTap: () {
-                      // Navigator.pushNamed(context, '/roommateView');
-                    },
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 24),
                     child: RoommateCard(
                       image: roommate['image'],
                       name: roommate['name'],
@@ -206,11 +211,10 @@ class _RoommatesScreenState extends State<RoommatesScreen> {
                   );
                 },
               ),
-            ),
-            const SizedBox(height: 32),
-          ],
+              const SizedBox(height: 100), // padding for bottom nav
+            ],
+          ),
         ),
-      ),
       ),
     );
   }

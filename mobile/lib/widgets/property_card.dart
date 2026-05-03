@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'glass_card.dart';
 
 class PropertyCard extends StatefulWidget {
   final String image;
@@ -35,37 +36,24 @@ class _PropertyCardState extends State<PropertyCard> {
       onTapDown: (_) => setState(() => _isPressed = true),
       onTapUp: (_) => setState(() => _isPressed = false),
       onTapCancel: () => setState(() => _isPressed = false),
-      onTap: () {
-        // Future: Navigate to property detail screen passing data
-      },
+      onTap: () {},
       child: AnimatedScale(
         scale: _isPressed ? 0.96 : 1.0,
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOutBack,
-        child: Container(
+        child: GlassCard(
           width: 270,
           margin: const EdgeInsets.only(right: 20, bottom: 12, top: 4),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: _isPressed
-                    ? Colors.black.withOpacity(0.04)
-                    : Colors.black.withOpacity(0.12),
-                offset: Offset(0, _isPressed ? 4 : 8),
-                blurRadius: _isPressed ? 12 : 24,
-              ),
-            ],
-          ),
+          padding: EdgeInsets.zero, // Padding handled individually inside
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min, // To prevent unbounded height issues
             children: [
               // Image
               Hero(
                 tag: 'property_${widget.title}_${widget.image}',
                 child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                   child: Image.network(
                     widget.image,
                     height: 150,
@@ -74,138 +62,143 @@ class _PropertyCardState extends State<PropertyCard> {
                     errorBuilder: (context, error, stackTrace) => Container(
                       height: 150,
                       width: double.infinity,
-                      color: Colors.grey[200],
-                      child: const Icon(Icons.broken_image, color: Colors.grey),
+                      color: Colors.white.withOpacity(0.2),
+                      child: const Icon(Icons.broken_image, color: Colors.white),
                     ),
                   ),
                 ),
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Title and Rating
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  widget.title,
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title and Rating
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.title,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Color(0xFF0A2463),
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.amber.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      widget.rating.toString(),
-                                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.amber.shade800,
-                                          ),
+                            ),
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.star_rounded, color: Colors.amber, size: 14),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    widget.rating.toString(),
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.amber.shade800,
+                                      fontSize: 12,
                                     ),
-                                  ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        // Location
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on_rounded, size: 14, color: Color(0xFF3E92CC)),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                widget.location,
+                                style: const TextStyle(fontSize: 12, color: Color(0xFF0A2463)),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        // Amenities
+                        Row(
+                          children: widget.amenities.map((a) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 12),
+                              child: Row(
+                                children: [
+                                  Text(a['icon'] ?? '', style: const TextStyle(fontSize: 14)),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    a['label'] ?? '',
+                                    style: const TextStyle(fontSize: 10, color: Color(0xFF0A2463)),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                    // Divider and Footer
+                    Column(
+                      children: [
+                        Divider(height: 16, color: const Color(0xFF0A2463).withOpacity(0.1)),
+                        // Price & Available
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            RichText(
+                              text: TextSpan(
+                                text: 'Rs ${widget.price.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Color(0xFF0A2463),
+                                ),
+                                children: const [
+                                  TextSpan(
+                                    text: ' /mo',
+                                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.normal),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF3E92CC).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                widget.available,
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFF0A2463),
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          // Location
-                          Row(
-                            children: [
-                              Icon(Icons.location_on_rounded, size: 14, color: Theme.of(context).colorScheme.primary),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  widget.location,
-                                  style: Theme.of(context).textTheme.bodySmall,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          // Amenities
-                          Row(
-                            children: widget.amenities.map((a) {
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 12),
-                                child: Row(
-                                  children: [
-                                    Text(a['icon'] ?? '', style: const TextStyle(fontSize: 14)),
-                                    const SizedBox(width: 4),
-                                    Text(a['label'] ?? '', style: Theme.of(context).textTheme.labelSmall),
-                                  ],
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ),
-                      // Divider and Footer
-                      Column(
-                        children: [
-                          const Divider(height: 16),
-                          // Price & Available
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              RichText(
-                                text: TextSpan(
-                                  text: 'Rs ${widget.price.toStringAsFixed(0)}',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: Theme.of(context).colorScheme.primary,
-                                      ),
-                                  children: [
-                                    TextSpan(
-                                      text: ' /mo',
-                                      style: Theme.of(context).textTheme.labelSmall,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Text(
-                                  widget.available,
-                                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                        color: Theme.of(context).colorScheme.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
             ],
