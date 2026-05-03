@@ -4,6 +4,7 @@ import 'home/home_screen.dart';
 import 'properties/properties_screen.dart';
 import 'roommates/roommates_screen.dart';
 import 'profile/profile_screen.dart';
+import 'properties/add_property_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -46,6 +47,16 @@ class _MainScreenState extends State<MainScreen> {
           _screens[_currentIndex],
         ],
       ),
+      floatingActionButton: _currentIndex == 1 
+        ? Padding(
+            padding: const EdgeInsets.only(bottom: 15),// Move it above the custom nav bar
+            child: FloatingActionButton(
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AddPropertyScreen())),
+              backgroundColor: const Color(0xFF0A2463),
+              child: const Icon(Icons.add, color: Colors.white),
+            ),
+          )
+        : null,
       bottomNavigationBar: Container(
         margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
         decoration: BoxDecoration(
@@ -62,14 +73,21 @@ class _MainScreenState extends State<MainScreen> {
         child: ClipRRect(
           borderRadius: BorderRadius.circular(30),
           child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
             child: Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.8),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.3),
+                    Colors.white.withOpacity(0.1),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.5),
-                  width: 1.5,
+                  color: Colors.white.withOpacity(0.6),
+                  width: 1.2,
                 ),
               ),
               child: BottomNavigationBar(

@@ -34,6 +34,9 @@ public class User {
     @Column(columnDefinition = "LONGTEXT")
     private String profilePictureUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String about;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

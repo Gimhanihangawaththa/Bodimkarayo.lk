@@ -1,58 +1,16 @@
 import 'package:flutter/material.dart';
+import '../../models/property_model.dart';
 import '../../widgets/info_pill.dart';
 
 class PropertyViewScreen extends StatefulWidget {
-  const PropertyViewScreen({super.key});
+  final PropertyModel property;
+  const PropertyViewScreen({super.key, required this.property});
 
   @override
   State<PropertyViewScreen> createState() => _PropertyViewScreenState();
 }
 
 class _PropertyViewScreenState extends State<PropertyViewScreen> {
-  final Map<String, dynamic> property = {
-    "title": "Modern Apartment in Downtown",
-    "price": "45,000",
-    "priceRange": "month",
-    "availableFrom": "Nov 20",
-    "location": "Downtown Area, Colombo 3",
-    "address": "32 Galle Road, Colombo 03, Sri Lanka",
-    "type": "Apartment",
-    "numberOfPeople": "4",
-    "rating": 4.8,
-    "images": [
-      "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=1200&h=800&fit=crop",
-      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=1200&h=800&fit=crop",
-    ],
-    "bedrooms": 2,
-    "kitchens": 1,
-    "bathrooms": 2,
-    "sizeSqft": "1,150 sq ft",
-    "floor": "6th floor",
-    "furnished": "Fully furnished",
-    "parking": "1 reserved slot",
-    "security": "24/7 security",
-    "petsAllowed": "No pets",
-    "yearBuilt": "2019",
-    "description":
-        "Beautiful modern apartment with stunning city views. Newly renovated with high-end fixtures and appliances. Perfect for professionals or small families.",
-    "highlights": [
-      "Sunset balcony with city skyline views",
-      "Quiet building with concierge service",
-    ],
-    "offers": [
-      "High-Speed WiFi",
-      "Parking Available",
-      "Air Conditioning",
-    ],
-    "rules": ["No smoking", "No loud parties"],
-    "nearby": ["Galle Face Green - 10 min", "Odel Mall - 8 min"],
-    "owner": {
-      "name": "Sunil Perera",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Sunil",
-      "rating": 4.9,
-    },
-  };
-
   bool _isFavorite = false;
 
   @override
@@ -69,7 +27,9 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
                 fit: StackFit.expand,
                 children: [
                   Image.network(
-                    property['images'][0],
+                    widget.property.images != null && widget.property.images!.isNotEmpty
+                        ? widget.property.images![0]
+                        : 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=1200',
                     fit: BoxFit.cover,
                   ),
                   Container(
@@ -90,14 +50,14 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
                       children: [
                         Row(
                           children: [
-                            InfoPill(label: property['type'], baseColor: Colors.blueAccent),
+                            InfoPill(label: widget.property.propertyType ?? 'Property', baseColor: Colors.blueAccent),
                             const SizedBox(width: 8),
-                            InfoPill(label: 'Avail: ${property['availableFrom']}', baseColor: Colors.greenAccent),
+                            InfoPill(label: 'Avail: ${widget.property.availableFrom ?? 'Now'}', baseColor: Colors.greenAccent),
                           ],
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          property['title'],
+                          widget.property.title,
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 24,
@@ -106,7 +66,7 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          property['address'],
+                          widget.property.address ?? widget.property.location,
                           style: const TextStyle(color: Colors.white70),
                         ),
                       ],
@@ -152,12 +112,12 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
-                              'Rs ${property['price']}',
+                              'Rs ${widget.property.rent}',
                               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                             ),
-                            Text(
-                              ' /${property['priceRange']}',
-                              style: const TextStyle(color: Colors.grey, fontSize: 16),
+                            const Text(
+                              ' /month',
+                              style: TextStyle(color: Colors.grey, fontSize: 16),
                             ),
                           ],
                         ),
@@ -186,7 +146,7 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
                   // Overview
                   _buildSectionTitle('Overview'),
                   Text(
-                    property['description'],
+                    widget.property.description,
                     style: TextStyle(color: Colors.grey[700], height: 1.5),
                   ),
                   const SizedBox(height: 24),
@@ -196,41 +156,45 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildSpecItem(Icons.bed, '${property['bedrooms']} Beds'),
-                      _buildSpecItem(Icons.bathtub, '${property['bathrooms']} Baths'),
-                      _buildSpecItem(Icons.kitchen, '${property['kitchens']} Kitchen'),
-                      _buildSpecItem(Icons.square_foot, property['sizeSqft']),
+                      _buildSpecItem(Icons.bed, '${widget.property.bedrooms ?? 0} Beds'),
+                      _buildSpecItem(Icons.bathtub, '${widget.property.bathrooms ?? 0} Baths'),
+                      _buildSpecItem(Icons.kitchen, '${widget.property.kitchens ?? 0} Kitchen'),
+                      _buildSpecItem(Icons.square_foot, widget.property.floor ?? 'Ground'),
                     ],
                   ),
                   const SizedBox(height: 32),
 
                   // Amenities
-                  _buildSectionTitle('Amenities'),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 12,
-                    children: (property['offers'] as List).map((offer) {
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.check_circle, color: Colors.green, size: 20),
-                          const SizedBox(width: 8),
-                          Text(offer.toString()),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 32),
+                  if (widget.property.offers != null && widget.property.offers!.isNotEmpty) ...[
+                    _buildSectionTitle('Amenities'),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: widget.property.offers!.map((offer) {
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            Text(offer),
+                          ],
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 32),
+                  ],
 
                   // Rules
-                  _buildSectionTitle('House Rules'),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: (property['rules'] as List).map((rule) {
-                      return Chip(label: Text(rule.toString()), backgroundColor: Colors.grey[200]);
-                    }).toList(),
-                  ),
+                  if (widget.property.rules != null && widget.property.rules!.isNotEmpty) ...[
+                    _buildSectionTitle('House Rules'),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: widget.property.rules!.map((rule) {
+                        return Chip(label: Text(rule), backgroundColor: Colors.grey[200]);
+                      }).toList(),
+                    ),
+                  ],
                   const SizedBox(height: 48),
                 ],
               ),

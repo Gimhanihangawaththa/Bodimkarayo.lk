@@ -48,6 +48,10 @@ public class UserService {
             user.setProfilePictureUrl(request.getProfilePictureUrl().trim());
         }
 
+        if (request.getAbout() != null) {
+            user.setAbout(request.getAbout().trim());
+        }
+
         User updatedUser = userRepository.save(user);
         return toProfileResponse(updatedUser);
     }
@@ -69,6 +73,7 @@ public class UserService {
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .profilePictureUrl(user.getProfilePictureUrl())
+                .about(user.getAbout())
                 .role(user.getRole())
                 .verified(user.getVerified())
                 .isActive(user.getIsActive())

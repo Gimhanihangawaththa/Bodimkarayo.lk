@@ -1,43 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../models/roommate_model.dart';
 
 class RoommateViewScreen extends StatefulWidget {
-  const RoommateViewScreen({super.key});
+  final RoommateModel roommate;
+  const RoommateViewScreen({super.key, required this.roommate});
 
   @override
   State<RoommateViewScreen> createState() => _RoommateViewScreenState();
 }
 
 class _RoommateViewScreenState extends State<RoommateViewScreen> {
-  final Map<String, dynamic> roommate = {
-    "name": "Priya Perera",
-    "age": 24,
-    "occupation": "Software Engineer",
-    "location": "Colombo 7",
-    "rating": 4.8,
-    "tags": ["Cooking", "Reading", "Yoga", "Writing"],
-    "bio": "Friendly and tidy. Loves quiet evenings, good food, and weekend hikes. Looking for a respectful roommate.",
-    "avatarUrl": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400&auto=format&fit=crop",
-    "about": "I'm a software engineer working at a tech company. I value cleanliness and respect for shared spaces. I enjoy cooking and often prepare meals for myself.",
-    "interests": ["Cooking", "Reading", "Yoga", "Writing", "Hiking", "Photography"],
-    "preferences": {
-      "lookingFor": "1-2 roommates",
-      "budget": "Rs. 15,000 - 20,000",
-      "preferredLocation": "Colombo 3-7",
-      "moveInDate": "Flexible",
-    },
-    "reviews": [
-      {
-        "author": "Samith Kumar",
-        "rating": 5,
-        "text": "Great roommate! Very respectful and clean. Highly recommended!",
-      },
-      {
-        "author": "Jessica Wong",
-        "rating": 4,
-        "text": "Nice person, good to live with.",
-      },
-    ],
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +42,9 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: NetworkImage(roommate['avatarUrl']),
+                      backgroundImage: NetworkImage(widget.roommate.gender == 'FEMALE' 
+                        ? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400"
+                        : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400"),
                     ),
                     const SizedBox(width: 20),
                     Expanded(
@@ -78,17 +52,17 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            roommate['name'],
+                            'Roommate Post',
                             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            roommate['occupation'],
+                            widget.roommate.occupation,
                             style: TextStyle(color: Colors.grey[700], fontSize: 16),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            roommate['location'],
+                            '${widget.roommate.location} • ${widget.roommate.age ?? 'N/A'} yrs',
                             style: TextStyle(color: Colors.grey[500], fontSize: 14),
                           ),
                           const SizedBox(height: 8),
@@ -96,7 +70,7 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
                             children: [
                               const Icon(Icons.star, color: Colors.amber, size: 20),
                               const SizedBox(width: 4),
-                              Text('${roommate['rating']} rating', style: TextStyle(color: Colors.grey[700])),
+                              Text('4.5 rating', style: TextStyle(color: Colors.grey[700])),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -121,35 +95,36 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
                 content: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(roommate['about'], style: const TextStyle(height: 1.5, color: Colors.black87)),
+                    Text(widget.roommate.about ?? 'No additional info provided.', style: const TextStyle(height: 1.5, color: Colors.black87)),
                     const SizedBox(height: 12),
-                    Text(roommate['bio'], style: const TextStyle(height: 1.5, color: Colors.black87)),
+                    Text(widget.roommate.bio, style: const TextStyle(height: 1.5, color: Colors.black87)),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
 
               // Interests
-              _buildCardSection(
-                title: 'Interests',
-                content: Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: (roommate['interests'] as List).map((interest) {
-                    return Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        interest,
-                        style: TextStyle(color: Colors.blue[800], fontWeight: FontWeight.w600),
-                      ),
-                    );
-                  }).toList(),
+              if (widget.roommate.interests != null && widget.roommate.interests!.isNotEmpty)
+                _buildCardSection(
+                  title: 'Interests',
+                  content: Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: widget.roommate.interests!.split(',').map((interest) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          interest.trim(),
+                          style: TextStyle(color: Colors.blue[800], fontWeight: FontWeight.w600),
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ),
-              ),
               const SizedBox(height: 20),
 
               // Preferences
@@ -161,50 +136,15 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
                   physics: const NeverScrollableScrollPhysics(),
                   childAspectRatio: 2.5,
                   children: [
-                    _buildPrefItem('Looking For', roommate['preferences']['lookingFor']),
-                    _buildPrefItem('Budget', roommate['preferences']['budget']),
-                    _buildPrefItem('Preferred Location', roommate['preferences']['preferredLocation']),
-                    _buildPrefItem('Move In Date', roommate['preferences']['moveInDate']),
+                    _buildPrefItem('Looking For', widget.roommate.gender),
+                    _buildPrefItem('Budget', 'Rs. ${widget.roommate.budget ?? 'N/A'}'),
+                    _buildPrefItem('Preferred Location', widget.roommate.preferredLocation ?? widget.roommate.location),
+                    _buildPrefItem('Move In Date', widget.roommate.moveInDate ?? 'Flexible'),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
 
-              // Reviews
-              _buildCardSection(
-                title: 'Reviews',
-                content: Column(
-                  children: (roommate['reviews'] as List).map((review) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(review['author'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                              Row(
-                                children: List.generate(
-                                  5,
-                                  (index) => Icon(
-                                    Icons.star,
-                                    size: 16,
-                                    color: index < review['rating'] ? Colors.amber : Colors.grey[300],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(review['text'], style: TextStyle(color: Colors.grey[700])),
-                          const Divider(),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
               const SizedBox(height: 32),
             ],
           ),
