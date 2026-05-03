@@ -1,16 +1,7 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import { LocationMap } from "../components/LocationMap";
-import { OwnerCard } from "../components/OwnerCard";
-import { PropertyImageViewer } from "../components/PropertyImageViewer";
-import { PropertyOffers } from "../components/PropertyOffers";
-import { PropertySpecifications } from "../components/PropertySpecifications";
-import { ReviewsList } from "../components/ReviewsList";
-import { AddReview } from "../components/AddReview";
-import { InfoPill } from "../components/ui/InfoPill";
-import { SectionCard } from "../components/ui/SectionCard";
-import { propertyService, reviewService } from "../services";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { LocationMap } from "../components/LocationMap";
 
 const sampleProperty = {
   id: 1,
@@ -120,6 +111,7 @@ const normalizeProperty = (propertyData) => {
 
 export default function PropertyView() {
   const { propertyId } = useParams();
+  const navigate = useNavigate();
   const { user: authUser } = useAuth();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -193,7 +185,16 @@ export default function PropertyView() {
   }, [propertyId, authUser?.id]);
 
   const handleMessageOwner = () => {
-    alert(`Message sent to ${property?.owner.name}`);
+    if (!currentUser) {
+      navigate('/signin');
+      return;
+    }
+    
+    if (property?.owner?.id) {
+      navigate('/chat', { state: { recipientId: property.owner.id } });
+    } else {
+      alert("Owner information not available.");
+    }
   };
 
   const handleScheduleVisit = () => {

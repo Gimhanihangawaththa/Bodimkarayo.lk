@@ -51,6 +51,14 @@ export default function Header() {
             >
               Roommates
             </Link>
+            <Link
+              to="/chat"
+              className={`px-4 py-2 rounded-full text-base font-semibold transition border border-transparent hover:border-blue-200 hover:text-blue-700 ${
+                location.pathname === '/chat' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-800'
+              }`}
+            >
+              Chat
+            </Link>
           </nav>
 
           <form

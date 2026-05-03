@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { apiClient } from '../config/api.config'
 import { propertyService } from '../services'
 import { UpgradeAdvertisement } from '../components/UpgradeAdvertisement'
+import AIRecommendations from '../components/AIRecommendations'
 
 const PropertyCard = ({ id, image, title, location, price, available, offers, rating, onCardClick }) => (
-  <div 
+  <div
     onClick={() => onCardClick(id)}
     className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition cursor-pointer"
   >
@@ -21,7 +22,7 @@ const PropertyCard = ({ id, image, title, location, price, available, offers, ra
         )}
       </div>
       <p className="text-sm text-gray-600 mb-2">{location}</p>
-      
+
       {/* Offers */}
       {offers && offers.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-3">
@@ -155,19 +156,19 @@ export default function Home() {
     try {
       // Fetch properties from backend
       const propertiesData = await propertyService.getAllProperties()
-      
+
       // Transform backend data to match UI component expectations
-      const transformedProperties = Array.isArray(propertiesData) 
+      const transformedProperties = Array.isArray(propertiesData)
         ? propertiesData.slice(0, 4).map(prop => ({
-            id: prop.id,
-            image: prop.images && prop.images.length > 0 ? prop.images[0] : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400',
-            title: prop.title || 'Property',
-            location: prop.location || 'Location not specified',
-            price: prop.rent || 0,
-            available: prop.availableFrom || 'TBD',
-            offers: prop.offers || [],
-            rating: 0,
-          }))
+          id: prop.id,
+          image: prop.images && prop.images.length > 0 ? prop.images[0] : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400',
+          title: prop.title || 'Property',
+          location: prop.location || 'Location not specified',
+          price: prop.rent || 0,
+          available: prop.availableFrom || 'TBD',
+          offers: prop.offers || [],
+          rating: 0,
+        }))
         : []
 
       setProperties(transformedProperties)
@@ -177,30 +178,30 @@ export default function Home() {
       const roommatesData = roommatesResponse?.data
       const transformedRoommates = Array.isArray(roommatesData)
         ? roommatesData
-            .filter((post) => {
-              if (!location) {
-                return true
-              }
-              return (post.location || '').toLowerCase().includes(location.toLowerCase())
-            })
-            .slice(0, 4)
-            .map((post) => {
-              const name = post.poster?.fullName || post.poster?.email || 'Anonymous'
-              const interests = post.interests
-                ? post.interests.split(',').map((interest) => interest.trim()).filter(Boolean)
-                : []
+          .filter((post) => {
+            if (!location) {
+              return true
+            }
+            return (post.location || '').toLowerCase().includes(location.toLowerCase())
+          })
+          .slice(0, 4)
+          .map((post) => {
+            const name = post.poster?.fullName || post.poster?.email || 'Anonymous'
+            const interests = post.interests
+              ? post.interests.split(',').map((interest) => interest.trim()).filter(Boolean)
+              : []
 
-              return {
-                id: post.id,
-                image: post.poster?.profilePictureUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
-                name,
-                age: post.age || '',
-                location: post.location || 'Location not specified',
-                bio: post.bio || 'No bio provided',
-                interests,
-                verified: Boolean(post.poster?.verified),
-              }
-            })
+            return {
+              id: post.id,
+              image: post.poster?.profilePictureUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+              name,
+              age: post.age || '',
+              location: post.location || 'Location not specified',
+              bio: post.bio || 'No bio provided',
+              interests,
+              verified: Boolean(post.poster?.verified),
+            }
+          })
         : []
 
       setRoommates(transformedRoommates)
@@ -245,7 +246,7 @@ export default function Home() {
           <p className="text-base text-gray-700 mb-8">
             Discover comfortable rooms and great roommates across the island
           </p>
-          
+
           {/* Search Box */}
           <form onSubmit={handleSearch} className="bg-white rounded-full p-1 flex items-center max-w-2xl shadow-lg overflow-hidden">
             <span className="pl-4 text-gray-400">📍</span>
@@ -267,6 +268,8 @@ export default function Home() {
         </div>
       </section>
 
+      
+
       {/* Featured Boardings */}
       <section className="py-16 bg-white">
         <div className="max-w-6xl mx-auto px-4">
@@ -274,7 +277,7 @@ export default function Home() {
             <p className="text-blue-600 font-semibold mb-2">Featured Boardings</p>
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Handpicked properties for you</h2>
           </div>
-          
+
           {!showFallbackProperties && propertiesError && (
             <p className="text-sm text-red-600 mb-6" role="alert">
               {propertiesError}
@@ -340,11 +343,8 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
-      {/* Upgrade Advertisement */}
-      <div className="max-w-6xl mx-auto px-4">
-        <UpgradeAdvertisement />
-      </div>
+      {/* AI Recommendations Section */}
+      <AIRecommendations />
     </>
   )
 }

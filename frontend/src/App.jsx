@@ -12,6 +12,7 @@ import PropertyView from './pages/PropertyView'
 import RoommateView from './pages/RoommateView'
 import ProfilePage from './pages/ProfilePage'
 import Settings from './pages/Settings'
+import Chat from './pages/Chat'
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="roommate/:roommateId" element={<RoommateView />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="chat" element={<Chat />} />
           <Route path="signin" element={<SignIn />} />
           <Route path="signup" element={<SignUp />} />
         </Route>
