@@ -2,6 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { LocationMap } from "../components/LocationMap";
+import { propertyService, reviewService } from "../services";
+import { SectionCard } from "../components/ui/SectionCard";
+import { InfoPill } from "../components/ui/InfoPill";
+import { PropertyImageViewer } from "../components/PropertyImageViewer";
+import { PropertySpecifications } from "../components/PropertySpecifications";
+import { PropertyOffers } from "../components/PropertyOffers";
+import { AddReview } from "../components/AddReview";
+import { ReviewsList } from "../components/ReviewsList";
+import { OwnerCard } from "../components/OwnerCard";
 
 const sampleProperty = {
   id: 1,
@@ -185,7 +194,7 @@ export default function PropertyView() {
   }, [propertyId, authUser?.id]);
 
   const handleMessageOwner = () => {
-    if (!currentUser) {
+    if (!authUser) {
       navigate('/signin');
       return;
     }
