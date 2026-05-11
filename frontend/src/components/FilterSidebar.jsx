@@ -22,12 +22,12 @@ export default function FilterSidebar({ onFiltersChange }) {
 
 
 	return (
-		<aside className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm lg:sticky lg:top-24">
-			<h3 className="text-lg font-semibold text-gray-900 mb-4">Filter Properties</h3>
+		<aside className="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-[0_12px_40px_rgba(15,23,42,0.06)] lg:sticky lg:top-24">
+			<h3 className="text-lg font-semibold text-gray-900 mb-6">Filter Properties</h3>
 
-			<div className="space-y-4">
+			<div className="space-y-6">
 				<div>
-					<label className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+					<label className="block text-sm font-semibold text-slate-700 mb-2">Property Type</label>
 					<select
 						value={propertyType}
 						onChange={(e) => {
@@ -43,7 +43,7 @@ export default function FilterSidebar({ onFiltersChange }) {
 								petAllowed,
 							})
 						}}
-						className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+						className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-gray-900 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition"
 					>
 						{propertyTypes.map((type) => (
 							<option key={type} value={type}>{type}</option>
@@ -52,9 +52,9 @@ export default function FilterSidebar({ onFiltersChange }) {
 				</div>
 
 				<div>
-					<div className="flex items-center justify-between mb-1">
-						<label className="text-sm font-medium text-gray-700">Min price</label>
-						<label className="text-sm font-medium text-gray-700">Max price</label>
+					<div className="flex items-center justify-between mb-2">
+						<label className="text-sm font-semibold text-slate-700">Price Range</label>
+						<span className="text-sm font-semibold text-blue-600">Rs {priceRange.toLocaleString()}</span>
 					</div>
 					<input
 						type="range"
@@ -75,14 +75,14 @@ export default function FilterSidebar({ onFiltersChange }) {
 								petAllowed,
 							})
 						}}
-						className="w-full accent-blue-600"
+						className="w-full accent-blue-600 cursor-pointer"
 					/>
-					<p className="text-sm text-gray-600 mt-1">Up to Rs {priceRange.toLocaleString()}</p>
+					<p className="text-xs text-slate-500 mt-2">Adjust the slider to set your budget</p>
 				</div>
 
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4">
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
+						<label className="block text-sm font-semibold text-slate-700 mb-2">Bedrooms</label>
 						<select
 							value={bedrooms}
 							onChange={(e) => {
@@ -98,7 +98,7 @@ export default function FilterSidebar({ onFiltersChange }) {
 									petAllowed,
 								})
 							}}
-							className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+							className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-gray-900 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition"
 						>
 							{bedroomOptions.map((option) => (
 								<option key={option} value={option}>{option}</option>
@@ -107,7 +107,7 @@ export default function FilterSidebar({ onFiltersChange }) {
 					</div>
 
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-1">Bathrooms</label>
+						<label className="block text-sm font-semibold text-slate-700 mb-2">Bathrooms</label>
 						<select
 							value={bathrooms}
 							onChange={(e) => {
@@ -123,7 +123,7 @@ export default function FilterSidebar({ onFiltersChange }) {
 									petAllowed,
 								})
 							}}
-							className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+							className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-gray-900 bg-slate-50 outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition"
 						>
 							{bathroomOptions.map((option) => (
 								<option key={option} value={option}>{option}</option>
@@ -133,7 +133,7 @@ export default function FilterSidebar({ onFiltersChange }) {
 				</div>
 
 				<div className="space-y-2 pt-1">
-					<label className="flex items-center gap-2 text-sm text-gray-700">
+					<label className="flex items-center gap-3 text-sm text-slate-700 cursor-pointer hover:text-slate-900 transition">
 						<input
 							type="checkbox"
 							checked={furnished}
@@ -150,11 +150,11 @@ export default function FilterSidebar({ onFiltersChange }) {
 									petAllowed,
 								})
 							}}
-							className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+							className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
 						/>
 						Furnished
 					</label>
-					<label className="flex items-center gap-2 text-sm text-gray-700">
+					<label className="flex items-center gap-3 text-sm text-slate-700 cursor-pointer hover:text-slate-900 transition">
 						<input
 							type="checkbox"
 							checked={parking}
@@ -171,11 +171,11 @@ export default function FilterSidebar({ onFiltersChange }) {
 									petAllowed,
 								})
 							}}
-							className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+							className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
 						/>
 						Parking
 					</label>
-					<label className="flex items-center gap-2 text-sm text-gray-700">
+					<label className="flex items-center gap-3 text-sm text-slate-700 cursor-pointer hover:text-slate-900 transition">
 						<input
 							type="checkbox"
 							checked={petAllowed}
@@ -192,7 +192,7 @@ export default function FilterSidebar({ onFiltersChange }) {
 									petAllowed: nextValue,
 								})
 							}}
-							className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+							className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
 						/>
 						Pet allowed
 					</label>
