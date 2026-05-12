@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/roommate_provider.dart';
 import '../../widgets/roommate_card.dart';
 import '../../widgets/glass_card.dart';
+import 'apply_roommate_screen.dart';
 
 class RoommatesScreen extends StatefulWidget {
   const RoommatesScreen({super.key});
@@ -34,6 +35,20 @@ class _RoommatesScreenState extends State<RoommatesScreen> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(bottom: 90.0),
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ApplyRoommateScreen()),
+            );
+          },
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          icon: const Icon(Icons.add, color: Colors.white),
+          label: const Text('Apply', style: TextStyle(color: Colors.white)),
+        ),
+      ),
       body: TweenAnimationBuilder<double>(
         tween: Tween(begin: 0.0, end: 1.0),
         duration: const Duration(milliseconds: 1200),

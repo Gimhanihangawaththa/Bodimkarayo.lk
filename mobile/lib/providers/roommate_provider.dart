@@ -28,4 +28,61 @@ class RoommateProvider with ChangeNotifier {
     _isLoading = false;
     notifyListeners();
   }
+
+  Future<bool> createRoommate(Map<String, dynamic> data) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _apiService.post('/roommates', data);
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        await fetchRoommates(); // Refresh the list
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Create roommate error: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
+  Future<bool> updateRoommate(int id, Map<String, dynamic> data) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _apiService.put('/roommates/$id', data);
+      if (response.statusCode == 200) {
+        await fetchRoommates(); // Refresh the list
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Update roommate error: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
+
+  Future<bool> deleteRoommate(int id) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _apiService.delete('/roommates/$id');
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        await fetchRoommates(); // Refresh the list
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Delete roommate error: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
+  }
 }

@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/roommate_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/roommate_provider.dart';
+import 'apply_roommate_screen.dart';
 
 class RoommateViewScreen extends StatefulWidget {
   final RoommateModel roommate;
@@ -13,6 +17,17 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentUser = context.read<AuthProvider>().user;
+    
+    // Fetch updated roommate from provider so changes reflect immediately
+    final roommates = context.watch<RoommateProvider>().roommates;
+    final currentRoommate = roommates.firstWhere(
+      (r) => r.id == widget.roommate.id,
+      orElse: () => widget.roommate,
+    );
+
+    final isOwner = currentUser != null && currentRoommate.posterId != null && currentUser.id == currentRoommate.posterId;
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -20,6 +35,25 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
         title: const Text('Roommate Profile', style: TextStyle(color: Colors.black)),
+        actions: [
+          if (isOwner)
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blue),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ApplyRoommateScreen(existingRoommate: currentRoommate),
+                  ),
+                );
+              },
+            ),
+          if (isOwner)
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () => _showDeleteDialog(context),
+            ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -42,7 +76,7 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: NetworkImage(widget.roommate.gender == 'FEMALE' 
+                      backgroundImage: NetworkImage(currentRoommate.gender == 'FEMALE' 
                         ? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400"
                         : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400"),
                     ),
@@ -57,12 +91,12 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            widget.roommate.occupation,
+                            currentRoommate.occupation,
                             style: TextStyle(color: Colors.grey[700], fontSize: 16),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            '${widget.roommate.location} • ${widget.roommate.age ?? 'N/A'} yrs',
+                            '${currentRoommate.location} • ${currentRoommate.age ?? 'N/A'} yrs',
                             style: TextStyle(color: Colors.grey[500], fontSize: 14),
                           ),
                           const SizedBox(height: 8),
@@ -95,22 +129,22 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
                 content: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.roommate.about ?? 'No additional info provided.', style: const TextStyle(height: 1.5, color: Colors.black87)),
+                    Text(currentRoommate.about ?? 'No additional info provided.', style: const TextStyle(height: 1.5, color: Colors.black87)),
                     const SizedBox(height: 12),
-                    Text(widget.roommate.bio, style: const TextStyle(height: 1.5, color: Colors.black87)),
+                    Text(currentRoommate.bio, style: const TextStyle(height: 1.5, color: Colors.black87)),
                   ],
                 ),
               ),
               const SizedBox(height: 20),
 
               // Interests
-              if (widget.roommate.interests != null && widget.roommate.interests!.isNotEmpty)
+              if (currentRoommate.interests != null && currentRoommate.interests!.isNotEmpty)
                 _buildCardSection(
                   title: 'Interests',
                   content: Wrap(
                     spacing: 10,
                     runSpacing: 10,
-                    children: widget.roommate.interests!.split(',').map((interest) {
+                    children: currentRoommate.interests!.split(',').map((interest) {
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
@@ -182,6 +216,39 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
         const SizedBox(height: 4),
         Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
       ],
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete Post'),
+        content: const Text('Are you sure you want to delete this roommate post?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext); // close dialog
+              final success = await context.read<RoommateProvider>().deleteRoommate(widget.roommate.id!);
+              if (success && mounted) {
+                Navigator.pop(context); // close view screen
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Post deleted successfully')),
+                );
+              } else if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Failed to delete post')),
+                );
+              }
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 }

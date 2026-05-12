@@ -6,12 +6,12 @@ import 'package:image_picker/image_picker.dart';
 import 'package:http_parser/http_parser.dart';
 
 class ApiService {
-  // 192.168.1.102 is your computer's IP for your Oppo phone
+  // 192.168.0.178 is your computer's IP for your physical phone
   // 10.0.2.2 is for Android Emulator
   // localhost is for Web
   static const String baseUrl = kIsWeb 
     ? 'http://localhost:4000/api' 
-    : 'http://192.168.1.102:4000/api'; 
+    : 'http://192.168.0.178:4000/api'; 
 
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();

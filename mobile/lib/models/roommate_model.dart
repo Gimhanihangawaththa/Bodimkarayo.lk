@@ -11,6 +11,7 @@ class RoommateModel {
   final String? preferredLocation;
   final String? moveInDate;
   final double? budget;
+  final int? posterId;
 
   RoommateModel({
     this.id,
@@ -25,6 +26,7 @@ class RoommateModel {
     this.preferredLocation,
     this.moveInDate,
     this.budget,
+    this.posterId,
   });
 
   factory RoommateModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class RoommateModel {
       preferredLocation: json['preferredLocation'],
       moveInDate: json['moveInDate'],
       budget: (json['budget'] as num?)?.toDouble(),
+      posterId: json['poster'] != null ? json['poster']['id'] : null,
     );
   }
 
