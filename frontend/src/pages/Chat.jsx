@@ -48,8 +48,18 @@ export default function Chat() {
   useEffect(() => {
     if (activeRoom) {
       fetchMessages(activeRoom.id);
+      markAsRead(activeRoom.id);
     }
   }, [activeRoom]);
+
+  const markAsRead = async (roomId) => {
+    try {
+      await apiClient.post(`/chat/mark-read/${roomId}/${user.id}`);
+      fetchRooms(); // Refresh unread counts
+    } catch (err) {
+      console.error("Error marking as read", err);
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -106,6 +116,15 @@ export default function Chat() {
       content: newMessage,
     };
 
+    // Optimistic update
+    const tempMsg = {
+      ...payload,
+      sender: user,
+      timestamp: new Date().toISOString(),
+      id: Date.now() // temporary ID
+    };
+    setMessages(prev => [...prev, tempMsg]);
+
     stompClient.publish({
       destination: '/app/chat.sendMessage',
       body: JSON.stringify(payload),
@@ -131,7 +150,9 @@ export default function Chat() {
           {rooms.length === 0 ? (
             <div className="p-10 text-center text-gray-400">No conversations yet.</div>
           ) : (
-            rooms.map(room => {
+            rooms.map(roomData => {
+              const room = roomData.chatRoom;
+              const unreadCount = roomData.unreadCount;
               const otherUser = getOtherUser(room);
               return (
                 <div 
@@ -139,12 +160,17 @@ export default function Chat() {
                   onClick={() => setActiveRoom(room)}
                   className={`p-4 border-b cursor-pointer transition-all hover:bg-indigo-50 flex items-center gap-4 ${activeRoom?.id === room.id ? 'bg-indigo-50 border-l-4 border-l-indigo-600' : ''}`}
                 >
-                  <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
+                  <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 relative">
                     <img src={otherUser.profilePictureUrl || 'https://via.placeholder.com/150'} alt={otherUser.fullName} className="w-full h-full object-cover" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                        {unreadCount}
+                      </span>
+                    )}
                   </div>
                   <div className="flex-grow">
                     <div className="flex justify-between items-center mb-1">
-                      <h3 className="font-bold text-gray-900">{otherUser.fullName}</h3>
+                      <h3 className={`font-bold ${unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>{otherUser.fullName}</h3>
                     </div>
                   </div>
                 </div>

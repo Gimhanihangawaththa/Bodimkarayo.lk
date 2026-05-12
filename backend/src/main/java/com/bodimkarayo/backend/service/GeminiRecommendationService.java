@@ -87,8 +87,13 @@ public class GeminiRecommendationService {
             JsonNode candidates = rootNode.path("candidates");
             if (candidates.isArray() && candidates.size() > 0) {
                 String textResponse = candidates.get(0).path("content").path("parts").get(0).path("text").asText();
-                textResponse = textResponse.replaceAll("```json", "").replaceAll("```", "").trim();
-                
+                // Robust JSON extraction
+                int start = textResponse.indexOf("[");
+                int end = textResponse.lastIndexOf("]");
+                if (start != -1 && end != -1 && end > start) {
+                    textResponse = textResponse.substring(start, end + 1);
+                }
+
                 JsonNode jsonArray = objectMapper.readTree(textResponse);
                 List<RecommendationResponse> recommendations = new ArrayList<>();
                 
@@ -114,6 +119,7 @@ public class GeminiRecommendationService {
                 return recommendations;
             }
         } catch (Exception e) {
+            System.err.println("Error in GeminiRecommendationService: " + e.getMessage());
             e.printStackTrace();
         }
         

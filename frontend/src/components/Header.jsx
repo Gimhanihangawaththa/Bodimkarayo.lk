@@ -15,6 +15,30 @@ export default function Header() {
     setSearchQuery(params.get('keyword') || '')
   }, [location.search])
 
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (user && token) {
+      const fetchUnread = async () => {
+        try {
+          const res = await fetch(`http://localhost:4000/api/chat/unread-count/${user.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const count = await res.json();
+            setUnreadCount(count);
+          }
+        } catch (err) {
+          console.error("Error fetching unread count", err);
+        }
+      };
+
+      fetchUnread();
+      const interval = setInterval(fetchUnread, 30000); // Check every 30s
+      return () => clearInterval(interval);
+    }
+  }, [user, token]);
+
   const handleLogout = () => {
     logout()
     navigate('/signin')
@@ -53,11 +77,16 @@ export default function Header() {
             </Link>
             <Link
               to="/chat"
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border border-transparent hover:border-blue-200 hover:text-blue-700 ${
+              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border border-transparent hover:border-blue-200 hover:text-blue-700 relative ${
                 location.pathname === '/chat' ? 'bg-blue-600 text-white shadow-md shadow-blue-200/60' : 'text-slate-700'
               }`}
             >
               Chat
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
             </Link>
           </nav>
 
