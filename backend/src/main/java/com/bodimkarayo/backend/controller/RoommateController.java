@@ -19,6 +19,37 @@ public class RoommateController {
         return roommateService.getAllPosts();
     }
 
+    @GetMapping("/search")
+    public List<RoommatePost> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) Integer minAge,
+            @RequestParam(required = false) Integer maxAge,
+            @RequestParam(required = false) String occupation,
+            @RequestParam(required = false) String roomTypePreference,
+            @RequestParam(required = false) Boolean smokingPreference,
+            @RequestParam(required = false) Boolean petFriendly,
+            @RequestParam(required = false) String foodPreference,
+            @RequestParam(required = false) Double minBudget,
+            @RequestParam(required = false) Double maxBudget
+    ) {
+        return roommateService.searchRoommates(
+                keyword,
+                location,
+                gender,
+                minAge,
+                maxAge,
+                occupation,
+                roomTypePreference,
+                smokingPreference,
+                petFriendly,
+                foodPreference,
+                minBudget,
+                maxBudget
+        );
+    }
+
     @GetMapping("/{id}")
     public RoommatePost getById(@PathVariable Long id) {
         return roommateService.getPostById(id)

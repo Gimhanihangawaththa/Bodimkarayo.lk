@@ -25,6 +25,33 @@ public class PropertyController {
         return propertyService.getAllProperties();
     }
 
+    @GetMapping("/search")
+    public List<Property> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String propertyType,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Integer bedrooms,
+            @RequestParam(required = false) Integer bathrooms,
+            @RequestParam(required = false) Boolean furnished,
+            @RequestParam(required = false) Boolean parking,
+            @RequestParam(required = false) Boolean petsAllowed
+    ) {
+        return propertyService.searchProperties(
+                keyword,
+                location,
+                propertyType,
+                minPrice,
+                maxPrice,
+                bedrooms,
+                bathrooms,
+                furnished,
+                parking,
+                petsAllowed
+        );
+    }
+
     @GetMapping("/{id}")
     public Property getById(@PathVariable Long id) {
         return propertyService.getPropertyById(id)

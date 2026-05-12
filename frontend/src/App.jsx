@@ -4,6 +4,7 @@ import Layout from './components/Layout'
 import Home from './pages/Home'
 import Properties from './pages/Properties'
 import Roommates from './pages/Roommates'
+import SearchResults from './pages/SearchResults'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import AddProperty from './pages/AddProperty'
@@ -22,6 +23,7 @@ function App() {
           <Route path="home" element={<Home />} />
           <Route path="properties" element={<Properties />} />
           <Route path="roommates" element={<Roommates />} />
+          <Route path="search" element={<SearchResults />} />
           <Route path="add-property" element={<AddProperty />} />
           <Route path="edit-property/:propertyId" element={<AddProperty />} />
           <Route path="property/:propertyId" element={<PropertyView />} />

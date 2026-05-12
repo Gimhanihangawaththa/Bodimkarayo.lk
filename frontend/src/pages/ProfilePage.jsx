@@ -14,6 +14,7 @@ const EMPTY_USER = {
   interests: [],
   roommateApplicationStatus: "notApplied",
   userProperties: [],
+  favoriteProperties: [],
 };
 
 const createEmptyApplicationData = (interests = []) => ({
@@ -196,6 +197,42 @@ export default function ProfilePage() {
     loadUserProperties();
   }, [authUser]);
 
+  useEffect(() => {
+    const loadFavoriteProperties = async () => {
+      if (!authUser?.id) {
+        return;
+      }
+
+      try {
+        const favorites = await propertyService.getFavoriteProperties(authUser.id);
+        const list = Array.isArray(favorites) ? favorites : [];
+        const transformed = list.map((prop) => ({
+          id: prop.id,
+          image:
+            prop.images && prop.images.length > 0
+              ? prop.images[0]
+              : "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400",
+          title: prop.title || "Property",
+          location: prop.location || "Location not specified",
+          price: prop.rent || 0,
+          type: prop.propertyType || "Property",
+          bedrooms: prop.bedrooms || 0,
+          bathrooms: prop.bathrooms || 0,
+          available: prop.availableFrom || "TBD",
+        }));
+
+        setUser((prev) => ({
+          ...prev,
+          favoriteProperties: transformed,
+        }));
+      } catch (error) {
+        console.error("Error loading favorite properties:", error);
+      }
+    };
+
+    loadFavoriteProperties();
+  }, [authUser]);
+
 
   const handleEditProfile = () => {
     setProfileImageFile(null);
@@ -220,16 +257,20 @@ export default function ProfilePage() {
       let profilePictureUrl = editFormData.avatarUrl;
 
       if (profileImageFile) {
-        const imageFormData = new FormData();
-        imageFormData.append("image", profileImageFile);
+        try {
+          const imageFormData = new FormData();
+          imageFormData.append("image", profileImageFile);
 
-        const imageUploadResponse = await apiClient.post(
-          `/users/${authUser.id}/profile-image`,
-          imageFormData
-        );
+          const imageUploadResponse = await apiClient.post(
+            `/users/${authUser.id}/profile-image`,
+            imageFormData
+          );
 
-        profilePictureUrl =
-          imageUploadResponse.data?.profilePictureUrl || profilePictureUrl;
+          profilePictureUrl =
+            imageUploadResponse.data?.profilePictureUrl || profilePictureUrl;
+        } catch (imageError) {
+          console.error("Error uploading profile image:", imageError);
+        }
       }
 
       const payload = {
@@ -371,6 +412,30 @@ export default function ProfilePage() {
         error?.response?.data?.message ||
         error?.message ||
         "Failed to delete property. Please try again.";
+      alert(message);
+    }
+  };
+
+  const handleRemoveFavorite = async (propertyId, propertyTitle) => {
+    if (!authUser?.id) {
+      return;
+    }
+    if (!window.confirm(`Remove "${propertyTitle}" from your saved properties?`)) {
+      return;
+    }
+
+    try {
+      await propertyService.removeFavoriteProperty(authUser.id, propertyId);
+      setUser((prev) => ({
+        ...prev,
+        favoriteProperties: (prev.favoriteProperties || []).filter((p) => p.id !== propertyId),
+      }));
+    } catch (error) {
+      console.error("Error removing favorite:", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to remove from favorites.";
       alert(message);
     }
   };
@@ -551,6 +616,73 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Saved properties (favorites) */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Saved Properties</h2>
+          {user.favoriteProperties && user.favoriteProperties.length > 0 ? (
+            <div className="grid grid-cols-1 gap-6 w-full">
+              {user.favoriteProperties.map((property) => (
+                <div
+                  key={property.id}
+                  className="rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/property/${property.id}`)}
+                >
+                  <div className="relative h-48 overflow-hidden bg-gray-100">
+                    <img
+                      src={property.image}
+                      alt={property.title}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src =
+                          "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400";
+                      }}
+                    />
+                    <span className="absolute top-2 right-2 bg-rose-600 text-white px-2 py-1 rounded text-sm font-medium">
+                      Saved
+                    </span>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{property.title}</h3>
+                    <p className="text-gray-600 text-sm mb-3">📍 {property.location}</p>
+                    <p className="text-xl font-bold text-blue-600 mb-3">Rs {property.price}/month</p>
+                    <div className="flex gap-4 text-sm text-gray-600 mb-4">
+                      <span className="flex items-center gap-1">🛏️ {property.bedrooms} Bed</span>
+                      <span className="flex items-center gap-1">🚿 {property.bathrooms} Bath</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/property/${property.id}`);
+                        }}
+                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-md font-medium transition"
+                      >
+                        View
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFavorite(property.id, property.title);
+                        }}
+                        className="flex-1 border border-gray-300 text-gray-800 hover:bg-gray-50 px-4 py-2 rounded-md font-medium transition"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-600 text-center py-6">
+              You have not saved any properties yet. Open a listing and tap &quot;Save to Favorites&quot;.
+            </p>
+          )}
         </div>
 
         {/* My Properties Section - Only visible for property owners */}

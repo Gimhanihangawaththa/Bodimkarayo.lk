@@ -8,31 +8,33 @@ import AIRecommendations from '../components/AIRecommendations'
 const PropertyCard = ({ id, image, title, location, price, available, offers, rating, onCardClick }) => (
   <div
     onClick={() => onCardClick(id)}
-    className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition cursor-pointer"
+    className="group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-[0_12px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_18px_50px_rgba(37,99,235,0.14)] hover:-translate-y-1 transition-all duration-300 cursor-pointer"
   >
-    <img src={image} alt={title} className="w-full h-48 object-cover" />
-    <div className="p-4">
+    <div className="overflow-hidden">
+      <img src={image} alt={title} className="w-full h-48 object-cover transition duration-500 group-hover:scale-105" />
+    </div>
+    <div className="p-5">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-gray-900">{title}</h3>
+        <h3 className="font-semibold text-gray-900 leading-tight">{title}</h3>
         {rating > 0 && (
-          <div className="flex items-center gap-1">
-            <span className="text-yellow-400">⭐</span>
+          <div className="flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-amber-600">
+            <span>⭐</span>
             <span className="text-sm font-medium">{rating}</span>
           </div>
         )}
       </div>
-      <p className="text-sm text-gray-600 mb-2">{location}</p>
+      <p className="text-sm text-slate-600 mb-3">{location}</p>
 
       {/* Offers */}
       {offers && offers.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-3">
+        <div className="flex flex-wrap gap-2 mb-4">
           {offers.slice(0, 2).map((offer, i) => (
-            <span key={i} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+            <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full border border-blue-100">
               {offer}
             </span>
           ))}
           {offers.length > 2 && (
-            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+            <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-1 rounded-full border border-slate-200">
               +{offers.length - 2} more
             </span>
           )}
@@ -40,7 +42,7 @@ const PropertyCard = ({ id, image, title, location, price, available, offers, ra
       )}
 
       <div className="flex items-center justify-between">
-        <p className="font-bold text-gray-900">Rs {price.toLocaleString()}<span className="text-xs font-normal text-gray-500">/month</span></p>
+        <p className="font-bold text-gray-900 text-lg">Rs {price.toLocaleString()}<span className="text-xs font-normal text-gray-500">/month</span></p>
       </div>
       {available && <p className="text-xs text-gray-500 mt-1">Available: {available}</p>}
     </div>
@@ -50,21 +52,23 @@ const PropertyCard = ({ id, image, title, location, price, available, offers, ra
 const RoommateCard = ({ id, image, name, age, location, bio, interests, verified, onCardClick }) => (
   <div
     onClick={() => onCardClick(id)}
-    className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition cursor-pointer"
+    className="group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-[0_12px_40px_rgba(15,23,42,0.06)] hover:shadow-[0_18px_50px_rgba(37,99,235,0.14)] hover:-translate-y-1 transition-all duration-300 cursor-pointer"
   >
-    <img src={image} alt={name} className="w-full h-48 object-cover" />
-    <div className="p-4">
+    <div className="overflow-hidden">
+      <img src={image} alt={name} className="w-full h-48 object-cover transition duration-500 group-hover:scale-105" />
+    </div>
+    <div className="p-5">
       <div className="flex items-center justify-between mb-2">
         <div>
           <h3 className="font-semibold text-gray-900">{name}, {age}</h3>
         </div>
-        {verified && <span className="text-blue-600 font-bold text-lg">✓</span>}
+        {verified && <span className="text-blue-600 font-bold text-lg bg-blue-50 h-8 w-8 rounded-full flex items-center justify-center ring-1 ring-blue-100">✓</span>}
       </div>
-      <p className="text-sm text-gray-600 mb-3">📍 {location}</p>
-      <p className="text-sm text-gray-700 mb-3">{bio}</p>
+      <p className="text-sm text-slate-600 mb-3">📍 {location}</p>
+      <p className="text-sm text-slate-700 mb-4 line-clamp-3">{bio}</p>
       <div className="flex flex-wrap gap-2">
         {interests.map((interest, i) => (
-          <span key={i} className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full">
+          <span key={i} className="text-xs bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full border border-blue-100">
             {interest}
           </span>
         ))}
@@ -131,7 +135,7 @@ const fallbackProperties = [
 
 export default function Home() {
   const navigate = useNavigate()
-  const [searchLocation, setSearchLocation] = useState('')
+  const [searchKeyword, setSearchKeyword] = useState('')
   const [properties, setProperties] = useState([])
   const [roommates, setRoommates] = useState([])
   const [isLoadingProperties, setIsLoadingProperties] = useState(false)
@@ -223,10 +227,14 @@ export default function Home() {
 
   const handleSearch = (e) => {
     e.preventDefault()
-    fetchFeatured(searchLocation.trim())
+    const keyword = searchKeyword.trim()
+    if (keyword) {
+      // Navigate to Properties page with search keyword
+      navigate(`/properties?keyword=${encodeURIComponent(keyword)}`)
+    }
   }
 
-  const isSearching = !!searchLocation.trim()
+  const isSearching = !!searchKeyword.trim()
   const showFallbackProperties = !isSearching && (propertiesError || (!isLoadingProperties && properties.length === 0))
   const displayedProperties = showFallbackProperties ? fallbackProperties : properties
   const displayedRoommates = roommates
@@ -234,28 +242,35 @@ export default function Home() {
   return (
     <>
       {/* Hero Section */}
-      <section style={{ background: 'linear-gradient(135deg, #93a5cf 0%, #a8b8d8 50%, #c5d4e8 100%)' }} className="py-16 text-gray-900 relative overflow-hidden">
+      <section className="relative overflow-hidden py-20 text-gray-900">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.22),_transparent_38%),radial-gradient(circle_at_bottom_right,_rgba(30,64,175,0.12),_transparent_32%),linear-gradient(135deg,_#edf4ff_0%,_#dfeaff_50%,_#f8fbff_100%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-white/70 to-transparent" />
         <div className="max-w-6xl mx-auto px-4 relative z-10">
-          <h1 className="text-4xl font-bold mb-2">
+          <div className="max-w-3xl">
+            <span className="inline-flex items-center rounded-full bg-white/70 px-4 py-2 text-sm font-semibold text-blue-700 ring-1 ring-blue-100 shadow-sm">
+              Boarding search made simple
+            </span>
+          </div>
+          <h1 className="mt-5 text-4xl md:text-5xl font-bold tracking-tight mb-4 max-w-3xl">
             Find your perfect boarding in Sri Lanka
           </h1>
-          <p className="text-base text-gray-700 mb-8">
+          <p className="max-w-2xl text-base md:text-lg text-slate-700 mb-10">
             Discover comfortable rooms and great roommates across the island
           </p>
 
           {/* Search Box */}
-          <form onSubmit={handleSearch} className="bg-white rounded-full p-1 flex items-center max-w-2xl shadow-lg overflow-hidden">
-            <span className="pl-4 text-gray-400">📍</span>
+          <form onSubmit={handleSearch} className="bg-white/95 rounded-full p-2 flex items-center max-w-2xl shadow-[0_18px_50px_rgba(37,99,235,0.18)] overflow-hidden ring-1 ring-white/60 backdrop-blur">
+            <span className="pl-4 text-blue-500">📍</span>
             <input
               type="text"
               placeholder="where do you want to stay ?"
-              value={searchLocation}
-              onChange={(e) => setSearchLocation(e.target.value)}
-              className="flex-1 px-3 py-3 text-gray-900 outline-none bg-white"
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              className="flex-1 px-3 py-3 text-gray-900 outline-none bg-transparent placeholder:text-slate-400"
             />
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-medium transition flex items-center gap-2"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-semibold transition flex items-center gap-2 shadow-sm shadow-blue-200/60"
             >
               <span>🔍</span>
               Search
@@ -267,11 +282,12 @@ export default function Home() {
       
 
       {/* Featured Boardings */}
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-white/70">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-blue-600 font-semibold mb-2">Featured Boardings</p>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Handpicked properties for you</h2>
+            <p className="text-blue-600 font-semibold mb-2 uppercase tracking-[0.2em] text-xs">Featured Boardings</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Handpicked properties for you</h2>
+            <p className="text-slate-600 max-w-2xl mx-auto">A cleaner view of the most relevant places, with more breathing room and stronger visual focus.</p>
           </div>
 
           {!showFallbackProperties && propertiesError && (
@@ -292,14 +308,14 @@ export default function Home() {
             </p>
           )}
 
-          <div className="grid grid-cols-4 gap-6 mb-8">
+          <div className="grid gap-6 mb-8 sm:grid-cols-2 xl:grid-cols-4">
             {displayedProperties.map((prop) => (
               <PropertyCard key={prop.id} {...prop} onCardClick={handlePropertyCardClick} />
             ))}
           </div>
 
           <div className="text-center">
-            <Link to="/properties" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/properties" className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-5 py-2.5 text-blue-700 font-semibold ring-1 ring-blue-100 hover:bg-blue-100 transition">
               View all properties →
             </Link>
           </div>
@@ -307,11 +323,12 @@ export default function Home() {
       </section>
 
       {/* Roommates */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-gradient-to-b from-slate-50 to-white">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-blue-600 font-semibold mb-2">Find Roommates</p>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Connect with verified roommates</h2>
+            <p className="text-blue-600 font-semibold mb-2 uppercase tracking-[0.2em] text-xs">Find Roommates</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">Connect with verified roommates</h2>
+            <p className="text-slate-600 max-w-2xl mx-auto">Keep the same blue theme, but present people, trust, and search results with clearer structure.</p>
           </div>
 
           {roommatesError && (
@@ -326,14 +343,14 @@ export default function Home() {
             </p>
           )}
 
-          <div className="grid grid-cols-4 gap-6 mb-8">
+          <div className="grid gap-6 mb-8 sm:grid-cols-2 xl:grid-cols-4">
             {displayedRoommates.map((roommate) => (
               <RoommateCard key={roommate.id} {...roommate} onCardClick={handleRoommateCardClick} />
             ))}
           </div>
 
           <div className="text-center">
-            <Link to="/roommates" className="text-blue-600 hover:text-blue-700 font-medium">
+            <Link to="/roommates" className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-5 py-2.5 text-blue-700 font-semibold ring-1 ring-blue-100 hover:bg-blue-100 transition">
               View all roommates →
             </Link>
           </div>

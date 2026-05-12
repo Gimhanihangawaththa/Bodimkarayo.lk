@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { propertyService } from '../services'
 import { UpgradeAdvertisement } from '../components/UpgradeAdvertisement'
+import FilterSidebar from '../components/FilterSidebar'
 
 const PropertyCard = ({ id, image, title, location, price, available, offers, rating, onCardClick }) => (
   <div 
@@ -47,22 +48,51 @@ const PropertyCard = ({ id, image, title, location, price, available, offers, ra
 
 export default function Properties() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchLocation, setSearchLocation] = useState('')
   const [properties, setProperties] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [filters, setFilters] = useState({
+    propertyType: 'Any',
+    maxPrice: 300000,
+    bedrooms: 'Any',
+    bathrooms: 'Any',
+    furnished: false,
+    parking: false,
+    petAllowed: false,
+  })
+
+  const keyword = new URLSearchParams(location.search).get('keyword') || ''
+
+  const handleSearchSubmit = () => {
+    const trimmed = searchLocation.trim()
+    navigate(trimmed ? `/properties?keyword=${encodeURIComponent(trimmed)}` : '/properties')
+  }
 
   const handlePropertyCardClick = (propertyId) => {
     navigate(`/property/${propertyId}`)
   }
 
-  // Fetch all properties on component mount
+  useEffect(() => {
+    setSearchLocation(keyword)
+  }, [keyword])
+
   useEffect(() => {
     const fetchProperties = async () => {
       setIsLoading(true)
       setError('')
       try {
-        const data = await propertyService.getAllProperties()
+        const data = await propertyService.searchProperties({
+          keyword,
+          propertyType: filters.propertyType !== 'Any' ? filters.propertyType : undefined,
+          maxPrice: filters.maxPrice,
+          bedrooms: filters.bedrooms !== 'Any' ? Number(filters.bedrooms.replace('+', '')) : undefined,
+          bathrooms: filters.bathrooms !== 'Any' ? Number(filters.bathrooms.replace('+', '')) : undefined,
+          furnished: filters.furnished || undefined,
+          parking: filters.parking || undefined,
+          petsAllowed: filters.petAllowed || undefined,
+        })
         const transformed = Array.isArray(data) 
           ? data.map(prop => ({
               id: prop.id,
@@ -85,12 +115,7 @@ export default function Properties() {
     }
 
     fetchProperties()
-  }, [])
-
-  // Filter properties based on search location
-  const filteredProperties = properties.filter(prop =>
-    prop.location.toLowerCase().includes(searchLocation.toLowerCase())
-  )
+  }, [keyword, filters])
 
   return (
     <>
@@ -106,7 +131,7 @@ export default function Properties() {
           
           {/* Search Box */}
           <div className="bg-white rounded-full p-1 flex items-center max-w-2xl shadow-lg overflow-hidden">
-            <span className="pl-4 text-gray-400">📍</span>
+            <span className="pl-4 text-gray-400" aria-hidden="true">📍</span>
             <input
               type="text"
               placeholder="where do you want to stay ?"
@@ -117,7 +142,7 @@ export default function Properties() {
             <button 
               type="button"
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-medium transition flex items-center gap-2"
-              onClick={() => {}}
+              onClick={handleSearchSubmit}
             >
               <span>🔍</span>
               Search
@@ -132,7 +157,7 @@ export default function Properties() {
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-gray-900">All Properties</h2>
             <p className="text-gray-600 mt-1">
-              {isLoading ? 'Loading...' : `Showing ${filteredProperties.length} properties`}
+              {isLoading ? 'Loading...' : `Showing ${properties.length} properties`}
             </p>
           </div>
 
@@ -146,17 +171,25 @@ export default function Properties() {
             <div className="text-center text-gray-500">Loading properties...</div>
           )}
 
-          {!isLoading && filteredProperties.length === 0 && (
-            <div className="text-center text-gray-500">No properties found.</div>
-          )}
-
-          {!isLoading && filteredProperties.length > 0 && (
-            <div className="grid grid-cols-4 gap-6">
-              {filteredProperties.map((prop) => (
-                <PropertyCard key={prop.id} {...prop} onCardClick={handlePropertyCardClick} />
-              ))}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div className="lg:col-span-1">
+              <FilterSidebar onFiltersChange={setFilters} />
             </div>
-          )}
+
+            <div className="lg:col-span-3">
+              {!isLoading && properties.length === 0 && (
+                <div className="text-center text-gray-500">No properties found.</div>
+              )}
+
+              {!isLoading && properties.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {properties.map((prop) => (
+                    <PropertyCard key={prop.id} {...prop} onCardClick={handlePropertyCardClick} />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
