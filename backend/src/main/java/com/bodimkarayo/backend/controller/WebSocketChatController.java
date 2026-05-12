@@ -21,14 +21,15 @@ public class WebSocketChatController {
 
     @MessageMapping("/chat.sendMessage")
     public void sendMessage(@Payload ChatMessageRequest request) {
+        System.out.println("Received message request: " + request);
         ChatMessage savedMessage = chatService.saveMessage(request);
         ChatRoom room = savedMessage.getChatRoom();
         
-        // Send to both users in the room
-        messagingTemplate.convertAndSendToUser(
-                room.getUser1().getId().toString(), "/queue/messages", savedMessage);
+        System.out.println("Sending message to users: " + room.getUser1().getId() + " and " + room.getUser2().getId());
         
-        messagingTemplate.convertAndSendToUser(
-                room.getUser2().getId().toString(), "/queue/messages", savedMessage);
+        // Send to both users in the room using explicit topics
+        messagingTemplate.convertAndSend("/topic/messages." + room.getUser1().getId(), savedMessage);
+        messagingTemplate.convertAndSend("/topic/messages." + room.getUser2().getId(), savedMessage);
+        System.out.println("Message sent successfully to topics /topic/messages." + room.getUser1().getId() + " and /topic/messages." + room.getUser2().getId());
     }
 }

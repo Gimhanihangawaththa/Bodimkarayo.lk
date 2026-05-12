@@ -58,7 +58,7 @@ export default function Header() {
         </Link>
 
         <div className="flex-1 flex items-center gap-4 min-w-0">
-          <nav className="hidden lg:flex items-center gap-2 flex-shrink-0 rounded-full bg-slate-50/90 p-1 ring-1 ring-slate-200">
+          <nav className="flex items-center gap-2 flex-shrink-0 rounded-full bg-slate-50/90 p-1 ring-1 ring-slate-200 overflow-x-auto">
             <Link
               to="/properties"
               className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border border-transparent hover:border-blue-200 hover:text-blue-700 ${
@@ -127,7 +127,7 @@ export default function Header() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                 </svg>
               </Link>
-              <button onClick={handleLogout} className="hidden sm:inline-flex text-slate-600 hover:text-red-600 font-semibold transition">
+              <button onClick={handleLogout} className="inline-flex text-slate-600 hover:text-red-600 font-semibold transition">
                 Logout
               </button>
             </div>

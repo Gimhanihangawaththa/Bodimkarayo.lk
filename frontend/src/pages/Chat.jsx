@@ -89,17 +89,22 @@ export default function Chat() {
     const socket = new SockJS('http://localhost:4000/ws');
     const client = new Client({
       webSocketFactory: () => socket,
-      debug: (str) => console.log(str),
+      debug: (str) => console.log('STOMP: ' + str),
       onConnect: () => {
-        console.log('Connected to WebSocket');
-        // Subscribe to user-specific queue for new message notifications
-        client.subscribe(`/user/${user.id}/queue/messages`, (msg) => {
+        console.log('Connected to WebSocket SUCCESSFULLY');
+        // Subscribe to user-specific topic for new message notifications
+        client.subscribe(`/topic/messages.${user.id}`, (msg) => {
+          console.log('Received message via WebSocket topic:', msg.body);
           const receivedMsg = JSON.parse(msg.body);
           if (activeRoom && receivedMsg.chatRoom.id === activeRoom.id) {
             setMessages(prev => [...prev, receivedMsg]);
           }
           fetchRooms(); // Refresh room list to show latest message
         });
+      },
+      onStompError: (frame) => {
+        console.error('Broker reported error: ' + frame.headers['message']);
+        console.error('Additional details: ' + frame.body);
       },
     });
     client.activate();
@@ -125,10 +130,12 @@ export default function Chat() {
     };
     setMessages(prev => [...prev, tempMsg]);
 
+    console.log('Sending message:', payload);
     stompClient.publish({
       destination: '/app/chat.sendMessage',
       body: JSON.stringify(payload),
     });
+    console.log('Message published to destination /app/chat.sendMessage');
 
     setNewMessage('');
   };
