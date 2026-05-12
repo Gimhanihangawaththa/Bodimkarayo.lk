@@ -1,15 +1,14 @@
 package com.bodimkarayo.backend.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class ChatMessage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -26,7 +25,9 @@ public class ChatMessage {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Builder.Default
     private boolean isRead = false;
 
+    @Builder.Default
     private LocalDateTime timestamp = LocalDateTime.now();
 }

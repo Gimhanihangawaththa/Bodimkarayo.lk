@@ -1,5 +1,6 @@
 package com.bodimkarayo.backend.controller;
 
+import com.bodimkarayo.backend.dto.ChatRoomResponse;
 import com.bodimkarayo.backend.model.ChatMessage;
 import com.bodimkarayo.backend.model.ChatRoom;
 import com.bodimkarayo.backend.service.ChatService;
@@ -16,7 +17,7 @@ public class ChatController {
     private ChatService chatService;
 
     @GetMapping("/rooms/{userId}")
-    public List<com.bodimkarayo.backend.dto.ChatRoomResponse> getRooms(@PathVariable Long userId) {
+    public List<ChatRoomResponse> getRooms(@PathVariable Long userId) {
         return chatService.getRoomsForUser(userId);
     }
 
