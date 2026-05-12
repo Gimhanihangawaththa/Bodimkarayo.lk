@@ -275,7 +275,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center mb-12">
             <p className="text-blue-600 font-semibold mb-2">Featured Boardings</p>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Handpicked properties for you</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2" style={{ fontSize: '31px' }}>Handpicked properties for you</h2>
           </div>
 
           {!showFallbackProperties && propertiesError && (
