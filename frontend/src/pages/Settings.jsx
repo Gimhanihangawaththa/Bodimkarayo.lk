@@ -108,7 +108,6 @@ export default function Settings() {
     { id: 'notifications', label: 'Notifications', icon: '🔔' },
     { id: 'privacy', label: 'Privacy & Visibility', icon: '👁️' },
     { id: 'billing', label: 'Billing & Payments', icon: '💳' },
-    { id: 'preferences', label: 'App Preferences', icon: '⚙️' },
     { id: 'danger', label: 'Danger Zone', icon: '⚠️' },
   ];
 
@@ -316,32 +315,6 @@ export default function Settings() {
                     <p className="font-medium text-gray-900">•••• •••• •••• 4242</p>
                     <p className="text-xs text-gray-500">Expires 12/26</p>
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Preferences Tab (Dummy) */}
-          {activeTab === 'preferences' && (
-            <div className="p-6 md:p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">App Preferences</h2>
-              <p className="text-gray-500 mb-8">Customize your Bodimkarayo experience. (Coming soon)</p>
-              
-              <div className="space-y-6 max-w-lg opacity-60 pointer-events-none">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Display Language</label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50">
-                    <option>English</option>
-                    <option>Sinhala</option>
-                    <option>Tamil</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50">
-                    <option>LKR (Rs)</option>
-                    <option>USD ($)</option>
-                  </select>
                 </div>
               </div>
             </div>
