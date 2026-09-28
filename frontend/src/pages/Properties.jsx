@@ -7,44 +7,65 @@ import FilterSidebar from '../components/FilterSidebar'
 const PropertyCard = ({ id, image, title, location, price, available, offers, rating, onCardClick }) => (
   <div 
     onClick={() => onCardClick(id)}
-    className="bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition cursor-pointer"
+    className="group bg-white rounded-3xl overflow-hidden border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-[#3488c3]/40 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between"
   >
-    <img src={image} alt={title} className="w-full h-48 object-cover" />
-    <div className="p-4">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-gray-900">{title}</h3>
-        {rating > 0 && (
-          <div className="flex items-center gap-1">
-            <span className="text-yellow-400">⭐</span>
-            <span className="text-sm font-medium">{rating}</span>
+    <div className="relative h-48 overflow-hidden bg-slate-100">
+      <img src={image} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+      {rating > 0 && (
+        <div className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md text-amber-400 font-bold text-xs px-2.5 py-1 rounded-full border border-slate-700/60 shadow-xs flex items-center gap-1">
+          ⭐ {rating}
+        </div>
+      )}
+    </div>
+    <div className="p-5 flex-1 flex flex-col justify-between">
+      <div>
+        <span className="text-[11px] font-bold text-[#3488c3] tracking-wide uppercase">{location}</span>
+        <h3 className="text-base font-bold text-slate-900 mt-0.5 group-hover:text-[#3488c3] transition-colors line-clamp-1">{title}</h3>
+        
+        {/* Offers / Amenities */}
+        {offers && offers.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 my-3">
+            {offers.slice(0, 2).map((offer, i) => (
+              <span key={i} className="text-[11px] bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-1 rounded-full border border-emerald-100">
+                {offer}
+              </span>
+            ))}
+            {offers.length > 2 && (
+              <span className="text-[11px] bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-full">
+                +{offers.length - 2} more
+              </span>
+            )}
           </div>
         )}
       </div>
-      <p className="text-sm text-gray-600 mb-2">{location}</p>
-      
-      {/* Offers */}
-      {offers && offers.length > 0 && (
-        <div className="flex flex-wrap gap-2 mb-3">
-          {offers.slice(0, 2).map((offer, i) => (
-            <span key={i} className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-              {offer}
-            </span>
-          ))}
-          {offers.length > 2 && (
-            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
-              +{offers.length - 2} more
-            </span>
-          )}
-        </div>
-      )}
 
-      <div className="flex items-center justify-between">
-        <p className="font-bold text-gray-900">Rs {price.toLocaleString()}<span className="text-xs font-normal text-gray-500">/month</span></p>
+      <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+        <p className="font-extrabold text-slate-900 text-lg">Rs {price.toLocaleString()}<span className="text-xs font-normal text-slate-500"> /mo</span></p>
+        <span className="text-xs text-[#3488c3] font-bold group-hover:translate-x-1 transition-transform inline-block">Inspect →</span>
       </div>
-      {available && <p className="text-xs text-gray-500 mt-1">Available: {available}</p>}
+      {available && <p className="text-[11px] text-slate-400 mt-1">Available: {available}</p>}
     </div>
   </div>
 )
+
+const HERO_SLIDES = [
+  {
+    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1920&q=80',
+    title: 'Modern Luxury Studios',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1920&q=80',
+    title: 'Cozy Student Annexes',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1920&q=80',
+    title: 'University Boardings',
+  },
+  {
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1920&q=80',
+    title: 'Executive Apartments',
+  },
+]
 
 export default function Properties() {
   const navigate = useNavigate()
@@ -53,6 +74,7 @@ export default function Properties() {
   const [properties, setProperties] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [currentSlide, setCurrentSlide] = useState(0)
   const [filters, setFilters] = useState({
     propertyType: 'Any',
     maxPrice: 300000,
@@ -62,6 +84,14 @@ export default function Properties() {
     parking: false,
     petAllowed: false,
   })
+
+  // Auto-play background image slider
+  useEffect(() => {
+    const slideTimer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % HERO_SLIDES.length)
+    }, 5000)
+    return () => clearInterval(slideTimer)
+  }, [])
 
   const keyword = new URLSearchParams(location.search).get('keyword') || ''
 
@@ -119,70 +149,136 @@ export default function Properties() {
 
   return (
     <>
-      {/* Hero Section */}
-      <section style={{ background: 'linear-gradient(135deg, #93a5cf 0%, #a8b8d8 50%, #c5d4e8 100%)' }} className="py-12 text-gray-900 relative overflow-hidden">
-        <div className="max-w-6xl mx-auto px-4 relative z-10">
-          <h1 className="text-3xl font-bold mb-2">
-            Find your perfect boarding
-          </h1>
-          <p className="text-base text-gray-700 mb-6">
-            Browse through all available properties
-          </p>
-          
-          {/* Search Box */}
-          <div className="bg-white rounded-full p-1 flex items-center max-w-2xl shadow-lg overflow-hidden">
-            <span className="pl-4 text-gray-400" aria-hidden="true">📍</span>
-            <input
-              type="text"
-              placeholder="where do you want to stay ?"
-              value={searchLocation}
-              onChange={(e) => setSearchLocation(e.target.value)}
-              className="flex-1 px-3 py-3 text-gray-900 outline-none bg-white"
-            />
-            <button 
-              type="button"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-full font-medium transition flex items-center gap-2"
-              onClick={handleSearchSubmit}
+      {/* Hero Section with Auto-Scrolling Background Images */}
+      <section className="relative overflow-hidden -mt-[100px] pt-36 md:pt-44 pb-16 md:pb-24 min-h-[460px] flex items-center">
+        {/* Background Image Carousel Slider */}
+        <div className="absolute inset-0 z-0">
+          {HERO_SLIDES.map((slide, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
+                index === currentSlide ? 'opacity-100 scale-105' : 'opacity-0 scale-100'
+              }`}
             >
-              <span>🔍</span>
-              Search
-            </button>
+              <img
+                src={slide.image}
+                alt={slide.title}
+                className="w-full h-full object-cover transition-transform duration-[7000ms] ease-linear"
+              />
+            </div>
+          ))}
+          {/* Top Dark Shade Overlay for Header Visibility */}
+          <div className="absolute inset-x-0 top-0 h-44 md:h-52 bg-gradient-to-b from-slate-950/90 via-slate-950/50 to-transparent pointer-events-none z-1" />
+          {/* Dark Gradient Overlay for optimal content contrast */}
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/75 to-slate-900/60" />
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white to-transparent" />
+        </div>
+
+        {/* Hero Content */}
+        <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="max-w-2xl w-full">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/20 backdrop-blur-md px-4 py-1.5 text-xs md:text-sm font-semibold text-white border border-white/30 shadow-md mb-4">
+              <span className="w-2 h-2 rounded-full bg-[#3488c3] animate-pulse"></span>
+              Verified Property Listings
+            </span>
+            <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-3 leading-tight drop-shadow-md">
+              Find your perfect boarding
+            </h1>
+            <p className="text-base md:text-lg text-slate-200 mb-8 font-normal leading-relaxed drop-shadow-xs">
+              Browse through all verified rooms, annexes, and apartments across Sri Lanka
+            </p>
+
+            {/* Search Box */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                handleSearchSubmit()
+              }}
+              className="bg-white/95 backdrop-blur-md rounded-full p-2 flex items-center max-w-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] ring-4 ring-white/20 hover:ring-white/40 transition-all"
+            >
+              <span className="pl-4 text-[#3488c3] text-lg">📍</span>
+              <input
+                type="text"
+                placeholder="where do you want to stay ?"
+                value={searchLocation}
+                onChange={(e) => setSearchLocation(e.target.value)}
+                className="flex-1 px-3 py-3 text-slate-900 text-sm md:text-base outline-none bg-transparent placeholder:text-slate-400 font-medium"
+              />
+              <button
+                type="submit"
+                className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-7 py-3 rounded-full font-semibold text-sm transition-all flex items-center gap-2 shadow-lg shadow-[#3488c3]/30 active:scale-95 cursor-pointer shrink-0"
+              >
+                <span>🔍</span>
+                <span>Search</span>
+              </button>
+            </form>
+          </div>
+
+          {/* Floating Right Glass Card Badge (Hidden on Mobile) */}
+          <div className="hidden lg:flex items-center gap-4 shrink-0">
+            <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-5 shadow-2xl text-white w-64 hover:scale-105 transition-transform duration-300">
+              <div className="relative h-36 rounded-2xl overflow-hidden mb-3">
+                <img
+                  src={HERO_SLIDES[currentSlide].image}
+                  alt="Property preview"
+                  className="w-full h-full object-cover"
+                />
+                <span className="absolute top-2.5 left-2.5 bg-emerald-500/90 text-white font-bold text-[10px] px-2 py-0.5 rounded-full shadow">
+                  ⭐ 4.9 Verified
+                </span>
+              </div>
+              <span className="text-[11px] font-bold text-[#3488c3] tracking-wide uppercase">Featured Collection</span>
+              <h4 className="text-sm font-bold text-white mt-0.5">{HERO_SLIDES[currentSlide].title}</h4>
+              <p className="text-[11px] text-slate-300 mt-1">Air conditioning, Wi-Fi & attached baths</p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* All Properties */}
-      <section className="py-16 bg-white">
-        <div className="max-w-6xl mx-auto px-4">
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900">All Properties</h2>
-            <p className="text-gray-600 mt-1">
-              {isLoading ? 'Loading...' : `Showing ${properties.length} properties`}
-            </p>
+      <section className="py-12 bg-white min-h-[600px]">
+        <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12">
+          <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">All Properties</h2>
+              <p className="text-slate-500 text-sm mt-1">
+                {isLoading ? 'Searching listings...' : `Showing ${properties.length} verified listings`}
+              </p>
+            </div>
           </div>
 
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <div className="bg-red-50 border border-red-200 text-red-700 px-5 py-4 rounded-2xl mb-8 text-sm font-semibold">
               {error}
             </div>
           )}
 
-          {isLoading && (
-            <div className="text-center text-gray-500">Loading properties...</div>
-          )}
-
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            <div className="lg:col-span-1">
+          {/* Sidebar + Main Cards Grid */}
+          <div className="flex flex-col lg:flex-row gap-8 items-start">
+            {/* Sticky Filter Sidebar */}
+            <div className="w-full lg:w-72 xl:w-80 shrink-0">
               <FilterSidebar onFiltersChange={setFilters} />
             </div>
 
-            <div className="lg:col-span-3">
+            {/* Property Grid */}
+            <div className="flex-1 w-full">
+              {isLoading && (
+                <div className="flex flex-col items-center justify-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200">
+                  <div className="w-10 h-10 border-4 border-[#3488c3] border-t-transparent rounded-full animate-spin mb-4" />
+                  <p className="text-slate-500 font-medium text-sm">Loading properties...</p>
+                </div>
+              )}
+
               {!isLoading && properties.length === 0 && (
-                <div className="text-center text-gray-500">No properties found.</div>
+                <div className="text-center py-20 bg-slate-50 rounded-3xl border border-dashed border-slate-200 p-8">
+                  <span className="text-4xl block mb-3">🏡</span>
+                  <h3 className="text-lg font-bold text-slate-800">No properties found</h3>
+                  <p className="text-slate-500 text-sm mt-1 max-w-sm mx-auto">Try adjusting your filters or price range to discover more locations.</p>
+                </div>
               )}
 
               {!isLoading && properties.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
                   {properties.map((prop) => (
                     <PropertyCard key={prop.id} {...prop} onCardClick={handlePropertyCardClick} />
                   ))}
@@ -194,7 +290,7 @@ export default function Properties() {
       </section>
 
       {/* Upgrade Advertisement */}
-      <div className="max-w-6xl mx-auto px-4 mb-8">
+      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 mb-8">
         <UpgradeAdvertisement />
       </div>
     </>

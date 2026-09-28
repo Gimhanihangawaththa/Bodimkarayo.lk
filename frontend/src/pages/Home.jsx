@@ -52,7 +52,7 @@ const PropertyCard = ({ id, image, title, location, price, available, offers, ra
 const RoommateCard = ({ id, image, name, age, location, bio, interests, verified, matchPercentage, occupation, budget, onCardClick }) => (
   <div
     onClick={() => onCardClick(id)}
-    className="group bg-white rounded-3xl p-4 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_20px_40px_rgba(37,99,235,0.16)] hover:border-blue-500/40 hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden cursor-pointer"
+    className="group bg-white rounded-3xl p-4 border border-slate-200/80 shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:shadow-[0_20px_40px_rgba(52,136,195,0.18)] hover:border-[#3488c3]/40 hover:-translate-y-2 transition-all duration-300 flex flex-col justify-between relative overflow-hidden cursor-pointer"
   >
     <div>
       {/* Hero Photo with Gradient Fade & Badges */}
@@ -76,11 +76,11 @@ const RoommateCard = ({ id, image, name, age, location, bio, interests, verified
         )}
 
         {/* Bottom Overlay Details on Photo */}
-        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white">
-          <span className="bg-slate-900/80 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-bold border border-white/20">
+        <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between gap-1.5 text-white">
+          <span className="bg-slate-900/85 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold border border-white/20 whitespace-nowrap shrink-0 shadow-sm">
             💰 {budget ? `Max ${budget}` : 'Flex Rent'}
           </span>
-          <span className="bg-blue-600/90 backdrop-blur-md px-2.5 py-1 rounded-lg text-[11px] font-bold truncate max-w-[110px]">
+          <span className="bg-slate-900/85 backdrop-blur-md px-2.5 py-1 rounded-full text-[11px] font-bold border border-white/20 truncate whitespace-nowrap shadow-sm">
             📍 {location}
           </span>
         </div>
@@ -89,7 +89,7 @@ const RoommateCard = ({ id, image, name, age, location, bio, interests, verified
       {/* Profile Info */}
       <div className="flex items-center justify-between mb-1">
         <h3 className="text-base font-extrabold text-slate-900">{name}{age ? `, ${age}` : ''}</h3>
-        <span className="text-[11px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md truncate max-w-[120px]">
+        <span className="text-[11px] font-bold bg-[#eaf4fb] text-[#246fa8] border border-[#d2e7f6] px-2 py-0.5 rounded-md truncate max-w-[120px]">
           {occupation || 'Verified Tenant'}
         </span>
       </div>
@@ -119,7 +119,7 @@ const RoommateCard = ({ id, image, name, age, location, bio, interests, verified
         e.stopPropagation()
         onCardClick(id)
       }}
-      className="w-full py-3 bg-blue-600 hover:bg-blue-700 active:scale-95 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-blue-600/25 transition-all flex items-center justify-center gap-2 cursor-pointer mt-1"
+      className="w-full py-3 bg-[#3488c3] hover:bg-[#2978b3] active:scale-95 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-[#3488c3]/25 transition-all flex items-center justify-center gap-2 cursor-pointer mt-1"
     >
       <span>💬 Connect & Message</span>
     </button>
@@ -576,7 +576,7 @@ export default function Home() {
               />
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-7 py-3 rounded-full font-semibold text-sm transition-all flex items-center gap-2 shadow-lg shadow-blue-600/30 active:scale-95 cursor-pointer shrink-0"
+                className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-7 py-3 rounded-full font-semibold text-sm transition-all flex items-center gap-2 shadow-lg shadow-[#3488c3]/30 active:scale-95 cursor-pointer shrink-0"
               >
                 <span>🔍</span>
                 <span>Search</span>
@@ -592,7 +592,7 @@ export default function Home() {
                 onClick={() => setCurrentSlide(index)}
                 className={`h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
                   index === currentSlide
-                    ? 'w-8 bg-blue-500 shadow-sm shadow-blue-500/50'
+                    ? 'w-8 bg-[#3488c3] shadow-sm shadow-[#3488c3]/50'
                     : 'w-2.5 bg-white/50 hover:bg-white/80'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
@@ -606,11 +606,11 @@ export default function Home() {
       <div className="relative z-20 max-w-5xl mx-auto px-4 -mt-16 sm:-mt-20 md:-mt-24 mb-4">
         <div className="bg-white/95 backdrop-blur-xl border border-slate-200/90 rounded-3xl p-6 md:p-7 shadow-[0_20px_50px_rgba(15,23,42,0.12)] ring-1 ring-black/5 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
           <div className="p-2 border-r border-slate-100/80 last:border-0">
-            <div className="text-2xl md:text-3xl font-black text-blue-600 tracking-tight">150+</div>
+            <div className="text-2xl md:text-3xl font-black text-[#3488c3] tracking-tight">150+</div>
             <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Verified Properties</div>
           </div>
           <div className="p-2 border-r border-slate-100/80 last:border-0">
-            <div className="text-2xl md:text-3xl font-black text-indigo-600 tracking-tight">2,500+</div>
+            <div className="text-2xl md:text-3xl font-black text-[#3488c3] tracking-tight">2,500+</div>
             <div className="text-xs font-bold text-slate-500 uppercase tracking-wider mt-1">Happy Tenants</div>
           </div>
           <div className="p-2 border-r border-slate-100/80 last:border-0">
@@ -632,9 +632,6 @@ export default function Home() {
         
         {/* Section Header (Centered) */}
         <div className="max-w-4xl mx-auto px-4 text-center mb-10">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/10 border border-blue-500/20 text-blue-700 font-semibold text-xs tracking-wider uppercase mb-3">
-            ✨ Handpicked Selection
-          </span>
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
             Featured Boardings for You
           </h2>
@@ -656,7 +653,7 @@ export default function Home() {
                 onClick={() => setSelectedCategory(cat.id)}
                 className={`px-4 py-2 rounded-full font-semibold text-xs transition-all cursor-pointer ${
                   selectedCategory === cat.id
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-500/25 ring-2 ring-blue-600/20 scale-105'
+                    ? 'bg-[#3488c3] text-white shadow-md shadow-[#3488c3]/25 ring-2 ring-[#3488c3]/20 scale-105'
                     : 'bg-white hover:bg-slate-100 text-slate-700 border border-slate-200'
                 }`}
               >
@@ -719,8 +716,8 @@ export default function Home() {
                   </div>
                   <div className="p-5 flex-1 flex flex-col justify-between">
                     <div>
-                      <span className="text-[11px] font-bold text-blue-600 tracking-wide uppercase">{prop.location}</span>
-                      <h3 className="text-base font-bold text-slate-900 mt-1 group-hover:text-blue-600 transition-colors line-clamp-1">
+                      <span className="text-[11px] font-bold text-[#3488c3] tracking-wide uppercase">{prop.location}</span>
+                      <h3 className="text-base font-bold text-slate-900 mt-1 group-hover:text-[#3488c3] transition-colors line-clamp-1">
                         {prop.title}
                       </h3>
                       <p className="text-slate-500 text-xs mt-1.5 line-clamp-2">
@@ -731,7 +728,7 @@ export default function Home() {
                       <span className="text-lg font-black text-slate-900">
                         Rs {prop.price.toLocaleString()} <span className="text-xs text-slate-500 font-normal">/mo</span>
                       </span>
-                      <span className="text-xs text-blue-600 font-bold group-hover:translate-x-1 transition-transform inline-block">
+                      <span className="text-xs text-[#3488c3] font-bold group-hover:translate-x-1 transition-transform inline-block">
                         Inspect →
                       </span>
                     </div>
@@ -750,7 +747,7 @@ export default function Home() {
         <div className="text-center">
           <Link
             to="/properties"
-            className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-full shadow-lg shadow-blue-600/25 hover:scale-105 active:scale-95 transition-all"
+            className="inline-flex items-center gap-2.5 px-8 py-3.5 bg-[#3488c3] hover:bg-[#2978b3] text-white font-bold text-sm rounded-full shadow-lg shadow-[#3488c3]/25 hover:scale-105 active:scale-95 transition-all cursor-pointer"
           >
             <span>Explore All Properties</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -764,9 +761,6 @@ export default function Home() {
       <section className="py-20 bg-gradient-to-b from-slate-50 via-white to-slate-50/80 border-t border-slate-200/60 overflow-hidden">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-600/10 border border-blue-500/20 text-blue-700 font-semibold text-xs tracking-wider uppercase mb-3">
-              🤝 Compatibility Matching
-            </span>
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">
               Connect with Verified Roommates
             </h2>
@@ -802,7 +796,7 @@ export default function Home() {
           <div className="text-center">
             <Link
               to="/roommates"
-              className="inline-flex items-center gap-2 px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-full shadow-lg shadow-blue-600/25 hover:scale-105 active:scale-95 transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-8 py-3.5 bg-[#3488c3] hover:bg-[#2978b3] text-white font-bold text-sm rounded-full shadow-lg shadow-[#3488c3]/25 hover:scale-105 active:scale-95 transition-all cursor-pointer"
             >
               <span>Explore All Verified Roommates</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

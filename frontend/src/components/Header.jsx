@@ -80,52 +80,52 @@ export default function Header() {
             to="/properties"
             className={`relative px-4 py-2 rounded-xl text-base transition-all duration-200 ${
               location.pathname === '/properties'
-                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/20'
-                : 'text-slate-900 font-semibold hover:text-blue-600 hover:bg-white/20 bg-transparent'
+                ? 'bg-[#3488c3] text-white font-bold shadow-md shadow-[#3488c3]/20'
+                : 'text-slate-900 font-semibold hover:text-[#3488c3] hover:bg-white/20 bg-transparent'
             }`}
           >
             Properties
             {location.pathname === '/properties' && (
-              <span className="absolute bottom-0.5 left-4 right-4 h-0.5 bg-blue-600 rounded-full"></span>
+              <span className="absolute bottom-0.5 left-4 right-4 h-0.5 bg-[#3488c3] rounded-full"></span>
             )}
           </Link>
           <Link
             to="/roommates"
             className={`relative px-4 py-2 rounded-xl text-base transition-all duration-200 ${
               location.pathname === '/roommates'
-                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/20'
-                : 'text-slate-900 font-semibold hover:text-blue-600 hover:bg-white/20 bg-transparent'
+                ? 'bg-[#3488c3] text-white font-bold shadow-md shadow-[#3488c3]/20'
+                : 'text-slate-900 font-semibold hover:text-[#3488c3] hover:bg-white/20 bg-transparent'
             }`}
           >
             Roommates
             {location.pathname === '/roommates' && (
-              <span className="absolute bottom-0.5 left-4 right-4 h-0.5 bg-blue-600 rounded-full"></span>
+              <span className="absolute bottom-0.5 left-4 right-4 h-0.5 bg-[#3488c3] rounded-full"></span>
             )}
           </Link>
           <Link
             to="/chat"
             className={`relative px-4 py-2 rounded-xl text-base transition-all duration-200 flex items-center gap-1.5 ${
               location.pathname === '/chat'
-                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/20'
-                : 'text-slate-900 font-semibold hover:text-blue-600 hover:bg-white/20 bg-transparent'
+                ? 'bg-[#3488c3] text-white font-bold shadow-md shadow-[#3488c3]/20'
+                : 'text-slate-900 font-semibold hover:text-[#3488c3] hover:bg-white/20 bg-transparent'
             }`}
           >
             Chat
             {location.pathname === '/chat' && (
-              <span className="absolute bottom-0.5 left-4 right-4 h-0.5 bg-blue-600 rounded-full"></span>
+              <span className="absolute bottom-0.5 left-4 right-4 h-0.5 bg-[#3488c3] rounded-full"></span>
             )}
           </Link>
           <Link
             to="/about"
             className={`relative px-4 py-2 rounded-xl text-base transition-all duration-200 ${
               location.pathname === '/about'
-                ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/20'
-                : 'text-slate-900 font-semibold hover:text-blue-600 hover:bg-white/20 bg-transparent'
+                ? 'bg-[#3488c3] text-white font-bold shadow-md shadow-[#3488c3]/20'
+                : 'text-slate-900 font-semibold hover:text-[#3488c3] hover:bg-white/20 bg-transparent'
             }`}
           >
             About Us
             {location.pathname === '/about' && (
-              <span className="absolute bottom-0.5 left-4 right-4 h-0.5 bg-blue-600 rounded-full"></span>
+              <span className="absolute bottom-0.5 left-4 right-4 h-0.5 bg-[#3488c3] rounded-full"></span>
             )}
           </Link>
         </nav>
@@ -134,8 +134,8 @@ export default function Header() {
         <div className="flex items-center gap-3 shrink-0">
           {/* Global Search Bar */}
           <form onSubmit={handleSearchSubmit} className="hidden lg:block w-80 lg:w-[420px] xl:w-[480px]">
-            <div className="relative flex items-center bg-white/40 hover:bg-white/60 focus-within:bg-white/95 backdrop-blur-md border border-white/40 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/20 rounded-full p-2 transition-all shadow-xs">
-              <div className="pl-3.5 pr-1.5 text-blue-600 pointer-events-none shrink-0">
+            <div className="relative flex items-center bg-white/40 hover:bg-white/60 focus-within:bg-white/95 backdrop-blur-md border border-white/40 focus-within:border-[#3488c3] focus-within:ring-4 focus-within:ring-[#3488c3]/20 rounded-full p-2 transition-all shadow-xs">
+              <div className="pl-3.5 pr-1.5 text-[#3488c3] pointer-events-none shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
@@ -150,7 +150,7 @@ export default function Header() {
               />
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm px-5 py-2 rounded-full transition-all flex items-center gap-1.5 shrink-0 shadow-sm shadow-blue-500/30 active:scale-95 cursor-pointer"
+                className="bg-[#3488c3] hover:bg-[#2978b3] text-white font-semibold text-sm px-5 py-2 rounded-full transition-all flex items-center gap-1.5 shrink-0 shadow-sm shadow-[#3488c3]/30 active:scale-95 cursor-pointer"
               >
                 <span>Search</span>
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">

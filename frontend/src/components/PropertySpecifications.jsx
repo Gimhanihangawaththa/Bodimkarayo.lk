@@ -1,36 +1,32 @@
 export function PropertySpecifications({ bedrooms, kitchens, bathrooms }) {
+  const specs = [
+    { label: "Bedrooms", count: bedrooms, icon: "🛏️" },
+    { label: "Bathrooms", count: bathrooms, icon: "🚿" },
+    { label: "Kitchens", count: kitchens, icon: "🍳" },
+  ].filter(s => s.count != null && s.count !== '');
+
+  if (specs.length === 0) return null;
+
   return (
-    <div className="mb-6 pb-6 border-b">
-      <h3 className="text-lg font-semibold mb-4">Room Details</h3>
-      <div className="grid grid-cols-3 gap-4">
-        <div>
-          <label className="block text-gray-600 text-sm mb-2">Bedrooms</label>
-          <input
-            type="number"
-            value={bedrooms}
-            readOnly
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-          />
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      {specs.map((spec) => (
+        <div 
+          key={spec.label} 
+          className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200/70 hover:bg-[#eaf4fb]/40 transition"
+        >
+          <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 shadow-2xs flex items-center justify-center text-xl shrink-0">
+            {spec.icon}
+          </div>
+          <div>
+            <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">
+              {spec.label}
+            </span>
+            <span className="text-base font-extrabold text-slate-900 mt-0.5 block">
+              {spec.count} {spec.count === 1 ? 'Room' : 'Rooms'}
+            </span>
+          </div>
         </div>
-        <div>
-          <label className="block text-gray-600 text-sm mb-2">Kitchens</label>
-          <input
-            type="number"
-            value={kitchens}
-            readOnly
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-          />
-        </div>
-        <div>
-          <label className="block text-gray-600 text-sm mb-2">Bathrooms</label>
-          <input
-            type="number"
-            value={bathrooms}
-            readOnly
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-          />
-        </div>
-      </div>
+      ))}
     </div>
   );
 }
