@@ -72,7 +72,6 @@ export default function AddProperty() {
         try {
           const property = await propertyService.getPropertyById(propertyId);
           
-          // Populate form with property data
           setFormData({
             title: property.title || "",
             propertyType: property.propertyType || "",
@@ -94,10 +93,9 @@ export default function AddProperty() {
             rules: property.rules || [],
             nearby: property.nearby || [],
             mapEmbedUrl: property.mapEmbedUrl || "",
-            images: [null, null, null, null, null], // Initialize with nulls for new image uploads
+            images: [null, null, null, null, null],
           });
 
-          // Load existing images as previews
           if (property.images && property.images.length > 0) {
             const newPreviews = [...imagePreviews];
             property.images.slice(0, 5).forEach((url, index) => {
@@ -270,11 +268,9 @@ export default function AddProperty() {
     setError(null);
 
     try {
-      // Separate images from other data
       const hasNewImages = formData.images.some(img => img !== null);
       const hasImagesToDelete = imagesToDelete.length > 0;
       
-      // Create JSON payload for property data
       const propertyData = {
         title: formData.title,
         propertyType: formData.propertyType,
@@ -303,54 +299,40 @@ export default function AddProperty() {
       let isNewProperty = false;
 
       if (isEditMode) {
-        // Update existing property
         savedProperty = await propertyService.updateProperty(propertyId, propertyData);
         console.log("Property updated successfully:", savedProperty);
 
         if (hasImagesToDelete) {
-          console.log("Deleting existing images:", imagesToDelete.length);
           await Promise.all(
             imagesToDelete.map((imageUrl) =>
               propertyService.deletePropertyImage(savedProperty.id, imageUrl)
             )
           );
-          console.log("Selected images deleted successfully");
         }
       } else {
-        // Create new property
         savedProperty = await propertyService.createProperty(propertyData);
         console.log("Property created successfully:", savedProperty);
         isNewProperty = true;
       }
 
-      // If there are new images, upload them separately
-      console.log("hasNewImages:", hasNewImages);
-      console.log("formData.images:", formData.images);
-      
       if (hasNewImages) {
         const imageFormData = new FormData();
-        formData.images.forEach((image, index) => {
+        formData.images.forEach((image) => {
           if (image) {
-            console.log(`Appending image ${index}:`, image.name, image.size);
             imageFormData.append("images", image);
           }
         });
 
-        console.log("Uploading images for property ID:", savedProperty.id);
         try {
-          const uploadResponse = await propertyService.uploadPropertyImages(savedProperty.id, imageFormData);
-          console.log("Images uploaded successfully:", uploadResponse);
+          await propertyService.uploadPropertyImages(savedProperty.id, imageFormData);
         } catch (imgErr) {
           console.error("Error uploading images:", imgErr);
-          console.error("Error details:", imgErr.response?.data);
           if (isNewProperty) {
             alert("Property created but some images failed to upload. You can edit the property to add them later.");
           } else {
             alert("Property updated but some images failed to upload. You can try again later.");
           }
         }
-      } else {
-        console.log("No new images to upload");
       }
 
       const successMessage = isEditMode
@@ -358,7 +340,6 @@ export default function AddProperty() {
         : "Property added successfully!";
       alert(successMessage);
 
-      // Navigate based on operation
       if (isEditMode) {
         navigate(`/property/${savedProperty.id}`);
       } else {
@@ -390,7 +371,7 @@ export default function AddProperty() {
             e.stopPropagation();
             handleRemoveImage(idx);
           }}
-          className="absolute top-2 right-2 bg-white text-gray-700 text-xs px-2 py-1 rounded hover:bg-gray-100 border"
+          className="absolute top-2 right-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-2.5 py-1 rounded-xl shadow-md transition cursor-pointer"
         >
           Remove
         </button>
@@ -399,298 +380,328 @@ export default function AddProperty() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header - to be implemented by another developer */}
-      <div className="bg-white shadow h-20"></div>
-
+    <div className="min-h-screen bg-slate-50 py-8 md:py-12">
       {/* Error Message */}
       {error && (
-        <div className="w-full lg:w-[80%] mx-auto px-4 pt-4">
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-            <strong className="font-bold">Error: </strong>
-            <span className="block sm:inline">{error}</span>
+        <div className="w-full lg:w-[85%] max-w-6xl mx-auto px-4 mb-6">
+          <div className="bg-rose-50 border border-rose-200 text-rose-700 px-5 py-4 rounded-2xl font-semibold text-sm flex items-center gap-3 shadow-xs">
+            <span className="text-lg">⚠️</span>
+            <span>{error}</span>
           </div>
         </div>
       )}
 
       {/* Main Content */}
       {isLoadingProperty ? (
-        <div className="w-full lg:w-[80%] mx-auto px-4 py-8 text-center">
-          <p className="text-gray-600">Loading property details...</p>
+        <div className="w-full lg:w-[85%] max-w-6xl mx-auto px-4 py-16 text-center space-y-3">
+          <div className="inline-block animate-spin text-3xl text-[#3488c3]">⏳</div>
+          <p className="text-slate-600 font-bold text-sm">Loading property details...</p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="w-full lg:w-[80%] mx-auto px-4 py-8">
+        <form onSubmit={handleSubmit} className="w-full lg:w-[85%] max-w-6xl mx-auto px-4 space-y-8">
+          
+          {/* Header Banner Card */}
+          <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/90 shadow-[0_12px_40px_rgba(15,23,42,0.06)] flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <span className="inline-block px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-[#3488c3]/15 text-[#3488c3] mb-2 border border-[#3488c3]/20">
+                PROPERTY MANAGEMENT
+              </span>
+              <h1 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">
+                {isEditMode ? "Edit Property Listing" : "Publish New Property"}
+              </h1>
+              <p className="text-xs font-semibold text-slate-500 mt-1">
+                Fill in the details below to publish your boarding, annex, or apartment listing on Bodimkarayo.lk
+              </p>
+            </div>
+          </div>
+
           {/* Image Upload Section */}
-          <FormSection title={isEditMode ? "Edit Property" : "Add Property"} isMainTitle={true}>
-            <div className="flex gap-4 overflow-x-auto">
-              {[0, 1, 2, 3, 4].map((idx) => renderImageTile(idx, "relative aspect-square flex-1 min-w-[150px]"))}
+          <FormSection title="Property Photos (Up to 5 Photos)">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {[0, 1, 2, 3, 4].map((idx) => renderImageTile(idx, "relative aspect-square w-full"))}
+            </div>
+            <p className="text-xs text-slate-400 font-medium mt-3">
+              💡 Tip: Upload high-quality photos of bedrooms, bathrooms, and living areas to maximize inquiry rates.
+            </p>
+          </FormSection>
+
+          {/* Basic Information */}
+          <FormSection title="Basic Information">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormInput
+                label="Property Title *"
+                placeholder="e.g., Luxury Annex Studio near UOC"
+                name="title"
+                value={formData.title}
+                onChange={handleInputChange}
+              />
+              <FormInput
+                label="Property Type *"
+                placeholder="e.g., Annex, Boarding, Single Room, Apartment"
+                name="propertyType"
+                value={formData.propertyType}
+                onChange={handleInputChange}
+              />
+              <FormInput
+                label="Monthly Rent (LKR) *"
+                placeholder="e.g., 25000"
+                name="price"
+                type="number"
+                value={formData.price}
+                onChange={handleInputChange}
+              />
+              <FormInput
+                label="Available From *"
+                name="availableFrom"
+                type="date"
+                value={formData.availableFrom}
+                onChange={handleInputChange}
+              />
+              <FormInput
+                label="Location / Area *"
+                placeholder="e.g., Colombo 07, Katubedda"
+                name="location"
+                value={formData.location}
+                onChange={handleInputChange}
+              />
+              <FormInput
+                label="Full Address *"
+                placeholder="e.g., No. 45/2, Reid Avenue, Colombo 07"
+                name="address"
+                value={formData.address}
+                onChange={handleInputChange}
+              />
+              <FormInput
+                label="Capacity / Number of Occupants *"
+                placeholder="e.g., 2 Persons"
+                name="numberOfPeople"
+                value={formData.numberOfPeople}
+                onChange={handleInputChange}
+              />
             </div>
           </FormSection>
 
-        {/* Basic Information */}
-        <FormSection>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <FormInput
-              label="Title"
-              placeholder="Property title"
-              name="title"
-              value={formData.title}
+          {/* Description */}
+          <FormSection title="Detailed Description">
+            <textarea
+              placeholder="Describe your property, nearby landmarks, security, utilities included, etc."
+              name="description"
+              value={formData.description}
               onChange={handleInputChange}
+              rows="4"
+              className="w-full px-4 py-3 bg-slate-50/60 border border-slate-200/90 rounded-2xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition shadow-xs resize-none"
             />
-            <FormInput
-              label="Type"
-              placeholder="Property type"
-              name="propertyType"
-              value={formData.propertyType}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Price"
-              placeholder="Price"
-              name="price"
-              type="number"
-              value={formData.price}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Available From"
-              name="availableFrom"
-              type="date"
-              value={formData.availableFrom}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Location"
-              placeholder="Location Address"
-              name="location"
-              value={formData.location}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Full Address"
-              placeholder="Full address"
-              name="address"
-              value={formData.address}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Number of People"
-              placeholder="No. 1 of 2"
-              name="numberOfPeople"
-              value={formData.numberOfPeople}
-              onChange={handleInputChange}
-            />
-          </div>
-        </FormSection>
+          </FormSection>
 
-        {/* Description */}
-        <FormSection title="Add Description">
-          <textarea
-            placeholder="Description"
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none h-32"
-          />
-        </FormSection>
-
-        {/* Specifications */}
-        <FormSection title="Specifications">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FormInput
-              label="Number of bedrooms"
-              placeholder="0"
-              name="bedrooms"
-              type="number"
-              value={formData.bedrooms}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Number of kitchens"
-              placeholder="0"
-              name="kitchens"
-              type="number"
-              value={formData.kitchens}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Number of bathrooms"
-              placeholder="0"
-              name="bathrooms"
-              type="number"
-              value={formData.bathrooms}
-              onChange={handleInputChange}
-            />
-          </div>
-        </FormSection>
-
-        {/* Property Details */}
-        <FormSection title="Property Details">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <FormInput
-              label="Floor"
-              placeholder="6th floor"
-              name="floor"
-              value={formData.floor}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Furnished"
-              placeholder="Fully furnished"
-              name="furnished"
-              value={formData.furnished}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Parking"
-              placeholder="1 reserved slot"
-              name="parking"
-              value={formData.parking}
-              onChange={handleInputChange}
-            />
-            <FormInput
-              label="Pets Allowed"
-              placeholder="No pets"
-              name="petsAllowed"
-              value={formData.petsAllowed}
-              onChange={handleInputChange}
-            />
-          </div>
-        </FormSection>
-
-        {/* Property Offers */}
-        <FormSection title="What your property offers">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {formData.offers.map((offer, idx) => (
-              <input
-                key={idx}
-                type="text"
-                placeholder={`Offer${idx + 1}`}
-                value={offer}
-                onChange={(e) => handleOffersChange(idx, e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          {/* Specifications */}
+          <FormSection title="Rooms & Layout Specifications">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <FormInput
+                label="Number of Bedrooms"
+                placeholder="0"
+                name="bedrooms"
+                type="number"
+                value={formData.bedrooms}
+                onChange={handleInputChange}
               />
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={handleAddOffer}
-            className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition"
-          >
-            More...
-          </button>
-        </FormSection>
-
-        {/* Highlights */}
-        <FormSection title="Highlights">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {formData.highlights.map((highlight, idx) => (
-              <input
-                key={idx}
-                type="text"
-                placeholder={`Highlight ${idx + 1}`}
-                value={highlight}
-                onChange={(e) => handleListChange("highlights", idx, e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              <FormInput
+                label="Number of Kitchens"
+                placeholder="0"
+                name="kitchens"
+                type="number"
+                value={formData.kitchens}
+                onChange={handleInputChange}
               />
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => handleAddListItem("highlights")}
-            className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition"
-          >
-            More...
-          </button>
-        </FormSection>
-
-        {/* House Rules */}
-        <FormSection title="House Rules">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {formData.rules.map((rule, idx) => (
-              <input
-                key={idx}
-                type="text"
-                placeholder={`Rule ${idx + 1}`}
-                value={rule}
-                onChange={(e) => handleListChange("rules", idx, e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+              <FormInput
+                label="Number of Bathrooms"
+                placeholder="0"
+                name="bathrooms"
+                type="number"
+                value={formData.bathrooms}
+                onChange={handleInputChange}
               />
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => handleAddListItem("rules")}
-            className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition"
-          >
-            More...
-          </button>
-        </FormSection>
+            </div>
+          </FormSection>
 
-        {/* Nearby Places */}
-        <FormSection title="Nearby Places">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {formData.nearby.map((spot, idx) => (
-              <input
-                key={idx}
-                type="text"
-                placeholder={`Place ${idx + 1}`}
-                value={spot}
-                onChange={(e) => handleListChange("nearby", idx, e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+          {/* Property Details */}
+          <FormSection title="Property Amenities & Features">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <FormInput
+                label="Floor Level"
+                placeholder="e.g., Ground Floor, 2nd Floor"
+                name="floor"
+                value={formData.floor}
+                onChange={handleInputChange}
               />
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={() => handleAddListItem("nearby")}
-            className="mt-4 px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition"
-          >
-            More...
-          </button>
-        </FormSection>
+              <FormInput
+                label="Furnishing Status"
+                placeholder="e.g., Fully Furnished, Semi-Furnished"
+                name="furnished"
+                value={formData.furnished}
+                onChange={handleInputChange}
+              />
+              <FormInput
+                label="Parking Availability"
+                placeholder="e.g., 1 Bike Slot, Car Parking"
+                name="parking"
+                value={formData.parking}
+                onChange={handleInputChange}
+              />
+              <FormInput
+                label="Pets Allowed"
+                placeholder="e.g., Yes / No / Cats Only"
+                name="petsAllowed"
+                value={formData.petsAllowed}
+                onChange={handleInputChange}
+              />
+            </div>
+          </FormSection>
 
-        {/* Map Section */}
-        <FormSection title="Add location Pin">
-          <FormInput
-            label="Map Embed URL (Auto-generated)"
-            placeholder="Click on the map to generate URL"
-            name="mapEmbedUrl"
-            value={formData.mapEmbedUrl}
-            onChange={handleInputChange}
-          />
-          <div className="mt-4">
-            <p className="text-sm text-gray-600 mb-2">Click on the map to pin your property location:</p>
-            <MapSelector 
-              initialPosition={extractCoordinates(formData.mapEmbedUrl)}
-              onLocationSelect={(lat, lng) => {
-                const embedUrl = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
-                setFormData(prev => ({ ...prev, mapEmbedUrl: embedUrl }));
-              }}
+          {/* Property Offers */}
+          <FormSection title="Key Offerings & Facilities">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {formData.offers.map((offer, idx) => (
+                <input
+                  key={idx}
+                  type="text"
+                  placeholder={`Facility / Offer ${idx + 1}`}
+                  value={offer}
+                  onChange={(e) => handleOffersChange(idx, e.target.value)}
+                  className="px-4 py-3 bg-slate-50/60 border border-slate-200/90 rounded-2xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition shadow-xs"
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={handleAddOffer}
+              className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition cursor-pointer"
+            >
+              + Add More Offerings
+            </button>
+          </FormSection>
+
+          {/* Highlights */}
+          <FormSection title="Key Highlights">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {formData.highlights.map((highlight, idx) => (
+                <input
+                  key={idx}
+                  type="text"
+                  placeholder={`Highlight ${idx + 1}`}
+                  value={highlight}
+                  onChange={(e) => handleListChange("highlights", idx, e.target.value)}
+                  className="px-4 py-3 bg-slate-50/60 border border-slate-200/90 rounded-2xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition shadow-xs"
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => handleAddListItem("highlights")}
+              className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition cursor-pointer"
+            >
+              + Add More Highlights
+            </button>
+          </FormSection>
+
+          {/* House Rules */}
+          <FormSection title="House Rules & Guidelines">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {formData.rules.map((rule, idx) => (
+                <input
+                  key={idx}
+                  type="text"
+                  placeholder={`House Rule ${idx + 1}`}
+                  value={rule}
+                  onChange={(e) => handleListChange("rules", idx, e.target.value)}
+                  className="px-4 py-3 bg-slate-50/60 border border-slate-200/90 rounded-2xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition shadow-xs"
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => handleAddListItem("rules")}
+              className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition cursor-pointer"
+            >
+              + Add More Rules
+            </button>
+          </FormSection>
+
+          {/* Nearby Places */}
+          <FormSection title="Nearby Places & Transport Links">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {formData.nearby.map((spot, idx) => (
+                <input
+                  key={idx}
+                  type="text"
+                  placeholder={`Nearby Landmark ${idx + 1}`}
+                  value={spot}
+                  onChange={(e) => handleListChange("nearby", idx, e.target.value)}
+                  className="px-4 py-3 bg-slate-50/60 border border-slate-200/90 rounded-2xl text-sm font-semibold text-slate-900 placeholder-slate-400 focus:bg-white focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition shadow-xs"
+                />
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => handleAddListItem("nearby")}
+              className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-2xl transition cursor-pointer"
+            >
+              + Add More Places
+            </button>
+          </FormSection>
+
+          {/* Map Section */}
+          <FormSection title="Pin Location on Map">
+            <FormInput
+              label="Map Location Embed URL"
+              placeholder="Click on the map below to auto-generate pin location"
+              name="mapEmbedUrl"
+              value={formData.mapEmbedUrl}
+              onChange={handleInputChange}
             />
-          </div>
-        </FormSection>
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-semibold text-slate-500">Click on the map to pin your exact property location:</p>
+              <div className="rounded-2xl overflow-hidden border border-slate-200 shadow-xs">
+                <MapSelector 
+                  initialPosition={extractCoordinates(formData.mapEmbedUrl)}
+                  onLocationSelect={(lat, lng) => {
+                    const embedUrl = `https://maps.google.com/maps?q=${lat},${lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`;
+                    setFormData(prev => ({ ...prev, mapEmbedUrl: embedUrl }));
+                  }}
+                />
+              </div>
+            </div>
+          </FormSection>
 
-        {/* Action Buttons */}
-        <div className="flex gap-4 mt-12">
-          <button
-            type="submit"
-            disabled={loading}
-            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 rounded-lg transition disabled:bg-blue-300 disabled:cursor-not-allowed"
-          >
-            {loading ? "Publishing..." : "Publish Property"}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            disabled={loading}
-            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 rounded-lg transition disabled:bg-gray-200 disabled:cursor-not-allowed"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-        )}
+          {/* Action Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 pt-4 pb-12">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-[#3488c3] hover:bg-[#2978b3] text-white font-extrabold py-4 rounded-2xl text-sm transition shadow-lg shadow-[#3488c3]/20 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            >
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>Publishing Property...</span>
+                </>
+              ) : (
+                <span>{isEditMode ? "Update Property" : "Publish Property"}</span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              disabled={loading}
+              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold py-4 rounded-2xl text-sm transition border border-slate-200 cursor-pointer disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

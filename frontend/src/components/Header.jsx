@@ -64,13 +64,19 @@ export default function Header() {
   const userName = user && user.fullName ? user.fullName : 'User'
 
   return (
-    <header className="sticky top-0 z-50 bg-white/60 backdrop-blur-md border-b border-white/20 shadow-xs">
-      <div className="w-full px-4 md:px-8 py-0 flex items-center justify-between gap-4">
+    <header className="sticky top-0 z-50 bg-white/50 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+      <div className="w-full px-4 md:px-8 py-4 min-h-[82px] flex items-center justify-between gap-4">
         
         {/* 1. Left: Brand Logo */}
         <div className="flex items-center shrink-0">
-          <Link to="/" className="flex items-center gap-2.5 group -my-3">
-            <img src={logo} alt="Bodimkarayo.lk" className="h-32 w-auto object-contain group-hover:scale-105 transition-transform" />
+          <Link to="/" className="flex items-center group -my-2">
+            <div className="px-3 py-1 bg-white/[0.03] rounded-[50%] shadow-xs group-hover:bg-white/10 transition-all duration-300 flex items-center justify-center overflow-hidden">
+              <img 
+                src={logo} 
+                alt="Bodimkarayo.lk" 
+                className="h-11 md:h-15 w-auto object-contain mix-blend-multiply scale-120 md:scale-125 group-hover:scale-130 transition-transform duration-300" 
+              />
+            </div>
           </Link>
         </div>
 
@@ -237,7 +243,7 @@ export default function Header() {
           ) : (
             <Link
               to="/signin"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold transition shadow-xs"
+              className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition shadow-md shadow-[#3488c3]/20 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
             >
               Sign In
             </Link>

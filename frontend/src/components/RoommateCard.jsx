@@ -191,7 +191,7 @@ const RoommateCard = ({
         {/* Connect Button */}
         <button
           onClick={onConnect}
-          className="mt-4 w-full rounded-xl bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
+          className="mt-4 w-full rounded-2xl bg-[#3488c3] hover:bg-[#2978b3] py-2.5 text-sm font-extrabold text-white transition shadow-md shadow-[#3488c3]/20 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
         >
           Connect
         </button>

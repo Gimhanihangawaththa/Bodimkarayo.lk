@@ -1,4 +1,4 @@
-import logo from '../assets/logo.jpg'
+import logo from '../assets/logo.png'
 
 export default function Footer() {
   const year = new Date().getFullYear();
@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="w-full px-8 py-12">
         <div className="grid grid-cols-4 gap-12 mb-8">
           <div>
-            <img src={logo} alt="Bodimkarayo" className="h-16 w-auto rounded-md object-contain mb-4" />
+            <img src={logo} alt="Bodimkarayo.lk" className="h-20 w-auto object-contain mb-4" />
             <p className="text-sm text-gray-600">Sri Lanka's trusted platform for finding boardings and roommates.</p>
           </div>
           <div>
