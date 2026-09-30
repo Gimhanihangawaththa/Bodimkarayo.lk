@@ -795,23 +795,18 @@ export default function ProfilePage() {
             className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200/80 cursor-default transform transition-all"
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-[#1b4b6d] px-6 py-5 flex justify-between items-center text-white">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/10 text-xl shadow-inner">
-                  ✏️
-                </div>
-                <div>
-                  <h3 className="text-lg font-extrabold text-white tracking-tight">Edit Profile</h3>
-                  <p className="text-xs text-slate-300 font-medium">Update your account information & avatar</p>
-                </div>
+            <div className="px-6 pt-6 pb-4 md:px-8 md:pt-7 md:pb-5 flex justify-between items-start border-b border-slate-100">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Edit Profile</h3>
+                <p className="text-xs md:text-sm text-slate-500 font-medium mt-1">Update your account details and profile photo</p>
               </div>
               <button 
                 type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-white/10 transition cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition cursor-pointer -mr-2 -mt-1"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
@@ -935,17 +930,14 @@ export default function ProfilePage() {
             className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200/80 cursor-default transform transition-all flex flex-col justify-between"
           >
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-slate-950 via-slate-900 to-[#1b4b6d] px-6 md:px-8 py-6 flex justify-between items-center text-white sticky top-0 z-10 shadow-md">
-              <div className="flex items-center gap-3.5">
-                <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/10 text-2xl shadow-inner shrink-0">
-                  👤
-                </div>
-                <div>
-                  <h3 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-                    {isEditingApplication ? "Edit Roommate Application" : "Apply as a Roommate"}
-                  </h3>
-                  <p className="text-xs text-slate-300 font-medium mt-0.5">Complete your profile to get discovered by compatible flatmates</p>
-                </div>
+            <div className="bg-white px-6 md:px-8 pt-6 pb-4 md:pt-7 md:pb-5 flex justify-between items-start border-b border-slate-100 sticky top-0 z-10">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                  {isEditingApplication ? "Edit Roommate Application" : "Apply as a Roommate"}
+                </h3>
+                <p className="text-xs md:text-sm text-slate-500 font-medium mt-1">
+                  Complete your profile to get discovered by compatible flatmates
+                </p>
               </div>
               <button 
                 type="button"
@@ -953,10 +945,10 @@ export default function ProfilePage() {
                   setIsApplyModalOpen(false);
                   setIsEditingApplication(false);
                 }}
-                className="text-slate-400 hover:text-white p-2 rounded-xl hover:bg-white/10 transition cursor-pointer"
+                className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition cursor-pointer -mr-2 -mt-1"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
