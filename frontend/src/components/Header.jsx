@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
 import logo from '../assets/logo.png'
 import { useAuth } from '../context/AuthContext'
+import { searchService } from '../services'
 
 export default function Header() {
   const location = useLocation()
@@ -10,13 +11,50 @@ export default function Header() {
   const isLoggedIn = Boolean(token)
   const [searchQuery, setSearchQuery] = useState('')
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [suggestions, setSuggestions] = useState({ properties: [], roommates: [] })
+  const [isSearchingLive, setIsSearchingLive] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
   const userMenuRef = useRef(null)
   const searchInputRef = useRef(null)
+  const searchContainerRef = useRef(null)
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search)
-    setSearchQuery(params.get('keyword') || '')
-  }, [location.search])
+    if (location.pathname === '/search') {
+      const params = new URLSearchParams(location.search)
+      setSearchQuery(params.get('keyword') || '')
+    } else {
+      setSearchQuery('')
+    }
+    setShowDropdown(false)
+  }, [location.pathname, location.search])
+
+  // Instant Live Typeahead suggestions as you type (250ms debounce)
+  useEffect(() => {
+    const trimmed = searchQuery.trim()
+    if (trimmed.length < 2) {
+      setSuggestions({ properties: [], roommates: [] })
+      setIsSearchingLive(false)
+      setShowDropdown(false)
+      return
+    }
+
+    setIsSearchingLive(true)
+    const timer = setTimeout(async () => {
+      try {
+        const results = await searchService.globalSearch(trimmed)
+        const props = Array.isArray(results?.properties) ? results.properties.slice(0, 3) : []
+        const rooms = Array.isArray(results?.roommates) ? results.roommates.slice(0, 2) : []
+        setSuggestions({ properties: props, roommates: rooms })
+        setShowDropdown(true)
+      } catch (err) {
+        console.error('Typeahead search error:', err)
+      } finally {
+        setIsSearchingLive(false)
+      }
+    }, 250)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   // Global ⌘K / Ctrl+K keyboard shortcut to focus search bar
   useEffect(() => {
@@ -25,6 +63,7 @@ export default function Header() {
         e.preventDefault()
         if (searchInputRef.current) {
           searchInputRef.current.focus()
+          setShowDropdown(true)
         }
       }
     }
@@ -32,11 +71,14 @@ export default function Header() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  // Close user dropdown menu when clicking outside
+  // Close dropdown and user menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setUserMenuOpen(false)
+      }
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setShowDropdown(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -57,7 +99,13 @@ export default function Header() {
   const handleSearchSubmit = (event) => {
     event.preventDefault()
     const keyword = searchQuery.trim()
-    navigate(keyword ? `/search?keyword=${encodeURIComponent(keyword)}` : '/search')
+    if (!keyword) {
+      if (searchInputRef.current) {
+        searchInputRef.current.focus()
+      }
+      return
+    }
+    navigate(`/search?keyword=${encodeURIComponent(keyword)}`)
   }
 
   const userInitial = user && user.fullName ? user.fullName.charAt(0).toUpperCase() : '👤'
@@ -124,33 +172,163 @@ export default function Header() {
 
         {/* 3. Right: Spotlight Search Bar & User Account Menu */}
         <div className="flex items-center gap-3 shrink-0">
-          {/* Global Search Bar */}
-          <form onSubmit={handleSearchSubmit} className="hidden lg:block w-72 lg:w-[380px] xl:w-[440px]">
-            <div className="relative flex items-center bg-white border border-slate-200 hover:border-slate-300 focus-within:border-[#3488c3] focus-within:ring-4 focus-within:ring-[#3488c3]/15 rounded-full p-1.5 transition-all shadow-xs">
-              <div className="pl-3 pr-1.5 text-[#3488c3] pointer-events-none shrink-0">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+          {/* Global Search Bar with Live Typeahead Dropdown */}
+          <div ref={searchContainerRef} className="relative hidden lg:block w-72 lg:w-[380px] xl:w-[440px]">
+            <form onSubmit={handleSearchSubmit}>
+              <div className="relative flex items-center bg-white border border-slate-200 hover:border-slate-300 focus-within:border-[#3488c3] focus-within:ring-4 focus-within:ring-[#3488c3]/15 rounded-full p-1.5 transition-all shadow-xs">
+                <div className="pl-3 pr-1.5 text-[#3488c3] pointer-events-none shrink-0">
+                  {isSearchingLive ? (
+                    <div className="w-4 h-4 border-2 border-[#3488c3] border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  )}
+                </div>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder="Search rooms, locations, roommates..."
+                  value={searchQuery}
+                  onFocus={() => {
+                    if (searchQuery.trim().length >= 2) setShowDropdown(true)
+                  }}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="flex-1 min-w-0 bg-transparent text-xs text-slate-900 placeholder:text-slate-400 px-2 py-1 outline-none font-medium"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('')
+                      setShowDropdown(false)
+                    }}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 transition-colors mr-1 cursor-pointer text-xs"
+                    title="Clear"
+                  >
+                    ✕
+                  </button>
+                )}
+                <button
+                  type="submit"
+                  className="bg-[#3488c3] hover:bg-[#2978b3] text-white font-bold text-xs px-4 py-2 rounded-full transition-all flex items-center gap-1 shrink-0 shadow-sm shadow-[#3488c3]/30 active:scale-95 cursor-pointer"
+                >
+                  <span>Search</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </button>
               </div>
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder="Search rooms, locations, roommates..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1 min-w-0 bg-transparent text-xs text-slate-900 placeholder:text-slate-400 px-2 py-1 outline-none font-medium"
-              />
-              <button
-                type="submit"
-                className="bg-[#3488c3] hover:bg-[#2978b3] text-white font-bold text-xs px-4 py-2 rounded-full transition-all flex items-center gap-1 shrink-0 shadow-sm shadow-[#3488c3]/30 active:scale-95 cursor-pointer"
-              >
-                <span>Search</span>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                </svg>
-              </button>
-            </div>
-          </form>
+            </form>
+
+            {/* Instant Floating Suggestions Dropdown */}
+            {showDropdown && searchQuery.trim().length >= 2 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                {isSearchingLive && (
+                  <div className="p-4 text-center text-xs text-slate-500 font-medium">
+                    Searching live in Elasticsearch...
+                  </div>
+                )}
+
+                {/* No Matches preview */}
+                {!isSearchingLive && suggestions.properties.length === 0 && suggestions.roommates.length === 0 && (
+                  <div className="p-4 text-center text-xs text-slate-500">
+                    No instant matches for <span className="font-bold text-slate-700">"{searchQuery}"</span>. Press Enter to view full results.
+                  </div>
+                )}
+
+                {/* Property Suggestions */}
+                {suggestions.properties.length > 0 && (
+                  <div className="p-2 border-b border-slate-100">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 py-1">
+                      🏠 Boarding & Properties
+                    </p>
+                    <div className="space-y-1">
+                      {suggestions.properties.map((prop) => (
+                        <div
+                          key={prop.id}
+                          onClick={() => {
+                            setShowDropdown(false)
+                            navigate(`/property/${prop.id}`)
+                          }}
+                          className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group"
+                        >
+                          <img
+                            src={prop.images && prop.images.length > 0 ? prop.images[0] : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=100'}
+                            alt={prop.title}
+                            className="w-10 h-10 rounded-lg object-cover shrink-0 bg-slate-100"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-slate-900 truncate group-hover:text-[#3488c3]">
+                              {prop.title}
+                            </p>
+                            <p className="text-[11px] text-slate-500 truncate">
+                              📍 {prop.location || prop.address || 'Sri Lanka'} • <span className="font-semibold text-emerald-600">Rs {prop.rent?.toLocaleString()}/mo</span>
+                            </p>
+                          </div>
+                          {prop.genderPreference && prop.genderPreference !== 'Both' && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 shrink-0">
+                              {prop.genderPreference}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Roommate Suggestions */}
+                {suggestions.roommates.length > 0 && (
+                  <div className="p-2 border-b border-slate-100">
+                    <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 px-3 py-1">
+                      👥 Roommate Profiles
+                    </p>
+                    <div className="space-y-1">
+                      {suggestions.roommates.map((room) => (
+                        <div
+                          key={room.id}
+                          onClick={() => {
+                            setShowDropdown(false)
+                            navigate(`/roommate/${room.id}`)
+                          }}
+                          className="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer group"
+                        >
+                          <img
+                            src={room.poster?.profilePictureUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100'}
+                            alt="Roommate"
+                            className="w-9 h-9 rounded-full object-cover shrink-0 ring-1 ring-slate-200"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-slate-900 truncate group-hover:text-[#3488c3]">
+                              {room.poster?.fullName || room.poster?.email || 'Roommate'}
+                            </p>
+                            <p className="text-[11px] text-slate-500 truncate">
+                              📍 {room.preferredLocation || room.location || 'Any location'} • {room.occupation || room.gender || 'Student'}
+                            </p>
+                          </div>
+                          {room.gender && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 shrink-0">
+                              {room.gender}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Bottom Full Search Link */}
+                <button
+                  type="button"
+                  onClick={(e) => handleSearchSubmit(e)}
+                  className="w-full p-2.5 bg-slate-50 hover:bg-[#3488c3] hover:text-white text-[#3488c3] font-bold text-xs text-center transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <span>View all results for "{searchQuery}"</span>
+                  <span>→</span>
+                </button>
+              </div>
+            )}
+          </div>
 
           {/* User Account Menu Dropdown */}
           {isLoggedIn ? (

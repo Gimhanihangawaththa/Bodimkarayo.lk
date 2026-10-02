@@ -38,7 +38,9 @@ export default function AddProperty() {
     availableFrom: "",
     location: "",
     address: "",
-    numberOfPeople: "",
+    numberOfPeople: "1 Person",
+    genderPreference: "Both",
+    suitableFor: "Any",
     description: "",
     bedrooms: "",
     kitchens: "",
@@ -79,7 +81,9 @@ export default function AddProperty() {
             availableFrom: property.availableFrom || "",
             location: property.location || "",
             address: property.address || "",
-            numberOfPeople: property.numberOfPeople || "",
+            numberOfPeople: property.numberOfPeople || "1 Person",
+            genderPreference: property.genderPreference || "Both",
+            suitableFor: property.suitableFor || "Any",
             description: property.description || "",
             bedrooms: property.bedrooms || "",
             kitchens: property.kitchens || "",
@@ -279,6 +283,8 @@ export default function AddProperty() {
         location: formData.location,
         address: formData.address,
         numberOfPeople: formData.numberOfPeople,
+        genderPreference: formData.genderPreference || "Both",
+        suitableFor: formData.suitableFor || "Any",
         description: formData.description,
         bedrooms: formData.bedrooms ? parseInt(formData.bedrooms) : null,
         kitchens: formData.kitchens ? parseInt(formData.kitchens) : null,
@@ -435,13 +441,41 @@ export default function AddProperty() {
                 value={formData.title}
                 onChange={handleInputChange}
               />
-              <FormInput
-                label="Property Type *"
-                placeholder="e.g., Annex, Boarding, Single Room, Apartment"
-                name="propertyType"
-                value={formData.propertyType}
-                onChange={handleInputChange}
-              />
+              <div className="space-y-1.5">
+                <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                  Property Type <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  name="propertyType"
+                  value={formData.propertyType}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full px-4 py-3 bg-slate-50/60 border border-slate-200/90 rounded-2xl text-sm font-semibold text-slate-900 focus:bg-white focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition shadow-xs cursor-pointer"
+                >
+                  <option value="" disabled>Select Property Type</option>
+                  <option value="Room">Room</option>
+                  <option value="Annex">Annex</option>
+                  <option value="Apartment">Apartment</option>
+                  <option value="House">House</option>
+                  <option value="Hostel">Hostel</option>
+                </select>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {["Room", "Annex", "Apartment", "House", "Hostel"].map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setFormData((prev) => ({ ...prev, propertyType: type }))}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        formData.propertyType === type
+                          ? "bg-[#3488c3] text-white shadow-xs scale-105"
+                          : "bg-slate-100 hover:bg-slate-200/90 text-slate-600"
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <FormInput
                 label="Monthly Rent (LKR) *"
                 placeholder="e.g., 25000"
@@ -471,13 +505,174 @@ export default function AddProperty() {
                 value={formData.address}
                 onChange={handleInputChange}
               />
-              <FormInput
-                label="Capacity / Number of Occupants *"
-                placeholder="e.g., 2 Persons"
-                name="numberOfPeople"
-                value={formData.numberOfPeople}
-                onChange={handleInputChange}
-              />
+            </div>
+          </FormSection>
+
+          {/* Tenant Eligibility & Capacity Guidelines */}
+          <FormSection title="Tenant Eligibility & Capacity Guidelines">
+            <div className="space-y-6">
+              {/* Gender Preference */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Gender Requirement / Preference <span className="text-rose-500">*</span>
+                </label>
+                <p className="text-xs text-slate-500 mb-3">
+                  Specify whether this boarding/property is strictly for males, females, or open to both.
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {[
+                    { value: "Both", label: "Both / Any (Male & Female)", icon: "🚻", desc: "Open to all genders" },
+                    { value: "Male", label: "Male Only", icon: "👨", desc: "Gentlemen / Boys only" },
+                    { value: "Female", label: "Female Only", icon: "👩", desc: "Ladies / Girls only" },
+                  ].map((item) => {
+                    const isSelected = (formData.genderPreference || "Both").toLowerCase() === item.value.toLowerCase();
+                    return (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, genderPreference: item.value }))}
+                        className={`p-4 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? "bg-[#eaf4fb] border-[#3488c3] ring-2 ring-[#3488c3]/30 shadow-sm"
+                            : "bg-slate-50/70 hover:bg-slate-100 border-slate-200/90 text-slate-700"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-2xl">{item.icon}</span>
+                          <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${
+                            isSelected ? "border-[#3488c3] bg-[#3488c3] text-white text-xs" : "border-slate-300 bg-white"
+                          }`}>
+                            {isSelected && "✓"}
+                          </div>
+                        </div>
+                        <span className={`text-sm font-extrabold ${isSelected ? "text-[#1b4b6d]" : "text-slate-800"}`}>
+                          {item.label}
+                        </span>
+                        <span className="text-[11px] text-slate-500 font-medium mt-0.5">
+                          {item.desc}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Suitable For / Target Tenant */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Suitable For / Target Tenants <span className="text-rose-500">*</span>
+                </label>
+                <p className="text-xs text-slate-500 mb-3">
+                  Highlight who this accommodation is best suited for (select one or multiple target groups, e.g. Students + Working Professionals).
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {[
+                    { value: "University Students", label: "University Students", icon: "🎓" },
+                    { value: "Working Professionals", label: "Working Professionals", icon: "💼" },
+                    { value: "Couples", label: "Couples", icon: "💑" },
+                    { value: "Family", label: "Families", icon: "👨‍👩‍👧‍👦" },
+                    { value: "Any", label: "Any / Anyone", icon: "🌐" },
+                  ].map((item) => {
+                    const currentParts = (formData.suitableFor || "Any")
+                      .split(",")
+                      .map((s) => s.trim().toLowerCase())
+                      .filter(Boolean);
+
+                    const isSelected = item.value === "Any"
+                      ? currentParts.includes("any") || currentParts.length === 0
+                      : currentParts.includes(item.value.toLowerCase());
+
+                    const handleToggle = () => {
+                      if (item.value === "Any") {
+                        setFormData((prev) => ({ ...prev, suitableFor: "Any" }));
+                        return;
+                      }
+
+                      const withoutAny = (formData.suitableFor || "Any")
+                        .split(",")
+                        .map((s) => s.trim())
+                        .filter((s) => Boolean(s) && s.toLowerCase() !== "any");
+
+                      const exists = withoutAny.some((s) => s.toLowerCase() === item.value.toLowerCase());
+                      let updated;
+
+                      if (exists) {
+                        updated = withoutAny.filter((s) => s.toLowerCase() !== item.value.toLowerCase());
+                      } else {
+                        updated = [...withoutAny, item.value];
+                      }
+
+                      if (updated.length === 0) {
+                        setFormData((prev) => ({ ...prev, suitableFor: "Any" }));
+                      } else {
+                        setFormData((prev) => ({ ...prev, suitableFor: updated.join(", ") }));
+                      }
+                    };
+
+                    return (
+                      <button
+                        key={item.value}
+                        type="button"
+                        onClick={handleToggle}
+                        className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+                          isSelected
+                            ? "bg-[#eaf4fb] border-[#3488c3] ring-2 ring-[#3488c3]/30 shadow-sm"
+                            : "bg-slate-50/70 hover:bg-slate-100 border-slate-200/90 text-slate-700"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xl">{item.icon}</span>
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
+                            isSelected ? "border-[#3488c3] bg-[#3488c3] text-white text-[10px]" : "border-slate-300 bg-white"
+                          }`}>
+                            {isSelected && "✓"}
+                          </div>
+                        </div>
+                        <span className={`text-xs font-extrabold leading-snug ${isSelected ? "text-[#1b4b6d]" : "text-slate-800"}`}>
+                          {item.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Number of Persons / Capacity */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Capacity / Number of Persons <span className="text-rose-500">*</span>
+                </label>
+                <p className="text-xs text-slate-500 mb-3">
+                  How many people can comfortably stay in this boarding / room / annex?
+                </p>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {["1 Person", "2 Persons", "3 Persons", "4 Persons", "5+ Persons"].map((cap) => {
+                    const isSelected = formData.numberOfPeople === cap;
+                    return (
+                      <button
+                        key={cap}
+                        type="button"
+                        onClick={() => setFormData((prev) => ({ ...prev, numberOfPeople: cap }))}
+                        className={`px-4 py-2.5 rounded-2xl text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isSelected
+                            ? "bg-[#3488c3] text-white border-[#3488c3] shadow-md shadow-[#3488c3]/20 scale-105"
+                            : "bg-slate-100 hover:bg-slate-200/80 text-slate-700 border-transparent"
+                        }`}
+                      >
+                        <span>👥</span>
+                        <span>{cap}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <FormInput
+                  label="Or specify custom occupant capacity"
+                  placeholder="e.g., 2 Persons, 4-6 Students, or Single Occupancy"
+                  name="numberOfPeople"
+                  value={formData.numberOfPeople}
+                  onChange={handleInputChange}
+                />
+              </div>
             </div>
           </FormSection>
 

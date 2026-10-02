@@ -32,6 +32,16 @@ const RoommateCard = ({ post, onCardClick, matchIndex, matchExplanation }) => {
   const occupation = post.occupation || post.poster?.occupation || 'Verified Tenant'
   const budget = post.budget ? `${post.budget.toLocaleString()}/mo` : 'Flex Rent'
   const matchPercentage = post.matchPercentage || Math.floor(Math.random() * 10 + 89)
+  const gender = post.gender || post.poster?.gender || ''
+
+  const getGenderBadge = (g) => {
+    if (!g) return null
+    if (g.toLowerCase() === 'male') return { text: '👨 Male', cls: 'bg-cyan-50 text-cyan-800 border-cyan-200' }
+    if (g.toLowerCase() === 'female') return { text: '👩 Female', cls: 'bg-rose-50 text-rose-800 border-rose-200' }
+    return { text: `👤 ${g}`, cls: 'bg-slate-50 text-slate-700 border-slate-200' }
+  }
+
+  const genderBadge = getGenderBadge(gender)
 
   return (
     <div
@@ -60,6 +70,12 @@ const RoommateCard = ({ post, onCardClick, matchIndex, matchExplanation }) => {
             <div className="absolute top-3 left-3 bg-emerald-500/90 backdrop-blur-md text-white font-extrabold text-[11px] px-2.5 py-1 rounded-full shadow-md flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span>
               {matchPercentage}% Match
+            </div>
+          )}
+
+          {genderBadge && (
+            <div className={`absolute top-3 ${verified ? 'right-12' : 'right-3'} ${genderBadge.cls} backdrop-blur-md font-bold text-[11px] px-2.5 py-0.5 rounded-full shadow-md border`}>
+              {genderBadge.text}
             </div>
           )}
 
@@ -161,9 +177,9 @@ export default function Roommates() {
     return () => clearInterval(slideTimer)
   }, [])
 
-  const handleSearchSubmit = () => {
-    const trimmed = searchLocation.trim()
-    navigate(trimmed ? `/roommates?keyword=${encodeURIComponent(trimmed)}` : '/roommates')
+  const handleSearchSubmit = (forceValue) => {
+    const term = (forceValue !== undefined ? forceValue : searchLocation).trim()
+    navigate(term ? `/roommates?keyword=${encodeURIComponent(term)}` : '/roommates', { replace: true })
   }
 
   const handleRoommateClick = (roommateId) => {
@@ -173,6 +189,17 @@ export default function Roommates() {
   useEffect(() => {
     setSearchLocation(keyword)
   }, [keyword])
+
+  // Instant Search as you type with 300ms debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const currentParam = new URLSearchParams(location.search).get('keyword') || ''
+      if (searchLocation.trim() !== currentParam.trim()) {
+        handleSearchSubmit(searchLocation)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchLocation])
 
   useEffect(() => {
     const fetchRoommates = async () => {
@@ -304,6 +331,19 @@ export default function Roommates() {
                   onChange={(e) => setSearchLocation(e.target.value)}
                   className="flex-1 px-3 py-3 text-slate-900 text-sm md:text-base outline-none bg-transparent placeholder:text-slate-400 font-medium"
                 />
+                {searchLocation && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchLocation('')
+                      handleSearchSubmit('')
+                    }}
+                    className="p-2 text-slate-400 hover:text-slate-700 transition-colors mr-1 cursor-pointer"
+                    title="Clear search"
+                  >
+                    ✕
+                  </button>
+                )}
                 <button
                   type="submit"
                   className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-7 py-3 rounded-full font-semibold text-sm transition-all flex items-center gap-2 shadow-lg shadow-[#3488c3]/30 active:scale-95 cursor-pointer shrink-0"
@@ -380,6 +420,13 @@ export default function Roommates() {
                 {loading ? 'Searching profiles...' : `Showing ${roommates.length} verified roommate listing${roommates.length !== 1 ? 's' : ''}`}
               </p>
             </div>
+            <button
+              onClick={() => navigate('/profile')}
+              className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-5 py-2.5 rounded-full font-bold text-xs shadow-md shadow-[#3488c3]/20 hover:-translate-y-0.5 active:translate-y-0 transition cursor-pointer flex items-center gap-2 self-start md:self-auto shrink-0"
+            >
+              <span>➕</span>
+              <span>Post Roommate Profile</span>
+            </button>
           </div>
 
           {/* Sidebar + Main Grid Container */}

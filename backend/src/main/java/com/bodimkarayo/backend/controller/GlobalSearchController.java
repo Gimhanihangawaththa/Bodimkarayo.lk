@@ -14,8 +14,20 @@ public class GlobalSearchController {
     @Autowired
     private GlobalSearchService globalSearchService;
 
+    @Autowired(required = false)
+    private com.bodimkarayo.backend.search.SearchIndexService searchIndexService;
+
     @GetMapping("/global")
     public Map<String, Object> globalSearch(@RequestParam(required = false) String keyword) {
         return globalSearchService.globalSearch(keyword);
+    }
+
+    @RequestMapping(value = "/sync", method = {RequestMethod.GET, RequestMethod.POST})
+    public Map<String, Object> syncIndices() {
+        if (searchIndexService != null) {
+            searchIndexService.reindexOnStartup();
+            return Map.of("status", "success", "message", "Elasticsearch indices synchronized successfully");
+        }
+        return Map.of("status", "skipped", "message", "Elasticsearch service is not active");
     }
 }

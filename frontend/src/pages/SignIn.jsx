@@ -36,9 +36,10 @@ export default function SignIn() {
     setIsSubmitting(true)
 
     try {
-      const response = await axios.post('http://localhost:4000/api/auth/login', { email, password })
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+      const response = await axios.post(`${baseUrl}/auth/login`, { email, password }, { withCredentials: true })
       const authData = response.data
-      login({ user: authData.user, token: authData.token })
+      login({ user: authData.user, token: authData.token, refreshToken: authData.refreshToken })
       navigate('/')
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'Something went wrong. Please try again.'

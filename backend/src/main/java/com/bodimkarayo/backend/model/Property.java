@@ -24,6 +24,8 @@ public class Property {
     private String availableFrom;
     private String address;
     private String numberOfPeople;
+    private String genderPreference; // Male, Female, Both
+    private String suitableFor; // University Students, Working Professionals, Couples, Family, Any
     private Integer bedrooms;
     private Integer kitchens;
     private Integer bathrooms;

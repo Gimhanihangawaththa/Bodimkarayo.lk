@@ -1,4 +1,4 @@
-export function PropertyDetailsCard({ price, priceRange, location, type, numberOfPeople }) {
+export function PropertyDetailsCard({ price, priceRange, location, type, numberOfPeople, genderPreference, suitableFor }) {
   return (
     <div className="mb-6">
       <div className="flex items-start justify-between">
@@ -8,9 +8,11 @@ export function PropertyDetailsCard({ price, priceRange, location, type, numberO
             <span className="text-gray-500 text-lg">/{priceRange}</span>
           </div>
           <p className="text-gray-600 mt-2">📍 {location}</p>
-          <div className="flex gap-4 mt-3 text-sm text-gray-600">
+          <div className="flex flex-wrap gap-3 mt-3 text-sm text-gray-600">
             <span>🏠 {type}</span>
-            <span>👥 {numberOfPeople} people</span>
+            {numberOfPeople && <span>👥 {numberOfPeople}</span>}
+            {genderPreference && <span>🚻 {genderPreference}</span>}
+            {suitableFor && <span>🎯 {suitableFor}</span>}
           </div>
         </div>
       </div>

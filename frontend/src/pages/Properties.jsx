@@ -4,49 +4,90 @@ import { propertyService } from '../services'
 import { UpgradeAdvertisement } from '../components/UpgradeAdvertisement'
 import FilterSidebar from '../components/FilterSidebar'
 
-const PropertyCard = ({ id, image, title, location, price, available, offers, rating, onCardClick }) => (
-  <div 
-    onClick={() => onCardClick(id)}
-    className="group bg-white rounded-3xl overflow-hidden border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-[#3488c3]/40 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between"
-  >
-    <div className="relative h-48 overflow-hidden bg-slate-100">
-      <img src={image} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-      {rating > 0 && (
-        <div className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md text-amber-400 font-bold text-xs px-2.5 py-1 rounded-full border border-slate-700/60 shadow-xs flex items-center gap-1">
-          ⭐ {rating}
-        </div>
-      )}
-    </div>
-    <div className="p-5 flex-1 flex flex-col justify-between">
-      <div>
-        <span className="text-[11px] font-bold text-[#3488c3] tracking-wide uppercase">{location}</span>
-        <h3 className="text-base font-bold text-slate-900 mt-0.5 group-hover:text-[#3488c3] transition-colors line-clamp-1">{title}</h3>
-        
-        {/* Offers / Amenities */}
-        {offers && offers.length > 0 && (
+const PropertyCard = ({ id, image, title, location, price, available, offers, rating, numberOfPeople, genderPreference, suitableFor, onCardClick }) => {
+  const getGenderBadge = (gender) => {
+    if (!gender || gender.toLowerCase() === 'both' || gender.toLowerCase() === 'any') return { text: '🚻 Open to All', cls: 'bg-blue-50 text-blue-700 border-blue-100' }
+    if (gender.toLowerCase().includes('male') && !gender.toLowerCase().includes('female')) return { text: '👨 Male Only', cls: 'bg-cyan-50 text-cyan-700 border-cyan-100' }
+    if (gender.toLowerCase().includes('female')) return { text: '👩 Female Only', cls: 'bg-rose-50 text-rose-700 border-rose-100' }
+    return { text: `🚻 ${gender}`, cls: 'bg-slate-50 text-slate-700 border-slate-200' }
+  }
+
+  const getSuitableBadge = (suitable) => {
+    if (!suitable || suitable.toLowerCase() === 'any') return null
+    const parts = suitable.split(',').map((s) => s.trim()).filter(Boolean)
+    if (parts.length === 1) {
+      const single = parts[0]
+      if (single.toLowerCase().includes('student')) return { text: '🎓 Students', cls: 'bg-purple-50 text-purple-700 border-purple-100' }
+      if (single.toLowerCase().includes('professional')) return { text: '💼 Professionals', cls: 'bg-indigo-50 text-indigo-700 border-indigo-100' }
+      if (single.toLowerCase().includes('couple')) return { text: '💑 Couples', cls: 'bg-pink-50 text-pink-700 border-pink-100' }
+      if (single.toLowerCase().includes('family')) return { text: '👨‍👩‍👧 Family', cls: 'bg-amber-50 text-amber-700 border-amber-100' }
+      return { text: `🎯 ${single}`, cls: 'bg-slate-50 text-slate-700 border-slate-200' }
+    }
+    return { text: `🎯 ${parts.join(', ')}`, cls: 'bg-purple-50 text-purple-700 border-purple-100' }
+  }
+
+  const genderBadge = getGenderBadge(genderPreference)
+  const suitableBadge = getSuitableBadge(suitableFor)
+
+  return (
+    <div 
+      onClick={() => onCardClick(id)}
+      className="group bg-white rounded-3xl overflow-hidden border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-[#3488c3]/40 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between"
+    >
+      <div className="relative h-48 overflow-hidden bg-slate-100">
+        <img src={image} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+        {rating > 0 && (
+          <div className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md text-amber-400 font-bold text-xs px-2.5 py-1 rounded-full border border-slate-700/60 shadow-xs flex items-center gap-1">
+            ⭐ {rating}
+          </div>
+        )}
+        {numberOfPeople && (
+          <div className="absolute bottom-3 left-3 bg-slate-950/80 backdrop-blur-md text-white font-bold text-[11px] px-2.5 py-1 rounded-full border border-white/20 shadow-xs flex items-center gap-1">
+            👥 {numberOfPeople}
+          </div>
+        )}
+      </div>
+      <div className="p-5 flex-1 flex flex-col justify-between">
+        <div>
+          <div className="flex items-center justify-between gap-1 mb-1">
+            <span className="text-[11px] font-bold text-[#3488c3] tracking-wide uppercase truncate">{location}</span>
+            {genderBadge && (
+              <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md border shrink-0 ${genderBadge.cls}`}>
+                {genderBadge.text}
+              </span>
+            )}
+          </div>
+          <h3 className="text-base font-bold text-slate-900 mt-0.5 group-hover:text-[#3488c3] transition-colors line-clamp-1">{title}</h3>
+          
+          {/* Target audience & Offers */}
           <div className="flex flex-wrap gap-1.5 my-3">
-            {offers.slice(0, 2).map((offer, i) => (
+            {suitableBadge && (
+              <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${suitableBadge.cls}`}>
+                {suitableBadge.text}
+              </span>
+            )}
+            {offers && offers.slice(0, suitableBadge ? 1 : 2).map((offer, i) => (
               <span key={i} className="text-[11px] bg-emerald-50 text-emerald-700 font-semibold px-2.5 py-1 rounded-full border border-emerald-100">
                 {offer}
               </span>
             ))}
-            {offers.length > 2 && (
+            {offers && offers.length > (suitableBadge ? 1 : 2) && (
               <span className="text-[11px] bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-full">
-                +{offers.length - 2} more
+                +{offers.length - (suitableBadge ? 1 : 2)} more
               </span>
             )}
           </div>
-        )}
-      </div>
+        </div>
 
-      <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-        <p className="font-extrabold text-slate-900 text-lg">Rs {price.toLocaleString()}<span className="text-xs font-normal text-slate-500"> /mo</span></p>
-        <span className="text-xs text-[#3488c3] font-bold group-hover:translate-x-1 transition-transform inline-block">Inspect →</span>
+        <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+          <p className="font-extrabold text-slate-900 text-lg">Rs {price.toLocaleString()}<span className="text-xs font-normal text-slate-500"> /mo</span></p>
+          <span className="text-xs text-[#3488c3] font-bold group-hover:translate-x-1 transition-transform inline-block">Inspect →</span>
+        </div>
+        {available && <p className="text-[11px] text-slate-400 mt-1">Available: {available}</p>}
       </div>
-      {available && <p className="text-[11px] text-slate-400 mt-1">Available: {available}</p>}
     </div>
-  </div>
-)
+  )
+}
 
 const HERO_SLIDES = [
   {
@@ -77,6 +118,8 @@ export default function Properties() {
   const [currentSlide, setCurrentSlide] = useState(0)
   const [filters, setFilters] = useState({
     propertyType: 'Any',
+    genderPreference: 'Any',
+    suitableFor: 'Any',
     maxPrice: 300000,
     bedrooms: 'Any',
     bathrooms: 'Any',
@@ -95,9 +138,9 @@ export default function Properties() {
 
   const keyword = new URLSearchParams(location.search).get('keyword') || ''
 
-  const handleSearchSubmit = () => {
-    const trimmed = searchLocation.trim()
-    navigate(trimmed ? `/properties?keyword=${encodeURIComponent(trimmed)}` : '/properties')
+  const handleSearchSubmit = (forceValue) => {
+    const term = (forceValue !== undefined ? forceValue : searchLocation).trim()
+    navigate(term ? `/properties?keyword=${encodeURIComponent(term)}` : '/properties', { replace: true })
   }
 
   const handlePropertyCardClick = (propertyId) => {
@@ -108,6 +151,17 @@ export default function Properties() {
     setSearchLocation(keyword)
   }, [keyword])
 
+  // Instant Search as you type with 300ms debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const currentParam = new URLSearchParams(location.search).get('keyword') || ''
+      if (searchLocation.trim() !== currentParam.trim()) {
+        handleSearchSubmit(searchLocation)
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchLocation])
+
   useEffect(() => {
     const fetchProperties = async () => {
       setIsLoading(true)
@@ -116,6 +170,8 @@ export default function Properties() {
         const data = await propertyService.searchProperties({
           keyword,
           propertyType: filters.propertyType !== 'Any' ? filters.propertyType : undefined,
+          genderPreference: filters.genderPreference !== 'Any' ? filters.genderPreference : undefined,
+          suitableFor: filters.suitableFor !== 'Any' ? filters.suitableFor : undefined,
           maxPrice: filters.maxPrice,
           bedrooms: filters.bedrooms !== 'Any' ? Number(filters.bedrooms.replace('+', '')) : undefined,
           bathrooms: filters.bathrooms !== 'Any' ? Number(filters.bathrooms.replace('+', '')) : undefined,
@@ -132,6 +188,9 @@ export default function Properties() {
               price: prop.rent || 0,
               available: prop.availableFrom || 'TBD',
               offers: prop.offers || [],
+              numberOfPeople: prop.numberOfPeople || '',
+              genderPreference: prop.genderPreference || 'Both',
+              suitableFor: prop.suitableFor || 'Any',
               rating: 0,
             }))
           : []
@@ -204,6 +263,19 @@ export default function Properties() {
                 onChange={(e) => setSearchLocation(e.target.value)}
                 className="flex-1 px-3 py-3 text-slate-900 text-sm md:text-base outline-none bg-transparent placeholder:text-slate-400 font-medium"
               />
+              {searchLocation && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearchLocation('')
+                    handleSearchSubmit('')
+                  }}
+                  className="p-2 text-slate-400 hover:text-slate-700 transition-colors mr-1 cursor-pointer"
+                  title="Clear search"
+                >
+                  ✕
+                </button>
+              )}
               <button
                 type="submit"
                 className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-7 py-3 rounded-full font-semibold text-sm transition-all flex items-center gap-2 shadow-lg shadow-[#3488c3]/30 active:scale-95 cursor-pointer shrink-0"

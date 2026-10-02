@@ -3,9 +3,13 @@ import { useState } from 'react'
 const propertyTypes = ['Any', 'Room', 'Annex', 'Apartment', 'House', 'Hostel']
 const bedroomOptions = ['Any', '1+', '2+', '3+', '4+']
 const bathroomOptions = ['Any', '1+', '2+', '3+']
+const genderOptions = ['Any', 'Both', 'Male', 'Female']
+const suitableForOptions = ['Any', 'University Students', 'Working Professionals', 'Couples', 'Family']
 
 export default function FilterSidebar({ onFiltersChange }) {
 	const [propertyType, setPropertyType] = useState('Any')
+	const [genderPreference, setGenderPreference] = useState('Any')
+	const [suitableFor, setSuitableFor] = useState('Any')
 	const [priceRange, setPriceRange] = useState(300000)
 	const [bedrooms, setBedrooms] = useState('Any')
 	const [bathrooms, setBathrooms] = useState('Any')
@@ -22,6 +26,8 @@ export default function FilterSidebar({ onFiltersChange }) {
 	const handleReset = () => {
 		const defaultState = {
 			propertyType: 'Any',
+			genderPreference: 'Any',
+			suitableFor: 'Any',
 			maxPrice: 300000,
 			bedrooms: 'Any',
 			bathrooms: 'Any',
@@ -30,6 +36,8 @@ export default function FilterSidebar({ onFiltersChange }) {
 			petAllowed: false,
 		}
 		setPropertyType('Any')
+		setGenderPreference('Any')
+		setSuitableFor('Any')
 		setPriceRange(300000)
 		setBedrooms('Any')
 		setBathrooms('Any')
@@ -42,6 +50,8 @@ export default function FilterSidebar({ onFiltersChange }) {
 	const togglePreset = (type) => {
 		let updated = {
 			propertyType,
+			genderPreference,
+			suitableFor,
 			maxPrice: priceRange,
 			bedrooms,
 			bathrooms,
@@ -139,6 +149,8 @@ export default function FilterSidebar({ onFiltersChange }) {
 						setPropertyType(nextValue)
 						emitFilters({
 							propertyType: nextValue,
+							genderPreference,
+							suitableFor,
 							maxPrice: priceRange,
 							bedrooms,
 							bathrooms,
@@ -154,6 +166,69 @@ export default function FilterSidebar({ onFiltersChange }) {
 							{type === 'Any' ? 'Any Property Type' : type}
 						</option>
 					))}
+				</select>
+			</div>
+
+			{/* Gender Requirement Selector */}
+			<div>
+				<label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+					Gender Requirement
+				</label>
+				<select
+					value={genderPreference}
+					onChange={(e) => {
+						const nextValue = e.target.value
+						setGenderPreference(nextValue)
+						emitFilters({
+							propertyType,
+							genderPreference: nextValue,
+							suitableFor,
+							maxPrice: priceRange,
+							bedrooms,
+							bathrooms,
+							furnished,
+							parking,
+							petAllowed,
+						})
+					}}
+					className="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 bg-slate-50 font-semibold outline-none focus:ring-2 focus:ring-[#3488c3] focus:bg-white transition cursor-pointer"
+				>
+					<option value="Any">Any Gender / All</option>
+					<option value="Both">Both (Male & Female)</option>
+					<option value="Male">Male Only</option>
+					<option value="Female">Female Only</option>
+				</select>
+			</div>
+
+			{/* Suitable For / Target Tenant */}
+			<div>
+				<label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+					Ideal For / Tenant Type
+				</label>
+				<select
+					value={suitableFor}
+					onChange={(e) => {
+						const nextValue = e.target.value
+						setSuitableFor(nextValue)
+						emitFilters({
+							propertyType,
+							genderPreference,
+							suitableFor: nextValue,
+							maxPrice: priceRange,
+							bedrooms,
+							bathrooms,
+							furnished,
+							parking,
+							petAllowed,
+						})
+					}}
+					className="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 bg-slate-50 font-semibold outline-none focus:ring-2 focus:ring-[#3488c3] focus:bg-white transition cursor-pointer"
+				>
+					<option value="Any">Any / Open to All</option>
+					<option value="University Students">University Students</option>
+					<option value="Working Professionals">Working Professionals</option>
+					<option value="Couples">Couples</option>
+					<option value="Family">Families</option>
 				</select>
 			</div>
 

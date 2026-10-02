@@ -110,6 +110,8 @@ const normalizeProperty = (propertyData) => {
     address: propertyData.address ?? propertyData.location ?? "Address not available",
     availableFrom: propertyData.availableFrom ?? "TBD",
     numberOfPeople: propertyData.numberOfPeople ?? "N/A",
+    genderPreference: propertyData.genderPreference ?? "Both",
+    suitableFor: propertyData.suitableFor ?? "Any",
     rating: typeof propertyData.rating === "number" ? propertyData.rating : 0,
     offers: propertyData.offers ?? [],
     highlights: propertyData.highlights ?? [],
@@ -328,7 +330,31 @@ export default function PropertyView() {
       ? "No reviews yet"
       : `${reviewAverage.toFixed(1)} average · ${reviews.length} review${reviews.length !== 1 ? "s" : ""}`;
 
+  const getGenderPillLabel = (gender) => {
+    if (!gender || gender.toLowerCase() === 'both' || gender.toLowerCase() === 'any') return "🚻 Male & Female (Both)";
+    if (gender.toLowerCase().includes('male') && !gender.toLowerCase().includes('female')) return "👨 Male Only";
+    if (gender.toLowerCase().includes('female')) return "👩 Female Only";
+    return `🚻 ${gender}`;
+  };
+
+  const getSuitableForPillLabel = (suitable) => {
+    if (!suitable || suitable.toLowerCase() === 'any') return "🌐 Open to Anyone";
+    const parts = suitable.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length === 1) {
+      const single = parts[0];
+      if (single.toLowerCase().includes('student')) return "🎓 University Students";
+      if (single.toLowerCase().includes('professional')) return "💼 Working Professionals";
+      if (single.toLowerCase().includes('couple')) return "💑 Couples";
+      if (single.toLowerCase().includes('family')) return "👨‍👩‍👧‍👦 Family Friendly";
+      return `🎯 ${single}`;
+    }
+    return `🎯 ${parts.join(' & ')}`;
+  };
+
   const detailItems = [
+    { label: "Gender Requirement", value: property.genderPreference ? getGenderPillLabel(property.genderPreference) : "Both / Any", icon: "🚻" },
+    { label: "Ideal For", value: property.suitableFor ? getSuitableForPillLabel(property.suitableFor) : "Any / All Tenants", icon: "🎯" },
+    { label: "Capacity", value: property.numberOfPeople, icon: "👥" },
     { label: "Bedrooms", value: property.bedrooms, icon: "🛏️" },
     { label: "Bathrooms", value: property.bathrooms, icon: "🚿" },
     { label: "Kitchens", value: property.kitchens, icon: "🍳" },
@@ -355,7 +381,9 @@ export default function PropertyView() {
               <div className="flex flex-wrap gap-2">
                 <InfoPill label={property.type} tone="blue" />
                 <InfoPill label={`Available from ${property.availableFrom}`} tone="emerald" />
-                <InfoPill label={`Up to ${property.numberOfPeople} people`} tone="amber" />
+                <InfoPill label={`👥 ${property.numberOfPeople}`} tone="amber" />
+                <InfoPill label={getGenderPillLabel(property.genderPreference)} tone="blue" />
+                <InfoPill label={getSuitableForPillLabel(property.suitableFor)} tone="purple" />
               </div>
               <h1 className="mt-4 text-3xl font-extrabold md:text-4xl tracking-tight text-white">{property.title}</h1>
               <p className="mt-2 text-sm text-slate-200 font-medium">📍 {property.address}</p>

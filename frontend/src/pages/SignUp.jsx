@@ -43,13 +43,16 @@ export default function SignUp() {
     setIsSubmitting(true)
 
     try {
-      await axios.post('http://localhost:4000/api/auth/register', { 
+      const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000/api'
+      const response = await axios.post(`${baseUrl}/auth/register`, { 
         fullName, 
         email, 
         password 
-      })
-      // Registration successful - redirect to sign in
-      navigate('/signin')
+      }, { withCredentials: true })
+      
+      const authData = response.data
+      login({ user: authData.user, token: authData.token, refreshToken: authData.refreshToken })
+      navigate('/')
     } catch (err) {
       const message = err?.response?.data?.message || err?.message || 'Something went wrong. Please try again.'
       setError(message)

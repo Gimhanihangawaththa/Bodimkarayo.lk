@@ -43,6 +43,15 @@ public class PropertySearchDocument {
     @Field(type = FieldType.Text)
     private String address;
 
+    @Field(type = FieldType.Text)
+    private String numberOfPeople;
+
+    @Field(type = FieldType.Text)
+    private String genderPreference;
+
+    @Field(type = FieldType.Text)
+    private String suitableFor;
+
     @Field(type = FieldType.Integer)
     private Integer bedrooms;
 
@@ -87,6 +96,9 @@ public class PropertySearchDocument {
                 .propertyType(property.getPropertyType())
                 .availableFrom(property.getAvailableFrom())
                 .address(property.getAddress())
+                .numberOfPeople(property.getNumberOfPeople())
+                .genderPreference(property.getGenderPreference())
+                .suitableFor(property.getSuitableFor())
                 .bedrooms(property.getBedrooms())
                 .bathrooms(property.getBathrooms())
                 .furnished(property.getFurnished())

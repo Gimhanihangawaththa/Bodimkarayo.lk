@@ -41,6 +41,7 @@ export default function RoommateView() {
           id: post.id,
           name: post.poster?.fullName || post.poster?.email || "Anonymous Profile",
           posterId: post.poster?.id,
+          gender: post.gender || post.poster?.gender || "Not specified",
           age: post.age || post.poster?.age || null,
           occupation: post.occupation || post.poster?.occupation || "Verified Tenant",
           location: post.location || "Location not specified",
@@ -132,6 +133,12 @@ export default function RoommateView() {
                     <span className="bg-[#3488c3] text-white text-xs font-extrabold px-3.5 py-1 rounded-full shadow-xs">
                       ✨ 95% Match
                     </span>
+                    {roommate.gender && (
+                      <span className="bg-indigo-500/90 text-white text-xs font-bold px-3.5 py-1 rounded-full shadow-xs flex items-center gap-1">
+                        <span>{roommate.gender.toLowerCase() === 'male' ? '👨' : roommate.gender.toLowerCase() === 'female' ? '👩' : '👤'}</span>
+                        <span>Gender: {roommate.gender}</span>
+                      </span>
+                    )}
                     <span className="bg-white/20 backdrop-blur-md text-white text-xs font-bold px-3.5 py-1 rounded-full border border-white/30">
                       💼 {roommate.occupation}
                     </span>
@@ -191,9 +198,19 @@ export default function RoommateView() {
                     <span className="w-9 h-9 rounded-2xl bg-[#3488c3]/10 text-[#3488c3] flex items-center justify-center text-lg font-bold border border-[#3488c3]/20">
                       🎯
                     </span>
-                    <span>Living Preferences</span>
+                    <span>Living Preferences & Details</span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-50/90 border border-slate-200/70 hover:bg-[#eaf4fb]/50 transition">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center text-lg shrink-0">
+                        {roommate.gender?.toLowerCase() === 'male' ? '👨' : roommate.gender?.toLowerCase() === 'female' ? '👩' : '👤'}
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block">Gender</span>
+                        <span className="text-sm font-extrabold text-slate-900 mt-0.5 block">{roommate.gender || 'Not specified'}</span>
+                      </div>
+                    </div>
+
                     <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-50/90 border border-slate-200/70 hover:bg-[#eaf4fb]/50 transition">
                       <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center text-lg shrink-0">
                         🔍
