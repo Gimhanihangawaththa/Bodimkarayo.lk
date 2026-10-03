@@ -82,36 +82,36 @@ export default function AIRecommendations() {
   };
 
   return (
-    <section className="py-20 bg-white">
+    <section className="py-12 md:py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4">
-        <div className={`rounded-3xl p-10 relative overflow-hidden transition-all duration-500 ${
-          autoMatched ? 'bg-gradient-to-br from-indigo-50 via-white to-blue-50 border border-indigo-100 shadow-xl' : 'bg-gray-50 border border-gray-200'
+        <div className={`rounded-3xl p-6 md:p-10 relative overflow-hidden transition-all duration-500 ${
+          autoMatched ? 'bg-gradient-to-br from-blue-50/80 via-white to-sky-50/60 border border-blue-100 shadow-xl' : 'bg-gradient-to-br from-slate-50/80 via-white to-blue-50/40 border border-slate-200/80 shadow-md'
         }`}>
-          {/* Decorative elements */}
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-200 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
-          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-200 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
+          {/* Decorative ambient lighting */}
+          <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#3488c3]/15 rounded-full blur-3xl opacity-70 pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-sky-300/20 rounded-full blur-3xl opacity-60 pointer-events-none" />
 
           <div className="relative z-10">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                  <div className="w-12 h-12 bg-gradient-to-tr from-[#3488c3] to-[#2978b3] rounded-2xl flex items-center justify-center text-white shadow-md shadow-[#3488c3]/25 shrink-0">
                     <span className="text-xl">✨</span>
                   </div>
-                  <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">AI Matchmaker</h2>
-                  {autoMatched && (
-                    <span className="bg-indigo-600 text-white text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-full shadow-sm ml-2">
-                      Personalized
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">AI Matchmaker</h2>
+                    <span className="bg-[#3488c3]/10 text-[#3488c3] border border-[#3488c3]/20 text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                      Smart Search
                     </span>
-                  )}
+                  </div>
                 </div>
                 {!autoMatched && (
-                  <p className="text-gray-600 font-medium max-w-xl">
-                    Describe your ideal boarding place, we will find the perfect matches for your lifestyle and budget.
+                  <p className="text-slate-600 font-medium text-sm md:text-base max-w-xl">
+                    Describe your ideal boarding place or lifestyle, and our AI will find the perfect matches for your budget.
                   </p>
                 )}
                 {autoMatched && recommendations.length > 0 && (
-                  <p className="text-gray-500 font-medium">
+                  <p className="text-slate-500 font-medium text-sm">
                     Based on your profile, we've found these perfect matches for you.
                   </p>
                 )}
@@ -120,7 +120,7 @@ export default function AIRecommendations() {
               {autoMatched && (
                 <button 
                   onClick={() => setAutoMatched(false)}
-                  className="text-indigo-600 hover:text-indigo-800 text-sm font-bold flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-indigo-50 transition-colors"
+                  className="text-[#3488c3] hover:text-[#2978b3] text-sm font-bold flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors"
                 >
                   <span>Edit Preferences</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,67 +131,67 @@ export default function AIRecommendations() {
             </div>
             
             {!autoMatched && (
-              <form onSubmit={handleGetRecommendations} className="space-y-6 mb-12 bg-white/60 backdrop-blur-md p-8 rounded-2xl border border-white shadow-inner">
+              <form onSubmit={handleGetRecommendations} className="space-y-6 bg-white/90 backdrop-blur-md p-6 md:p-8 rounded-2xl border border-slate-200/80 shadow-xs">
                 <div>
-                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Your Preferences</label>
+                  <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">Your Preferences</label>
                   <textarea 
                     value={preferences}
                     onChange={(e) => setPreferences(e.target.value)}
-                    placeholder="e.g. I am a vegetarian student looking for a quiet place with WiFi and a friendly environment..."
-                    className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none shadow-sm text-gray-700 placeholder-gray-300 resize-none"
+                    placeholder="e.g. I am a vegetarian engineering student looking for a quiet boarding room with WiFi and friendly flatmates..."
+                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-[#3488c3]/15 focus:border-[#3488c3] transition-all outline-none shadow-xs text-slate-800 text-sm placeholder:text-slate-400 resize-none font-medium"
                     rows="3"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Location</label>
+                    <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">Preferred Location</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">📍</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">📍</span>
                       <input 
                         type="text"
                         value={preferredLocation}
                         onChange={(e) => setPreferredLocation(e.target.value)}
-                        placeholder="e.g. Colombo 07"
-                        className="w-full pl-10 pr-5 py-4 rounded-xl border border-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none shadow-sm text-gray-700"
+                        placeholder="e.g. Katubedda, Colombo 07, Malabe"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-[#3488c3]/15 focus:border-[#3488c3] transition-all outline-none shadow-xs text-slate-800 text-sm font-medium"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Max Budget</label>
+                    <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">Max Budget (LKR)</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">Rs</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rs</span>
                       <input 
                         type="number"
                         value={maxBudget}
                         onChange={(e) => setMaxBudget(e.target.value)}
                         placeholder="e.g. 25000"
-                        className="w-full pl-12 pr-5 py-4 rounded-xl border border-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none shadow-sm text-gray-700"
+                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-[#3488c3]/15 focus:border-[#3488c3] transition-all outline-none shadow-xs text-slate-800 text-sm font-medium"
                       />
                     </div>
                   </div>
                 </div>
                 
-                {error && <p className="text-red-500 text-sm font-bold flex items-center gap-2 animate-bounce">
+                {error && <p className="text-red-600 text-xs font-bold flex items-center gap-2">
                   <span>⚠️</span> {error}
                 </p>}
                 
                 <button 
                   type="submit" 
                   disabled={loading}
-                  className={`w-full md:w-auto px-10 py-4 rounded-xl font-black text-white shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${
-                    loading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-200 shadow-indigo-100'
+                  className={`w-full md:w-auto px-8 py-3.5 rounded-xl font-bold text-sm text-white shadow-md transition-all flex items-center justify-center gap-2.5 active:scale-95 cursor-pointer ${
+                    loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-[#3488c3] hover:bg-[#2978b3] shadow-[#3488c3]/25'
                   }`}
                 >
                   {loading ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      <span>Thinking...</span>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span>Finding Matches...</span>
                     </>
                   ) : (
                     <>
                       <span>Find My Match</span>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </>
                   )}

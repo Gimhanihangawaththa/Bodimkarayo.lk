@@ -531,15 +531,29 @@ export default function ProfilePage() {
     }
   };
 
+  // Keyboard Escape listener for closing active modals
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsEditModalOpen(false);
+        setIsApplyModalOpen(false);
+      }
+    };
+    if (isEditModalOpen || isApplyModalOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isEditModalOpen, isApplyModalOpen]);
+
   const getStatusBadge = () => {
     const statusConfig = {
-      notApplied: { text: "Not Applied", color: "bg-gray-100 text-gray-800" },
-      applied: { text: "Applied", color: "bg-blue-100 text-blue-800" },
+      notApplied: { text: "Not Applied", color: "bg-slate-100 text-slate-700 border border-slate-200" },
+      applied: { text: "Applied", color: "bg-emerald-50 text-emerald-700 border border-emerald-200" },
     };
 
     const config = statusConfig[roommateStatus] || statusConfig.notApplied;
     return (
-      <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${config.color}`}>
+      <span className={`inline-block px-3 py-1 rounded-full text-xs font-extrabold ${config.color}`}>
         {config.text}
       </span>
     );
@@ -551,48 +565,52 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="mx-auto max-w-4xl px-4">
+    <div className="min-h-screen bg-slate-50 py-10">
+      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 space-y-8">
         {/* Header Section */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex gap-6">
+        <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/90 shadow-[0_12px_40px_rgba(15,23,42,0.06)]">
+          <div className="flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
             {/* Avatar */}
-            <div className="flex-shrink-0">
+            <div className="relative shrink-0">
               <img
-                src={user.avatarUrl}
+                src={user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'}
                 alt={user.name}
-                className="w-32 h-32 rounded-full object-cover ring-2 ring-blue-500"
+                className="w-28 h-28 md:w-32 md:h-32 rounded-3xl object-cover border-4 border-slate-100 shadow-xl bg-slate-100"
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400';
+                }}
               />
+              <span className="absolute -bottom-1 -right-1 bg-[#3488c3] text-white text-xs w-7 h-7 rounded-full flex items-center justify-center font-bold shadow-md">
+                ✓
+              </span>
             </div>
 
             {/* Basic Info */}
-            <div className="flex-grow">
-              <h1 className="text-3xl font-bold text-gray-900">{user.name}</h1>
-              <p className="text-gray-600 mt-2">{user.email}</p>
-              <div className="mt-2">
-                <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-indigo-100 text-indigo-800">
-                  {getRoleLabel(user.role)}
+            <div className="flex-1 text-center md:text-left space-y-2">
+              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-bold bg-[#eaf4fb] text-[#246fa8] border border-[#d2e7f6]">
+                  👤 {getRoleLabel(user.role)}
                 </span>
-              </div>
-
-              {/* Roommate Status Badge */}
-              <div className="mt-4 mb-4">
-                <p className="text-sm text-gray-600 mb-2">Roommate Status:</p>
                 {getStatusBadge()}
               </div>
 
+              <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">{user.name || 'User Profile'}</h1>
+              <p className="text-slate-500 font-medium text-sm">{user.email}</p>
+
               {/* Action Buttons */}
-              <div className="flex gap-3 mt-4 flex-wrap">
+              <div className="flex gap-3 pt-3 flex-wrap justify-center md:justify-start">
                 <button
+                  type="button"
                   onClick={handleEditProfile}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md font-medium transition"
+                  className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-6 py-2.5 rounded-2xl font-extrabold text-xs md:text-sm transition shadow-lg shadow-[#3488c3]/25 active:scale-95 cursor-pointer flex items-center gap-1.5"
                 >
-                  Edit Profile
+                  <span>✏️</span> Edit Profile
                 </button>
                 {roommateStatus === "notApplied" && (
                   <button
+                    type="button"
                     onClick={handleOpenApplyModal}
-                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium transition flex items-center gap-2"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-2xl font-extrabold text-xs md:text-sm transition shadow-lg shadow-emerald-600/25 active:scale-95 cursor-pointer flex items-center gap-2"
                   >
                     <span>🏠</span> Apply as Roommate
                   </button>
@@ -600,14 +618,16 @@ export default function ProfilePage() {
                 {roommateStatus === "applied" && (
                   <>
                     <button
+                      type="button"
                       onClick={handleEditApplication}
-                      className="bg-slate-600 hover:bg-slate-700 text-white px-6 py-2 rounded-md font-medium transition"
+                      className="bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-2xl font-bold text-xs md:text-sm transition cursor-pointer"
                     >
                       Edit Application
                     </button>
                     <button
+                      type="button"
                       onClick={handleRemoveApplication}
-                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md font-medium transition"
+                      className="bg-rose-600 hover:bg-rose-700 text-white px-6 py-2.5 rounded-2xl font-bold text-xs md:text-sm transition cursor-pointer"
                     >
                       Remove Application
                     </button>
@@ -619,59 +639,56 @@ export default function ProfilePage() {
         </div>
 
         {/* Saved properties (favorites) */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Saved Properties</h2>
+        <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/90 shadow-[0_12px_40px_rgba(15,23,42,0.06)] space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+              <span>❤️</span> Saved Properties
+            </h2>
+            <span className="text-xs font-bold text-slate-500">
+              {user.favoriteProperties ? `${user.favoriteProperties.length} Saved` : '0 Saved'}
+            </span>
+          </div>
+
           {user.favoriteProperties && user.favoriteProperties.length > 0 ? (
-            <div className="grid grid-cols-1 gap-6 w-full">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {user.favoriteProperties.map((property) => (
                 <div
                   key={property.id}
-                  className="rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  className="group bg-white rounded-3xl overflow-hidden border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-[#3488c3]/40 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between"
                   onClick={() => navigate(`/property/${property.id}`)}
                 >
-                  <div className="relative h-48 overflow-hidden bg-gray-100">
+                  <div className="relative h-48 overflow-hidden bg-slate-100">
                     <img
                       src={property.image}
                       alt={property.title}
-                      className="w-full h-full object-cover hover:scale-105 transition-transform"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src =
                           "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400";
                       }}
                     />
-                    <span className="absolute top-2 right-2 bg-rose-600 text-white px-2 py-1 rounded text-sm font-medium">
+                    <span className="absolute top-3 right-3 bg-rose-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
                       Saved
                     </span>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{property.title}</h3>
-                    <p className="text-gray-600 text-sm mb-3">📍 {property.location}</p>
-                    <p className="text-xl font-bold text-blue-600 mb-3">Rs {property.price}/month</p>
-                    <div className="flex gap-4 text-sm text-gray-600 mb-4">
-                      <span className="flex items-center gap-1">🛏️ {property.bedrooms} Bed</span>
-                      <span className="flex items-center gap-1">🚿 {property.bathrooms} Bath</span>
+                  <div className="p-5 flex-1 flex flex-col justify-between">
+                    <div>
+                      <span className="text-[11px] font-extrabold text-[#3488c3] tracking-wide uppercase">{property.location}</span>
+                      <h3 className="text-base font-bold text-slate-900 mt-0.5 group-hover:text-[#3488c3] transition-colors line-clamp-1">{property.title}</h3>
                     </div>
-                    <div className="flex gap-2">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          navigate(`/property/${property.id}`);
-                        }}
-                        className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-md font-medium transition"
-                      >
-                        View
-                      </button>
+
+                    <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <p className="font-extrabold text-slate-900 text-base">Rs {property.price.toLocaleString()}<span className="text-xs font-normal text-slate-500"> /mo</span></p>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleRemoveFavorite(property.id, property.title);
                         }}
-                        className="flex-1 border border-gray-300 text-gray-800 hover:bg-gray-50 px-4 py-2 rounded-md font-medium transition"
+                        className="text-xs font-bold text-rose-600 hover:underline cursor-pointer"
                       >
-                        Remove
+                        Remove ✕
                       </button>
                     </div>
                   </div>
@@ -679,108 +696,85 @@ export default function ProfilePage() {
               ))}
             </div>
           ) : (
-            <p className="text-gray-600 text-center py-6">
-              You have not saved any properties yet. Open a listing and tap &quot;Save to Favorites&quot;.
-            </p>
+            <div className="text-center py-12 bg-slate-50 rounded-3xl border border-dashed border-slate-200 p-8">
+              <span className="text-4xl block mb-3">🏡</span>
+              <h3 className="text-base font-bold text-slate-800">No saved properties yet</h3>
+              <p className="text-slate-500 text-xs mt-1 max-w-sm mx-auto">
+                Open any property listing and tap &quot;Save to Favorites&quot; to bookmark it here.
+              </p>
+            </div>
           )}
         </div>
 
         {/* My Properties Section - Only visible for property owners */}
         {user.role === 'OWNER' && (
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">My Properties</h2>
+          <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/90 shadow-[0_12px_40px_rgba(15,23,42,0.06)] space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <h2 className="text-xl md:text-2xl font-extrabold text-slate-900 tracking-tight flex items-center gap-2">
+                <span>🏢</span> My Listed Properties
+              </h2>
               <button
+                type="button"
                 onClick={() => navigate("/add-property")}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition"
+                className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-5 py-2.5 rounded-2xl font-extrabold text-xs md:text-sm transition shadow-lg shadow-[#3488c3]/25 cursor-pointer flex items-center gap-1.5"
               >
-                + Add Property
+                <span>+</span> Add Property
               </button>
             </div>
 
             {user.userProperties && user.userProperties.length > 0 ? (
-              <div className="grid grid-cols-1 gap-6 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {user.userProperties.map((property) => (
                   <div
                     key={property.id}
-                    className="rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                    className="group bg-white rounded-3xl overflow-hidden border border-slate-200/90 shadow-md hover:shadow-2xl hover:border-[#3488c3]/40 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer flex flex-col justify-between"
                     onClick={() => navigate(`/property/${property.id}`)}
                   >
-                    {/* Property Image */}
-                    <div className="relative h-48 overflow-hidden bg-gray-100">
+                    <div className="relative h-48 overflow-hidden bg-slate-100">
                       <img
                         src={property.image}
                         alt={property.title}
-                        className="w-full h-full object-cover hover:scale-105 transition-transform"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
-                      <span className="absolute top-2 right-2 bg-blue-600 text-white px-2 py-1 rounded text-sm font-medium">
+                      <span className="absolute top-3 right-3 bg-[#3488c3] text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
                         {property.type}
                       </span>
                     </div>
 
-                    {/* Property Details */}
-                    <div className="p-4">
-                      <h3 className="font-bold text-gray-900 mb-2 line-clamp-2">{property.title}</h3>
-                      <p className="text-gray-600 text-sm mb-3">📍 {property.location}</p>
-
-                      {/* Price */}
-                      <p className="text-xl font-bold text-blue-600 mb-3">Rs {property.price}/month</p>
-
-                      {/* Features */}
-                      <div className="flex gap-4 text-sm text-gray-600 mb-4">
-                        <span className="flex items-center gap-1">
-                          🛏️ {property.bedrooms} Bed
-                        </span>
-                        <span className="flex items-center gap-1">
-                          🚿 {property.bathrooms} Bath
-                        </span>
+                    <div className="p-5 flex-1 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[11px] font-extrabold text-[#3488c3] tracking-wide uppercase">{property.location}</span>
+                        <h3 className="text-base font-bold text-slate-900 mt-0.5 group-hover:text-[#3488c3] transition-colors line-clamp-1">{property.title}</h3>
                       </div>
 
-                      {/* Action Buttons */}
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/property/${property.id}`);
-                          }}
-                          className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 px-4 py-2 rounded-md font-medium transition"
-                        >
-                          View Details
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/edit-property/${property.id}`);
-                          }}
-                          className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md font-medium transition"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteProperty(property.id, property.title);
-                          }}
-                          className="text-black hover:opacity-60 transition"
-                          title="Delete property"
-                        >
-                          <svg className="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-9l-1 1H5v2h14V4z"/>
-                          </svg>
-                        </button>
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
+                        <p className="font-extrabold text-slate-900 text-base">Rs {property.price.toLocaleString()}<span className="text-xs font-normal text-slate-500"> /mo</span></p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/edit-property/${property.id}`);
+                            }}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
+                          >
+                            Edit
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">You haven't added any properties yet.</p>
+              <div className="text-center py-12 bg-slate-50 rounded-3xl border border-dashed border-slate-200 p-8">
+                <p className="text-slate-500 text-xs mb-4">You haven't added any property listings yet.</p>
                 <button
+                  type="button"
                   onClick={() => navigate("/add-property")}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium transition"
+                  className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-6 py-2.5 rounded-2xl font-extrabold text-xs transition shadow-lg shadow-[#3488c3]/25 cursor-pointer"
                 >
-                  Add Your First Property
+                  + Add Your First Property
                 </button>
               </div>
             )}
@@ -792,91 +786,130 @@ export default function ProfilePage() {
 
       {/* Edit Profile Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <h3 className="text-2xl font-bold text-gray-900">Edit Profile</h3>
+        <div 
+          onClick={() => setIsEditModalOpen(false)}
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-200/80 cursor-default transform transition-all"
+          >
+            {/* Header */}
+            <div className="px-6 pt-6 pb-4 md:px-8 md:pt-7 md:pb-5 flex justify-between items-start border-b border-slate-100">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">Edit Profile</h3>
+                <p className="text-xs md:text-sm text-slate-500 font-medium mt-1">Update your account details and profile photo</p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition cursor-pointer -mr-2 -mt-1"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
-            <div className="p-6">
+            {/* Modal Body */}
+            <div className="p-6 md:p-8 space-y-6">
               {/* Profile Image Upload Section */}
-              <div className="mb-6 pb-6 border-b">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Profile Picture</h4>
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Image Preview */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-32 h-32 rounded-full overflow-hidden border-2 border-gray-300 mb-3">
-                      <img
-                        src={previewImage}
-                        alt="Profile preview"
-                        className="w-full h-full object-cover"
-                      />
+              <div className="p-5 bg-slate-50/80 rounded-2xl border border-slate-200/70">
+                <label className="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-3">
+                  Profile Picture
+                </label>
+                <div className="flex items-center gap-5">
+                  <div className="relative group w-24 h-24 rounded-3xl overflow-hidden border-2 border-white shadow-xl bg-slate-200 shrink-0">
+                    <img
+                      src={previewImage || user.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400'}
+                      alt="Profile preview"
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      onError={(e) => {
+                        e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400';
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition duration-200">
+                      <span className="text-white text-xs font-bold">Preview</span>
                     </div>
-                    <p className="text-sm text-gray-600">Preview</p>
                   </div>
 
-                  {/* Upload Input */}
-                  <div className="flex-1 flex flex-col justify-center">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Change Profile Picture
+                  <div className="flex-1">
+                    <label className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#3488c3] hover:bg-[#2978b3] text-white rounded-xl font-extrabold text-xs shadow-md shadow-[#3488c3]/20 transition cursor-pointer hover:-translate-y-0.5 active:translate-y-0">
+                      <span>📷</span> Upload New Photo
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
                     </label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageChange}
-                      className="block w-full text-sm text-gray-500
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-md file:border-0
-                        file:text-sm file:font-medium
-                        file:bg-blue-50 file:text-blue-700
-                        hover:file:bg-blue-100 file:cursor-pointer"
-                    />
-                    <p className="text-xs text-gray-500 mt-2">Supported formats: JPG, PNG, GIF (Max 5MB)</p>
+                    <p className="text-[11px] text-slate-400 mt-2 font-medium">Recommended: Square JPG, PNG or GIF (Max 5MB)</p>
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Name */}
+              {/* Form Inputs */}
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={editFormData.name}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Full Name</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">👤</span>
+                    <input
+                      type="text"
+                      name="name"
+                      value={editFormData.name}
+                      onChange={handleInputChange}
+                      placeholder="Enter full name"
+                      className="w-full pl-11 pr-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900"
+                    />
+                  </div>
                 </div>
 
-                {/* Email */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={editFormData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">✉️</span>
+                    <input
+                      type="email"
+                      name="email"
+                      value={editFormData.email}
+                      onChange={handleInputChange}
+                      placeholder="your.email@example.com"
+                      className="w-full pl-11 pr-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900"
+                    />
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Modal Action Buttons */}
-            <div className="p-6 border-t flex gap-3 justify-end">
+            <div className="p-6 border-t border-slate-100 bg-slate-50/80 flex gap-3 justify-end items-center">
               <button
+                type="button"
                 onClick={() => setIsEditModalOpen(false)}
-                className="px-6 py-2 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-50 transition"
+                className="px-6 py-2.5 bg-slate-200/70 hover:bg-slate-200 rounded-2xl font-bold text-xs text-slate-700 transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSaveProfile}
                 disabled={isSavingProfile}
-                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition"
+                className="px-7 py-2.5 bg-[#3488c3] hover:bg-[#2978b3] text-white rounded-2xl font-extrabold text-xs transition shadow-lg shadow-[#3488c3]/25 cursor-pointer disabled:opacity-60 flex items-center gap-2 hover:-translate-y-0.5 active:translate-y-0"
               >
-                {isSavingProfile ? "Saving..." : "Save Changes"}
+                {isSavingProfile ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✓</span> Save Changes
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -885,276 +918,287 @@ export default function ProfilePage() {
 
       {/* Roommate Application Modal */}
       {isApplyModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div 
+          onClick={() => {
+            setIsApplyModalOpen(false);
+            setIsEditingApplication(false);
+          }}
+          className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-slate-200/80 cursor-default transform transition-all flex flex-col justify-between"
+          >
             {/* Modal Header */}
-            <div className="p-6 border-b bg-gradient-to-r from-green-50 to-emerald-50">
-              <h3 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <span>🏠</span> {isEditingApplication ? "Edit Roommate Application" : "Apply as a Roommate"}
-              </h3>
-              <p className="text-gray-600 text-sm mt-2">Complete your roommate profile to start finding compatible roommates</p>
+            <div className="bg-white px-6 md:px-8 pt-6 pb-4 md:pt-7 md:pb-5 flex justify-between items-start border-b border-slate-100 sticky top-0 z-10">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+                  {isEditingApplication ? "Edit Roommate Application" : "Apply as a Roommate"}
+                </h3>
+                <p className="text-xs md:text-sm text-slate-500 font-medium mt-1">
+                  Complete your profile to get discovered by compatible flatmates
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => {
+                  setIsApplyModalOpen(false);
+                  setIsEditingApplication(false);
+                }}
+                className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-slate-100 transition cursor-pointer -mr-2 -mt-1"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
 
             {/* Modal Content */}
-            <div className="p-6">
-              {/* Info Section */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-blue-800">
-                  <strong>ℹ️ Info:</strong> Your profile information will be shared with potential roommates. Complete this form to let them know about your preferences and timeline.
+            <div className="p-6 md:p-8 space-y-7">
+              {/* Sleek Info Callout Banner */}
+              <div className="bg-[#3488c3]/10 border border-[#3488c3]/20 rounded-2xl p-4 text-[#20689b] font-medium text-xs flex items-start gap-3 shadow-xs">
+                <span className="text-lg shrink-0 mt-0.5">ℹ️</span>
+                <p className="leading-relaxed">
+                  Your profile details will be listed on <strong className="font-extrabold text-[#1b4b6d]">Bodimkarayo.lk Roommates</strong> so potential flatmates can contact you. Complete all required fields to maximize your AI match rate!
                 </p>
               </div>
 
-              {/* Occupation and Location Section */}
-              <div className="mb-6 pb-6 border-b">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Basic Information</h4>
+              {/* Section 1: Basic Info */}
+              <div className="space-y-4 pb-6 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">📋</span>
+                  <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Basic Information</h4>
+                </div>
+                
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Gender */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Gender <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="gender"
-                      value={applicationData.gender}
-                      onChange={handleApplicationChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    >
-                      <option value="">Select gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                      <option value="Prefer not to say">Prefer not to say</option>
-                    </select>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Gender <span className="text-rose-500">*</span></label>
+                    <div className="relative">
+                      <select
+                        name="gender"
+                        value={applicationData.gender}
+                        onChange={handleApplicationChange}
+                        className="w-full px-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900 cursor-pointer"
+                      >
+                        <option value="">Select gender</option>
+                        <option value="Male">Male</option>
+                        <option value="Female">Female</option>
+                        <option value="Other">Other</option>
+                        <option value="Prefer not to say">Prefer not to say</option>
+                      </select>
+                    </div>
                   </div>
 
-                  {/* Age */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Age <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      name="age"
-                      value={applicationData.age}
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Age <span className="text-rose-500">*</span></label>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        name="age"
+                        value={applicationData.age}
+                        onChange={handleApplicationChange}
+                        placeholder="e.g., 24"
+                        className="w-full px-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Occupation <span className="text-rose-500">*</span></label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">💼</span>
+                      <input
+                        type="text"
+                        name="occupation"
+                        value={applicationData.occupation}
+                        onChange={handleApplicationChange}
+                        placeholder="e.g., Software Engineer, Student"
+                        className="w-full pl-11 pr-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Current Location <span className="text-rose-500">*</span></label>
+                    <div className="relative">
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">📍</span>
+                      <input
+                        type="text"
+                        name="location"
+                        value={applicationData.location}
+                        onChange={handleApplicationChange}
+                        placeholder="e.g., Colombo 3, Katubedda"
+                        className="w-full pl-11 pr-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 2: About You */}
+              <div className="space-y-4 pb-6 border-b border-slate-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">✍️</span>
+                    <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">About You</h4>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Short Bio / Headline <span className="text-rose-500">*</span></label>
+                    <textarea
+                      name="bio"
+                      value={applicationData.bio}
                       onChange={handleApplicationChange}
-                      placeholder="e.g., 24"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="A catchy tagline about your lifestyle (e.g. Quiet engineering student looking for a clean place)"
+                      rows="2"
+                      className="w-full px-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white resize-none text-slate-900"
                     />
                   </div>
 
-                  {/* Occupation */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Occupation <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="occupation"
-                      value={applicationData.occupation}
+                    <div className="flex justify-between items-center mb-1.5">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">Detailed Description <span className="text-rose-500">*</span></label>
+                      <span className="text-[11px] font-bold text-slate-400">{applicationData.about.length}/500</span>
+                    </div>
+                    <textarea
+                      name="about"
+                      value={applicationData.about}
                       onChange={handleApplicationChange}
-                      placeholder="e.g., Software Engineer, Accountant"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  {/* Location */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Current Location <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="location"
-                      value={applicationData.location}
-                      onChange={handleApplicationChange}
-                      placeholder="e.g., Colombo 3"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder="Share about your personality, daily routine, study/work hours, and what you expect from a flatmate..."
+                      rows="4"
+                      maxLength={500}
+                      className="w-full px-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white resize-none text-slate-900"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* About Section */}
-              <div className="mb-6 pb-6 border-b">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">About You</h4>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Short bio <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    name="bio"
-                    value={applicationData.bio}
-                    onChange={handleApplicationChange}
-                    placeholder="A short description about you"
-                    rows="2"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none mb-4"
-                  />
-
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Detailed about <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    name="about"
-                    value={applicationData.about}
-                    onChange={handleApplicationChange}
-                    placeholder="Share about your personality, lifestyle, habits, and what you're looking for in a living situation..."
-                    rows="4"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">{applicationData.about.length}/500 characters</p>
+              {/* Section 3: Interests */}
+              <div className="space-y-3 pb-6 border-b border-slate-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🎯</span>
+                    <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Your Interests <span className="text-rose-500">*</span></h4>
+                  </div>
+                  <span className="text-[11px] text-[#3488c3] font-bold">Select all that apply</span>
                 </div>
-              </div>
-
-              {/* Interests Section */}
-              <div className="mb-6 pb-6 border-b">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                  Your Interests <span className="text-red-500">*</span>
-                </h4>
-                <p className="text-sm text-gray-600 mb-3">Select at least one interest to help match with compatible roommates</p>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                
+                <div className="flex flex-wrap gap-2 pt-1">
                   {[
-                    "Cooking",
-                    "Reading",
-                    "Yoga",
-                    "Writing",
-                    "Hiking",
-                    "Photography",
-                    "Gaming",
-                    "Music",
-                    "Sports",
-                    "Travel",
-                    "Art",
-                    "Movies",
-                    "Fitness",
-                    "Technology",
-                    "Gardening",
-                    "Meditation",
-                  ].map((interest) => (
-                    <button
-                      key={interest}
-                      type="button"
-                      onClick={() => handleInterestToggle(interest)}
-                      className={`px-3 py-2 rounded-full text-sm font-medium transition border ${
-                        applicationData.interests.includes(interest)
-                          ? "bg-green-500 text-white border-green-500"
-                          : "bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200"
-                      }`}
-                    >
-                      {interest}
-                    </button>
-                  ))}
+                    "Cooking", "Reading", "Yoga", "Writing", "Hiking", "Photography",
+                    "Gaming", "Music", "Sports", "Travel", "Art", "Movies",
+                    "Fitness", "Technology", "Gardening", "Meditation"
+                  ].map((interest) => {
+                    const isSelected = applicationData.interests.includes(interest);
+                    return (
+                      <button
+                        key={interest}
+                        type="button"
+                        onClick={() => handleInterestToggle(interest)}
+                        className={`px-3.5 py-2 rounded-2xl text-xs font-extrabold transition-all duration-200 border cursor-pointer flex items-center gap-1.5 ${
+                          isSelected
+                            ? "bg-[#3488c3] text-white border-[#3488c3] shadow-md shadow-[#3488c3]/20 scale-105"
+                            : "bg-slate-100 hover:bg-slate-200/80 text-slate-700 border-transparent"
+                        }`}
+                      >
+                        {isSelected && <span className="text-[10px]">✓</span>}
+                        {interest}
+                      </button>
+                    );
+                  })}
                 </div>
-                <p className="text-xs text-gray-500 mt-3">
-                  Selected: {applicationData.interests.length > 0 ? applicationData.interests.join(", ") : "None"}
-                </p>
               </div>
 
-              {/* Move-in and Budget Section */}
-              <div className="mb-6 pb-6 border-b">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Move-in Details</h4>
+              {/* Section 4: Move-In & Budget */}
+              <div className="space-y-4 pb-6 border-b border-slate-100">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">💰</span>
+                  <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Move-In & Budget</h4>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Move-in Date */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      When are you looking to move in? <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="month"
-                      name="moveInDate"
-                      value={applicationData.moveInDate}
-                      onChange={handleApplicationChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Move-In Date <span className="text-rose-500">*</span></label>
+                    <div className="relative">
+                      <input
+                        type="month"
+                        name="moveInDate"
+                        value={applicationData.moveInDate}
+                        onChange={handleApplicationChange}
+                        className="w-full px-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900 cursor-pointer"
+                      />
+                    </div>
                   </div>
 
-                  {/* Budget */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      What's your monthly budget? <span className="text-red-500">*</span>
-                    </label>
-                    <div className="flex items-center">
-                      <span className="text-gray-600 mr-2">Rs</span>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Monthly Budget <span className="text-rose-500">*</span></label>
+                    <div className="relative flex items-center">
+                      <span className="absolute left-4 font-extrabold text-xs text-[#3488c3] bg-[#3488c3]/15 px-2 py-1 rounded-lg">LKR</span>
                       <input
                         type="number"
                         name="budget"
                         value={applicationData.budget}
                         onChange={handleApplicationChange}
                         placeholder="e.g., 25000"
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        className="w-full pl-16 pr-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900"
                       />
-                      <span className="text-gray-600 ml-2">/month</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Preferences Section */}
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Preferred boarding location <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="preferredLocation"
-                    value={applicationData.preferredLocation}
-                    onChange={handleApplicationChange}
-                    placeholder="e.g., Colombo 4-7"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  />
+              {/* Section 5: Roommate Preferences */}
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">🔍</span>
+                  <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">Roommate Preferences</h4>
                 </div>
 
-                {/* Preferences */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    What are you looking for in a roommate? (Optional)
-                  </label>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Preferred Location / Area <span className="text-rose-500">*</span></label>
+                  <div className="relative mb-3">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">📍</span>
+                    <input
+                      type="text"
+                      name="preferredLocation"
+                      value={applicationData.preferredLocation}
+                      onChange={handleApplicationChange}
+                      placeholder="e.g., Colombo 4-7, Moratuwa, Malabe"
+                      className="w-full pl-11 pr-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900"
+                    />
+                  </div>
+
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Specific Roommate Preferences (Optional)</label>
                   <textarea
                     name="preferences"
                     value={applicationData.preferences}
                     onChange={handleApplicationChange}
-                    placeholder="e.g., Quiet roommate, early riser, pet-friendly, vegetarian, etc."
+                    placeholder="e.g., Prefer quiet non-smoker, early riser, pet-friendly, vegetarian, etc."
                     rows="3"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
-                  />
-                </div>
-
-                {/* Additional Info */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Anything else you'd like to share? (Optional)
-                  </label>
-                  <textarea
-                    name="additionalInfo"
-                    value={applicationData.additionalInfo}
-                    onChange={handleApplicationChange}
-                    placeholder="Any other relevant information..."
-                    rows="2"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
+                    className="w-full px-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white resize-none text-slate-900"
                   />
                 </div>
               </div>
             </div>
 
             {/* Modal Footer */}
-            <div className="p-6 border-t bg-gray-50 flex gap-3 justify-end">
+            <div className="p-6 border-t border-slate-100 bg-slate-50/80 flex gap-3 justify-end items-center sticky bottom-0 z-10 shadow-lg">
               <button
+                type="button"
                 onClick={() => {
                   setIsApplyModalOpen(false);
-                  if (isEditingApplication && currentApplication) {
-                    setApplicationData(mapPostToApplicationData(currentApplication));
-                  } else {
-                    setApplicationData(createEmptyApplicationData(user.interests || []));
-                  }
                   setIsEditingApplication(false);
                 }}
-                className="px-6 py-2 border border-gray-300 rounded-md font-medium text-gray-700 hover:bg-gray-100 transition"
+                className="px-6 py-2.5 bg-slate-200/70 hover:bg-slate-200 rounded-2xl font-bold text-xs text-slate-700 transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleSubmitApplication}
-                className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-medium transition flex items-center gap-2"
+                className="px-7 py-2.5 bg-[#3488c3] hover:bg-[#2978b3] text-white rounded-2xl font-extrabold text-xs transition shadow-lg shadow-[#3488c3]/25 cursor-pointer flex items-center gap-1.5 hover:-translate-y-0.5 active:translate-y-0"
               >
                 <span>✓</span> {isEditingApplication ? "Save Changes" : "Submit Application"}
               </button>

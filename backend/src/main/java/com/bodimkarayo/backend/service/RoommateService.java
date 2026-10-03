@@ -15,6 +15,9 @@ public class RoommateService {
     @Autowired
     private RoommateRepository roommateRepository;
 
+    @Autowired(required = false)
+    private com.bodimkarayo.backend.search.SearchIndexService searchIndexService;
+
     public List<RoommatePost> getAllPosts() {
         return roommateRepository.findAll();
     }
@@ -25,6 +28,9 @@ public class RoommateService {
 
     public RoommatePost createPost(RoommatePost post) {
         RoommatePost savedPost = (RoommatePost) roommateRepository.save(post);
+        if (searchIndexService != null) {
+            searchIndexService.syncRoommate(savedPost);
+        }
         return savedPost;
     }
 
@@ -46,11 +52,17 @@ public class RoommateService {
         post.setPoster(updatedPost.getPoster());
 
         RoommatePost savedPost = (RoommatePost) roommateRepository.save(post);
+        if (searchIndexService != null) {
+            searchIndexService.syncRoommate(savedPost);
+        }
         return savedPost;
     }
 
     public void deletePost(Long id) {
         roommateRepository.deleteById(id);
+        if (searchIndexService != null) {
+            searchIndexService.removeRoommate(id);
+        }
     }
 
     public List<RoommatePost> searchRoommates(
@@ -67,6 +79,26 @@ public class RoommateService {
             Double minBudget,
             Double maxBudget
     ) {
+        if (searchIndexService != null) {
+            try {
+                return searchIndexService.searchRoommates(
+                        keyword,
+                        location,
+                        null,
+                        gender,
+                        occupation,
+                        null,
+                        roomTypePreference,
+                        smokingPreference,
+                        petFriendly,
+                        foodPreference,
+                        minBudget,
+                        maxBudget
+                );
+            } catch (Exception ex) {
+                System.err.println("SearchIndexService roommate search error, falling back to database: " + ex.getMessage());
+            }
+        }
         return roommateRepository.findAll().stream()
                 .filter(post -> matchesRoommate(post, keyword, location, gender, minAge, maxAge, occupation, roomTypePreference, smokingPreference, petFriendly, foodPreference, minBudget, maxBudget))
                 .toList();
@@ -87,6 +119,8 @@ public class RoommateService {
             Double minBudget,
             Double maxBudget
     ) {
+        String posterName = post.getPoster() != null ? post.getPoster().getFullName() : "";
+        String posterEmail = post.getPoster() != null ? post.getPoster().getEmail() : "";
         String searchableText = joinText(
                 post.getGender(),
                 post.getOccupation(),
@@ -96,7 +130,9 @@ public class RoommateService {
                 post.getInterests(),
                 post.getPreferences(),
                 post.getPreferredLocation(),
-            post.getMoveInDate()
+                post.getMoveInDate(),
+                posterName,
+                posterEmail
         );
 
         return matchesKeyword(searchableText, keyword)

@@ -1,6 +1,5 @@
 package com.bodimkarayo.backend.dto;
 
-import com.bodimkarayo.backend.model.User;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,13 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class AuthResponse {
-    private User user;
+public class TokenRefreshResponse {
     private String token;
     private String refreshToken;
-
-    public AuthResponse(User user, String token) {
-        this.user = user;
-        this.token = token;
-    }
+    @Builder.Default
+    private String tokenType = "Bearer";
 }

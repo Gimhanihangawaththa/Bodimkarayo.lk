@@ -36,7 +36,9 @@ public class PropertyController {
             @RequestParam(required = false) Integer bathrooms,
             @RequestParam(required = false) Boolean furnished,
             @RequestParam(required = false) Boolean parking,
-            @RequestParam(required = false) Boolean petsAllowed
+            @RequestParam(required = false) Boolean petsAllowed,
+            @RequestParam(required = false) String genderPreference,
+            @RequestParam(required = false) String suitableFor
     ) {
         return propertyService.searchProperties(
                 keyword,
@@ -48,7 +50,9 @@ public class PropertyController {
                 bathrooms,
                 furnished,
                 parking,
-                petsAllowed
+                petsAllowed,
+                genderPreference,
+                suitableFor
         );
     }
 
@@ -73,6 +77,8 @@ public class PropertyController {
             @RequestParam(required = false) String availableFrom,
             @RequestParam(required = false) String address,
             @RequestParam(required = false) String numberOfPeople,
+            @RequestParam(required = false) String genderPreference,
+            @RequestParam(required = false) String suitableFor,
             @RequestParam(required = false) String bedrooms,
             @RequestParam(required = false) String kitchens,
             @RequestParam(required = false) String bathrooms,
@@ -96,6 +102,8 @@ public class PropertyController {
                 .availableFrom(availableFrom)
                 .address(address)
                 .numberOfPeople(numberOfPeople)
+                .genderPreference(genderPreference)
+                .suitableFor(suitableFor)
                 .bedrooms(parseInteger(bedrooms))
                 .kitchens(parseInteger(kitchens))
                 .bathrooms(parseInteger(bathrooms))
