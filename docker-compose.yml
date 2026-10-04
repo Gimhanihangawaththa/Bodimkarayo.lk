@@ -51,6 +51,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-bodim_user}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-StrongPassword123!}
       SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      APP_SEARCH_ELASTICSEARCH_ENABLED: "true"
       SERVER_PORT: 4000
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-should-be-at-least-32-characters-long-for-security}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}

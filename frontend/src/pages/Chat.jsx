@@ -147,38 +147,44 @@ export default function Chat() {
   if (!user) return <div className="p-20 text-center">Please sign in to chat.</div>;
 
   return (
-    <div className="flex h-[calc(100vh-80px)] bg-gray-50 overflow-hidden">
+    <div className="flex h-[calc(100vh-80px)] bg-slate-50 overflow-hidden">
       {/* Sidebar - Chat List */}
-      <div className="w-1/3 border-r bg-white flex flex-col shadow-sm z-10">
-        <div className="p-6 border-b bg-indigo-600 text-white">
-          <h2 className="text-xl font-bold">Messages</h2>
+      <div className="w-80 md:w-96 border-r border-slate-200/80 bg-white flex flex-col shadow-xs z-10 shrink-0">
+        <div className="p-5 md:p-6 border-b border-slate-100 bg-gradient-to-r from-[#3488c3] to-[#2978b3] text-white shadow-xs">
+          <h2 className="text-xl font-bold tracking-tight">Messages</h2>
+          <p className="text-xs text-blue-100 font-medium mt-0.5">Your conversations & flatmate chats</p>
         </div>
         <div className="flex-grow overflow-y-auto">
           {rooms.length === 0 ? (
-            <div className="p-10 text-center text-gray-400">No conversations yet.</div>
+            <div className="p-12 text-center text-slate-400 space-y-3">
+              <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center mx-auto text-xl">
+                💬
+              </div>
+              <p className="text-sm font-semibold text-slate-600">No conversations yet</p>
+              <p className="text-xs text-slate-400">Start chatting by contacting a landlord or roommate post.</p>
+            </div>
           ) : (
             rooms.map(roomData => {
               const room = roomData.chatRoom;
               const unreadCount = roomData.unreadCount;
               const otherUser = getOtherUser(room);
+              const isActive = activeRoom?.id === room.id;
               return (
                 <div 
                   key={room.id}
                   onClick={() => setActiveRoom(room)}
-                  className={`p-4 border-b cursor-pointer transition-all hover:bg-indigo-50 flex items-center gap-4 ${activeRoom?.id === room.id ? 'bg-indigo-50 border-l-4 border-l-indigo-600' : ''}`}
+                  className={`p-4 border-b border-slate-100 cursor-pointer transition-all hover:bg-blue-50/50 flex items-center gap-3.5 ${
+                    isActive ? 'bg-[#3488c3]/10 border-l-4 border-l-[#3488c3]' : ''
+                  }`}
                 >
-                  <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden flex-shrink-0 relative">
-                    <img src={otherUser.profilePictureUrl || 'https://via.placeholder.com/150'} alt={otherUser.fullName} className="w-full h-full object-cover" />
-                    {unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
-                        {unreadCount}
-                      </span>
-                    )}
+                  <div className="w-11 h-11 bg-slate-200 rounded-full overflow-hidden shrink-0 border border-slate-200">
+                    <img src={otherUser.profilePictureUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} alt={otherUser.fullName} className="w-full h-full object-cover" />
                   </div>
-                  <div className="flex-grow">
-                    <div className="flex justify-between items-center mb-1">
-                      <h3 className={`font-bold ${unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>{otherUser.fullName}</h3>
+                  <div className="flex-grow min-w-0">
+                    <div className="flex justify-between items-center mb-0.5">
+                      <h3 className="font-bold text-slate-900 text-sm truncate">{otherUser.fullName}</h3>
                     </div>
+                    <p className="text-xs text-slate-500 font-medium truncate">Click to view conversation</p>
                   </div>
                 </div>
               );
@@ -191,25 +197,30 @@ export default function Chat() {
       <div className="flex-grow flex flex-col bg-white">
         {activeRoom ? (
           <>
-            <div className="p-4 border-b flex items-center gap-4 bg-white shadow-sm z-10">
-              <div className="w-10 h-10 bg-gray-200 rounded-full overflow-hidden">
-                <img src={getOtherUser(activeRoom).profilePictureUrl || 'https://via.placeholder.com/150'} alt="Recipient" className="w-full h-full object-cover" />
+            <div className="p-4 border-b border-slate-200/80 flex items-center gap-3.5 bg-white shadow-xs z-10">
+              <div className="w-10 h-10 bg-slate-200 rounded-full overflow-hidden border border-slate-200 shrink-0">
+                <img src={getOtherUser(activeRoom).profilePictureUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} alt="Recipient" className="w-full h-full object-cover" />
               </div>
-              <h2 className="font-bold text-gray-900 text-lg">{getOtherUser(activeRoom).fullName}</h2>
+              <div>
+                <h2 className="font-bold text-slate-900 text-base leading-tight">{getOtherUser(activeRoom).fullName}</h2>
+                <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Active Now
+                </span>
+              </div>
             </div>
             
-            <div ref={scrollRef} className="flex-grow p-6 overflow-y-auto bg-[#f8fafc] space-y-4">
+            <div ref={scrollRef} className="flex-grow p-6 overflow-y-auto bg-slate-50/70 space-y-4">
               {messages.map((msg, i) => {
                 const isMine = msg.sender.id === user.id;
                 return (
                   <div key={i} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] p-4 rounded-2xl shadow-sm ${
+                    <div className={`max-w-[70%] p-4 rounded-2xl shadow-xs ${
                       isMine 
-                        ? 'bg-indigo-600 text-white rounded-br-none' 
-                        : 'bg-white text-gray-800 rounded-bl-none border border-gray-100'
+                        ? 'bg-[#3488c3] text-white rounded-br-none' 
+                        : 'bg-white text-slate-800 rounded-bl-none border border-slate-200/80'
                     }`}>
                       <p className="text-sm leading-relaxed">{msg.content}</p>
-                      <span className={`text-[10px] mt-1 block opacity-70 ${isMine ? 'text-right' : 'text-left'}`}>
+                      <span className={`text-[10px] mt-1.5 block opacity-80 font-medium ${isMine ? 'text-right text-blue-100' : 'text-left text-slate-400'}`}>
                         {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
@@ -218,32 +229,35 @@ export default function Chat() {
               })}
             </div>
 
-            <form onSubmit={handleSendMessage} className="p-4 border-t bg-white flex gap-3">
+            <form onSubmit={handleSendMessage} className="p-4 border-t border-slate-200/80 bg-white flex gap-3">
               <input 
                 type="text" 
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Type your message..."
-                className="flex-grow px-5 py-3 rounded-xl bg-gray-100 border-none focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                className="flex-grow px-4 py-3 rounded-xl bg-slate-100/80 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-[#3488c3]/20 focus:border-[#3488c3] outline-none transition-all text-sm font-medium text-slate-800"
               />
               <button 
                 type="submit"
-                className="bg-indigo-600 hover:bg-indigo-700 text-white p-3 rounded-xl shadow-lg transition-all active:scale-95"
+                className="bg-[#3488c3] hover:bg-[#2978b3] text-white p-3 rounded-xl shadow-md shadow-[#3488c3]/20 transition-all active:scale-95 cursor-pointer"
               >
-                <svg className="w-6 h-6 transform rotate-90" fill="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 transform rotate-90" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                 </svg>
               </button>
             </form>
           </>
         ) : (
-          <div className="flex-grow flex flex-col items-center justify-center text-gray-400 bg-gray-50">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+          <div className="flex-grow flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 p-8 text-center space-y-4">
+            <div className="w-20 h-20 bg-[#3488c3]/10 text-[#3488c3] rounded-full flex items-center justify-center shadow-xs">
               <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
               </svg>
             </div>
-            <p className="text-lg font-medium">Select a conversation to start chatting</p>
+            <div>
+              <p className="text-lg font-bold text-slate-900">Select a conversation to start chatting</p>
+              <p className="text-sm text-slate-500 font-medium mt-1">Connect with landlords, flatmates, and prospective tenants directly.</p>
+            </div>
           </div>
         )}
       </div>

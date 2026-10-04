@@ -54,14 +54,29 @@ const PropertyResult = ({ property, onPropertyClick }) => {
             LKR {property.rent.toLocaleString()}/month
           </p>
         )}
-        <div className="flex gap-2 mb-2">
+        <div className="flex flex-wrap gap-1.5 mb-2">
+          {property.numberOfPeople && (
+            <span className="text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-medium">
+              👥 {property.numberOfPeople}
+            </span>
+          )}
+          {property.genderPreference && property.genderPreference !== 'Both' && property.genderPreference !== 'Any' && (
+            <span className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">
+              🚻 {property.genderPreference}
+            </span>
+          )}
+          {property.suitableFor && property.suitableFor !== 'Any' && (
+            <span className="text-xs bg-purple-50 text-purple-700 px-2 py-0.5 rounded font-medium">
+              🎯 {property.suitableFor}
+            </span>
+          )}
           {property.bedrooms && (
-            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
               🛏️ {property.bedrooms} bed
             </span>
           )}
           {property.bathrooms && (
-            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">
+            <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded">
               🚿 {property.bathrooms} bath
             </span>
           )}
@@ -194,13 +209,58 @@ export default function SearchResults() {
               <p className="text-gray-500 text-lg">Searching...</p>
             </div>
           ) : !hasSearched ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">Enter a search query to find properties and roommates</p>
+            <div className="text-center py-12 max-w-2xl mx-auto">
+              <div className="w-16 h-16 bg-blue-50 text-[#3488c3] rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                🔍
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Explore Bodimkarayo.lk</h3>
+              <p className="text-slate-600 text-sm mb-6">Type a keyword in the search bar above or choose a popular category below to start browsing.</p>
+              
+              <div className="flex flex-wrap items-center justify-center gap-2 mb-8">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mr-1">Popular:</span>
+                {['Colombo', 'Kandy', 'Malabe', 'Students', 'Female Only', 'Single Room', 'Couples', 'Furnished'].map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => {
+                      navigate(`/search?keyword=${encodeURIComponent(tag)}`)
+                    }}
+                    className="text-xs font-semibold bg-slate-100 hover:bg-[#3488c3] hover:text-white text-slate-700 px-3 py-1.5 rounded-full transition-all cursor-pointer shadow-2xs"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={() => navigate('/properties')}
+                  className="px-5 py-2.5 bg-[#3488c3] hover:bg-[#2978b3] text-white font-bold text-sm rounded-xl transition-all shadow-md shadow-[#3488c3]/20 cursor-pointer"
+                >
+                  🏠 Browse All Properties
+                </button>
+                <button
+                  onClick={() => navigate('/roommates')}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-sm rounded-xl transition-all cursor-pointer"
+                >
+                  👥 Find Roommates
+                </button>
+              </div>
             </div>
           ) : totalResults === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 text-lg">No results found for "{keyword}"</p>
-              <p className="text-gray-400 text-sm mt-2">Try different keywords or check back later</p>
+            <div className="text-center py-12 max-w-xl mx-auto">
+              <div className="w-16 h-16 bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-inner">
+                🏠
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 mb-1">No matches found for "{keyword}"</h3>
+              <p className="text-slate-500 text-sm mb-6">Try searching with broader keywords, different locations, or check your spelling.</p>
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={() => navigate('/properties')}
+                  className="px-4 py-2 bg-[#3488c3] hover:bg-[#2978b3] text-white text-xs font-bold rounded-lg transition-all cursor-pointer"
+                >
+                  View All Properties
+                </button>
+              </div>
             </div>
           ) : (
             <div className="space-y-12">

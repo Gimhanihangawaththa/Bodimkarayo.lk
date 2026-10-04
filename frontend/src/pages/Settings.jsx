@@ -108,7 +108,6 @@ export default function Settings() {
     { id: 'notifications', label: 'Notifications', icon: '🔔' },
     { id: 'privacy', label: 'Privacy & Visibility', icon: '👁️' },
     { id: 'billing', label: 'Billing & Payments', icon: '💳' },
-    { id: 'preferences', label: 'App Preferences', icon: '⚙️' },
     { id: 'danger', label: 'Danger Zone', icon: '⚠️' },
   ];
 
@@ -124,12 +123,12 @@ export default function Settings() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg text-left font-medium transition ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left font-semibold transition ${
                   activeTab === tab.id
                     ? tab.id === 'danger'
-                      ? 'bg-red-50 text-red-700'
-                      : 'bg-blue-50 text-blue-700'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-red-50 text-red-700 font-bold'
+                      : 'bg-[#3488c3]/10 text-[#3488c3] font-bold border border-[#3488c3]/20 shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                 }`}
               >
                 <span>{tab.icon}</span>
@@ -140,28 +139,28 @@ export default function Settings() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 bg-white rounded-xl shadow-sm border border-gray-200 min-h-[500px]">
+        <div className="flex-1 bg-white rounded-2xl shadow-xs border border-slate-200 min-h-[500px]">
           
           {/* Account & Profile Tab (Dummy) */}
           {activeTab === 'account' && (
             <div className="p-6 md:p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Account Information</h2>
-              <p className="text-gray-500 mb-8">Update your personal details here. (Coming soon)</p>
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Account Information</h2>
+              <p className="text-slate-500 mb-8">Update your personal details here. (Coming soon)</p>
               
               <div className="space-y-6 max-w-lg opacity-60 pointer-events-none">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                  <input type="text" value={user?.fullName || 'John Doe'} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50" readOnly />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
+                  <input type="text" value={user?.fullName || 'John Doe'} className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-50" readOnly />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                  <input type="email" value={user?.email || 'john@example.com'} className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50" readOnly />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                  <input type="email" value={user?.email || 'john@example.com'} className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-50" readOnly />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                  <input type="tel" placeholder="+94 7X XXX XXXX" className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50" readOnly />
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
+                  <input type="tel" placeholder="+94 7X XXX XXXX" className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-50" readOnly />
                 </div>
-                <button className="bg-blue-600 text-white px-6 py-2 rounded-md font-medium">Save Changes</button>
+                <button className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-6 py-2.5 rounded-xl font-bold shadow-md shadow-[#3488c3]/20 transition-all cursor-pointer">Save Changes</button>
               </div>
             </div>
           )}
@@ -169,66 +168,66 @@ export default function Settings() {
           {/* Security Tab (Functional) */}
           {activeTab === 'security' && (
             <div className="p-6 md:p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Password & Security</h2>
-              <p className="text-gray-500 mb-8">Manage your password and security preferences.</p>
+              <h2 className="text-2xl font-bold text-slate-900 mb-6">Password & Security</h2>
+              <p className="text-slate-500 mb-8">Manage your password and security preferences.</p>
               
               <div className="max-w-lg">
                 {passwordSuccess && (
-                  <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+                  <div className="mb-4 p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl font-medium text-sm">
                     {passwordSuccess}
                   </div>
                 )}
 
                 {passwordError && (
-                  <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+                  <div className="mb-4 p-4 bg-red-50 border border-red-300 text-red-800 rounded-xl font-medium text-sm">
                     {passwordError}
                   </div>
                 )}
 
                 <form onSubmit={handlePasswordSubmit} className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Current Password</label>
                     <input 
                       type="password" 
                       name="currentPassword"
                       value={passwordForm.currentPassword}
                       onChange={handlePasswordChange}
                       placeholder="Enter your current password"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
                       disabled={passwordLoading}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">New Password</label>
                     <input 
                       type="password" 
                       name="newPassword"
                       value={passwordForm.newPassword}
                       onChange={handlePasswordChange}
                       placeholder="Enter your new password (min. 6 characters)"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
                       disabled={passwordLoading}
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Confirm New Password</label>
                     <input 
                       type="password" 
                       name="confirmPassword"
                       value={passwordForm.confirmPassword}
                       onChange={handlePasswordChange}
                       placeholder="Confirm your new password"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
                       disabled={passwordLoading}
                     />
                   </div>
                   <button 
                     type="submit" 
                     disabled={passwordLoading}
-                    className={`w-full py-2 px-4 rounded-md font-medium text-white transition ${
+                    className={`w-full py-3 px-6 rounded-xl font-bold text-white transition shadow-md shadow-[#3488c3]/20 cursor-pointer ${
                       passwordLoading
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
+                        ? 'bg-slate-400 cursor-not-allowed'
+                        : 'bg-[#3488c3] hover:bg-[#2978b3] active:bg-[#246393]'
                     }`}
                   >
                     {passwordLoading ? 'Updating Password...' : 'Update Password'}
@@ -316,32 +315,6 @@ export default function Settings() {
                     <p className="font-medium text-gray-900">•••• •••• •••• 4242</p>
                     <p className="text-xs text-gray-500">Expires 12/26</p>
                   </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Preferences Tab (Dummy) */}
-          {activeTab === 'preferences' && (
-            <div className="p-6 md:p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">App Preferences</h2>
-              <p className="text-gray-500 mb-8">Customize your Bodimkarayo experience. (Coming soon)</p>
-              
-              <div className="space-y-6 max-w-lg opacity-60 pointer-events-none">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Display Language</label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50">
-                    <option>English</option>
-                    <option>Sinhala</option>
-                    <option>Tamil</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50">
-                    <option>LKR (Rs)</option>
-                    <option>USD ($)</option>
-                  </select>
                 </div>
               </div>
             </div>

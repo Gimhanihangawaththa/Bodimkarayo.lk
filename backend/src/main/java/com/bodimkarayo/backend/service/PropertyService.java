@@ -23,6 +23,9 @@ public class PropertyService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired(required = false)
+    private com.bodimkarayo.backend.search.SearchIndexService searchIndexService;
+
     public List<Property> getAllProperties() {
         return propertyRepository.findAll();
     }
@@ -33,6 +36,9 @@ public class PropertyService {
 
     public Property createProperty(Property property) {
         Property savedProperty = propertyRepository.save(property);
+        if (searchIndexService != null) {
+            searchIndexService.syncProperty(savedProperty);
+        }
         return savedProperty;
     }
 
@@ -48,6 +54,8 @@ public class PropertyService {
         property.setAvailableFrom(updatedProperty.getAvailableFrom());
         property.setAddress(updatedProperty.getAddress());
         property.setNumberOfPeople(updatedProperty.getNumberOfPeople());
+        property.setGenderPreference(updatedProperty.getGenderPreference());
+        property.setSuitableFor(updatedProperty.getSuitableFor());
         property.setBedrooms(updatedProperty.getBedrooms());
         property.setKitchens(updatedProperty.getKitchens());
         property.setBathrooms(updatedProperty.getBathrooms());
@@ -65,11 +73,17 @@ public class PropertyService {
         property.setOwner(updatedProperty.getOwner());
 
         Property savedProperty = propertyRepository.save(property);
+        if (searchIndexService != null) {
+            searchIndexService.syncProperty(savedProperty);
+        }
         return savedProperty;
     }
 
     public void deleteProperty(Long id) {
         propertyRepository.deleteById(id);
+        if (searchIndexService != null) {
+            searchIndexService.removeProperty(id);
+        }
     }
 
     public Property removePropertyImage(Long propertyId, String imageUrl) {
@@ -126,6 +140,9 @@ public class PropertyService {
             existingImages.addAll(imageUrls);
             property.setImages(existingImages);
             property = propertyRepository.save(property);
+            if (searchIndexService != null) {
+                searchIndexService.syncProperty(property);
+            }
             
             System.out.println("Property " + propertyId + " images uploaded successfully: " + imageUrls.size() + " new images added");
             return property;
@@ -159,11 +176,35 @@ public class PropertyService {
             Integer bathrooms,
             Boolean furnished,
             Boolean parking,
+            Boolean petsAllowed,
+            String genderPreference,
+            String suitableFor
+    ) {
+        if (searchIndexService != null) {
+            try {
+                return searchIndexService.searchProperties(keyword, location, propertyType, minPrice, maxPrice, bedrooms, bathrooms, furnished, parking, petsAllowed, genderPreference, suitableFor);
+            } catch (Exception ex) {
+                System.err.println("SearchIndexService search error, falling back to database: " + ex.getMessage());
+            }
+        }
+        return propertyRepository.findAll().stream()
+                .filter(property -> matchesProperty(property, keyword, location, propertyType, minPrice, maxPrice, bedrooms, bathrooms, furnished, parking, petsAllowed, genderPreference, suitableFor))
+                .toList();
+    }
+
+    public List<Property> searchProperties(
+            String keyword,
+            String location,
+            String propertyType,
+            Double minPrice,
+            Double maxPrice,
+            Integer bedrooms,
+            Integer bathrooms,
+            Boolean furnished,
+            Boolean parking,
             Boolean petsAllowed
     ) {
-        return propertyRepository.findAll().stream()
-                .filter(property -> matchesProperty(property, keyword, location, propertyType, minPrice, maxPrice, bedrooms, bathrooms, furnished, parking, petsAllowed))
-                .toList();
+        return searchProperties(keyword, location, propertyType, minPrice, maxPrice, bedrooms, bathrooms, furnished, parking, petsAllowed, null, null);
     }
 
     private boolean matchesProperty(
@@ -177,7 +218,9 @@ public class PropertyService {
             Integer bathrooms,
             Boolean furnished,
             Boolean parking,
-            Boolean petsAllowed
+            Boolean petsAllowed,
+            String genderPreference,
+            String suitableFor
     ) {
         String searchableText = joinText(
                 property.getTitle(),
@@ -185,6 +228,9 @@ public class PropertyService {
                 property.getLocation(),
                 property.getAddress(),
                 property.getPropertyType(),
+                property.getGenderPreference(),
+                property.getSuitableFor(),
+                property.getNumberOfPeople(),
                 joinList(property.getOffers()),
                 joinList(property.getHighlights()),
                 joinList(property.getRules()),
@@ -200,7 +246,35 @@ public class PropertyService {
                 && matchesNumber(property.getBathrooms(), bathrooms)
                 && matchesBooleanText(property.getFurnished(), furnished)
                 && matchesBooleanText(property.getParking(), parking)
-                && matchesBooleanText(property.getPetsAllowed(), petsAllowed);
+                && matchesBooleanText(property.getPetsAllowed(), petsAllowed)
+                && matchesGenderPreference(property.getGenderPreference(), genderPreference)
+                && matchesSuitableFor(property.getSuitableFor(), suitableFor);
+    }
+
+    private boolean matchesGenderPreference(String actual, String expected) {
+        if (expected == null || expected.isBlank() || expected.equalsIgnoreCase("Any") || expected.equalsIgnoreCase("All")) {
+            return true;
+        }
+        if (actual == null || actual.isBlank()) {
+            return true;
+        }
+        if (actual.equalsIgnoreCase("Both") || actual.equalsIgnoreCase("Any")) {
+            return true;
+        }
+        return containsIgnoreCase(actual, expected) || containsIgnoreCase(expected, actual);
+    }
+
+    private boolean matchesSuitableFor(String actual, String expected) {
+        if (expected == null || expected.isBlank() || expected.equalsIgnoreCase("Any") || expected.equalsIgnoreCase("All")) {
+            return true;
+        }
+        if (actual == null || actual.isBlank()) {
+            return true;
+        }
+        if (actual.equalsIgnoreCase("Any") || actual.equalsIgnoreCase("Anyone")) {
+            return true;
+        }
+        return containsIgnoreCase(actual, expected) || containsIgnoreCase(expected, actual);
     }
 
     private boolean matchesKeyword(String source, String keyword) {

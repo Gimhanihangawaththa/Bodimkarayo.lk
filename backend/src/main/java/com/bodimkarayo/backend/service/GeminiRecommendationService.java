@@ -50,8 +50,9 @@ public class GeminiRecommendationService {
         
         prompt.append("\nHere is a list of available properties:\n");
         for (Property p : allProperties) {
-            prompt.append(String.format("ID: %d | Title: %s | Location: %s | Rent: Rs %.2f | Type: %s | Offers: %s | Highlights: %s\n",
+            prompt.append(String.format("ID: %d | Title: %s | Location: %s | Rent: Rs %.2f | Type: %s | Gender: %s | Suitable For: %s | Capacity: %s | Offers: %s | Highlights: %s\n",
                     p.getId(), p.getTitle(), p.getLocation(), p.getRent(), p.getPropertyType(), 
+                    p.getGenderPreference(), p.getSuitableFor(), p.getNumberOfPeople(),
                     p.getOffers(), p.getHighlights()));
         }
         

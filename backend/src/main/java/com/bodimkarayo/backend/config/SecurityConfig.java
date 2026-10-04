@@ -36,12 +36,14 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 // Public auth endpoints
-                .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                .requestMatchers("/api/auth/**").permitAll()
 
                 // Public read-only access
                 .requestMatchers(HttpMethod.GET, "/api/properties/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/roommates/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/reviews/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/recommendations/**").permitAll()
+                .requestMatchers("/api/search/**").permitAll()
                 .requestMatchers("/api/recommendations/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
 
