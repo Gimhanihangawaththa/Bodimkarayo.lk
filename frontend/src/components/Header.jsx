@@ -135,46 +135,6 @@ export default function Header() {
   const userInitial = user && user.fullName ? user.fullName.charAt(0).toUpperCase() : '👤'
   const userName = user && user.fullName ? user.fullName : 'User'
   return (
-    <header className="sticky top-0 z-50 border-b border-blue-100/70 bg-white text-gray-900 shadow-[0_8px_30px_rgba(15,23,42,0.06)]">
-      <div className="w-full px-4 md:px-8 py-3 flex items-center gap-4 justify-between">
-        <Link to="/" className="flex items-center gap-3 shrink-0">
-          <img src={logo} alt="Bodimkarayo" className="h-12 w-auto rounded-xl object-contain shadow-sm" />
-        </Link>
-
-        <div className="flex-1 flex items-center gap-4 min-w-0">
-          <nav className="flex items-center gap-2 flex-shrink-0 rounded-full bg-slate-50/90 p-1 ring-1 ring-slate-200 overflow-x-auto">
-            <Link
-              to="/properties"
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border border-transparent hover:border-blue-200 hover:text-blue-700 ${
-                location.pathname === '/properties' ? 'bg-blue-600 text-white shadow-md shadow-blue-200/60' : 'text-slate-700'
-              }`}
-            >
-              Properties
-            </Link>
-            <Link
-              to="/roommates"
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border border-transparent hover:border-blue-200 hover:text-blue-700 ${
-                location.pathname === '/roommates' ? 'bg-blue-600 text-white shadow-md shadow-blue-200/60' : 'text-slate-700'
-              }`}
-            >
-              Roommates
-            </Link>
-            <Link
-              to="/chat"
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 border border-transparent hover:border-blue-200 hover:text-blue-700 relative ${
-                location.pathname === '/chat' ? 'bg-blue-600 text-white shadow-md shadow-blue-200/60' : 'text-slate-700'
-              }`}
-            >
-              Chat
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </Link>
-          </nav>
-
-  return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs transition-all">
       <div className="w-full px-4 md:px-8 py-3 min-h-[76px] flex items-center justify-between gap-4">
         
