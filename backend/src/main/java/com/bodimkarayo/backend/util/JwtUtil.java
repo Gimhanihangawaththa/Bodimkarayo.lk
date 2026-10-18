@@ -1,7 +1,6 @@
 package com.bodimkarayo.backend.util;
 
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -15,17 +14,21 @@ public class JwtUtil {
     @Value("${jwt.secret:your-secret-key-should-be-at-least-32-characters-long}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration:86400000}")
+    @Value("${jwt.expiration:900000}")
     private long jwtExpirationMs;
 
     public String generateToken(String email) {
+        return generateAccessToken(email);
+    }
+
+    public String generateAccessToken(String email) {
         SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
-        
+
         return Jwts.builder()
                 .subject(email)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
-                .signWith(key, SignatureAlgorithm.HS256)
+                .signWith(key, Jwts.SIG.HS256)
                 .compact();
     }
 

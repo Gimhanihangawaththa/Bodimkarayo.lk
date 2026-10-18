@@ -16,7 +16,6 @@ public class UserProfileResponse {
     private String fullName;
     private String email;
     private String profilePictureUrl;
-    private String about;
     private String role;
     private Boolean verified;
     private Boolean isActive;

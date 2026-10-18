@@ -2,14 +2,26 @@ package com.bodimkarayo.backend.service;
 
 import com.bodimkarayo.backend.dto.UserProfileResponse;
 import com.bodimkarayo.backend.dto.UserProfileUpdateRequest;
+import com.bodimkarayo.backend.dto.ChangePasswordRequest;
 import com.bodimkarayo.backend.exception.BadRequestException;
+import com.bodimkarayo.backend.model.Role;
 import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.bodimkarayo.backend.repository.PropertyRepository;
+import com.bodimkarayo.backend.repository.RoommateRepository;
+import com.bodimkarayo.backend.repository.ReviewRepository;
+import com.bodimkarayo.backend.model.Property;
+import com.bodimkarayo.backend.model.RoommatePost;
+import com.bodimkarayo.backend.model.Review;
+
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -20,11 +32,29 @@ public class UserService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private PropertyRepository propertyRepository;
+
+    @Autowired
+    private RoommateRepository roommateRepository;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     public UserProfileResponse getUserProfile(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         return toProfileResponse(user);
+    }
+
+    public List<UserProfileResponse> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(this::toProfileResponse)
+                .collect(Collectors.toList());
     }
 
     public UserProfileResponse updateUserProfile(Long userId, UserProfileUpdateRequest request) {
@@ -48,10 +78,6 @@ public class UserService {
             user.setProfilePictureUrl(request.getProfilePictureUrl().trim());
         }
 
-        if (request.getAbout() != null) {
-            user.setAbout(request.getAbout().trim());
-        }
-
         User updatedUser = userRepository.save(user);
         return toProfileResponse(updatedUser);
     }
@@ -67,13 +93,60 @@ public class UserService {
         return toProfileResponse(updatedUser);
     }
 
+    public UserProfileResponse upgradeUserRole(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setRole(Role.OWNER.name());
+
+        User updatedUser = userRepository.save(user);
+        return toProfileResponse(updatedUser);
+    }
+
+    public void deleteUser(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Delete reviews made by the user
+        List<Review> userReviews = reviewRepository.findByReviewer(user);
+        reviewRepository.deleteAll(userReviews);
+
+        // Delete user's properties (and their reviews)
+        List<Property> userProperties = propertyRepository.findByOwner(user);
+        for (Property property : userProperties) {
+            List<Review> propertyReviews = reviewRepository.findByProperty(property);
+            reviewRepository.deleteAll(propertyReviews);
+        }
+        propertyRepository.deleteAll(userProperties);
+
+        // Delete user's roommate posts
+        List<RoommatePost> userRoommatePosts = roommateRepository.findByPoster(user);
+        roommateRepository.deleteAll(userRoommatePosts);
+
+        // Finally, delete the user
+        userRepository.delete(user);
+    }
+
+    public void changePassword(Long userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Verify current password
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new BadRequestException("Current password is incorrect");
+        }
+
+        // Update password
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+    }
+
     private UserProfileResponse toProfileResponse(User user) {
         return UserProfileResponse.builder()
                 .id(user.getId())
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .profilePictureUrl(user.getProfilePictureUrl())
-                .about(user.getAbout())
                 .role(user.getRole())
                 .verified(user.getVerified())
                 .isActive(user.getIsActive())

@@ -1,7 +1,7 @@
 package com.bodimkarayo.backend.controller;
 
 import com.bodimkarayo.backend.model.Property;
-import com.bodimkarayo.backend.service.CloudinaryService;
+
 import com.bodimkarayo.backend.service.PropertyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -18,12 +18,42 @@ public class PropertyController {
     @Autowired
     private PropertyService propertyService;
 
-    @Autowired
-    private CloudinaryService cloudinaryService;
+
 
     @GetMapping
     public List<Property> getAll() {
         return propertyService.getAllProperties();
+    }
+
+    @GetMapping("/search")
+    public List<Property> search(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String propertyType,
+            @RequestParam(required = false) Double minPrice,
+            @RequestParam(required = false) Double maxPrice,
+            @RequestParam(required = false) Integer bedrooms,
+            @RequestParam(required = false) Integer bathrooms,
+            @RequestParam(required = false) Boolean furnished,
+            @RequestParam(required = false) Boolean parking,
+            @RequestParam(required = false) Boolean petsAllowed,
+            @RequestParam(required = false) String genderPreference,
+            @RequestParam(required = false) String suitableFor
+    ) {
+        return propertyService.searchProperties(
+                keyword,
+                location,
+                propertyType,
+                minPrice,
+                maxPrice,
+                bedrooms,
+                bathrooms,
+                furnished,
+                parking,
+                petsAllowed,
+                genderPreference,
+                suitableFor
+        );
     }
 
     @GetMapping("/{id}")
@@ -47,6 +77,8 @@ public class PropertyController {
             @RequestParam(required = false) String availableFrom,
             @RequestParam(required = false) String address,
             @RequestParam(required = false) String numberOfPeople,
+            @RequestParam(required = false) String genderPreference,
+            @RequestParam(required = false) String suitableFor,
             @RequestParam(required = false) String bedrooms,
             @RequestParam(required = false) String kitchens,
             @RequestParam(required = false) String bathrooms,
@@ -70,6 +102,8 @@ public class PropertyController {
                 .availableFrom(availableFrom)
                 .address(address)
                 .numberOfPeople(numberOfPeople)
+                .genderPreference(genderPreference)
+                .suitableFor(suitableFor)
                 .bedrooms(parseInteger(bedrooms))
                 .kitchens(parseInteger(kitchens))
                 .bathrooms(parseInteger(bathrooms))

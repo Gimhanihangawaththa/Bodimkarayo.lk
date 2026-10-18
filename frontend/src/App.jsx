@@ -4,12 +4,16 @@ import Layout from './components/Layout'
 import Home from './pages/Home'
 import Properties from './pages/Properties'
 import Roommates from './pages/Roommates'
+import SearchResults from './pages/SearchResults'
 import SignIn from './pages/SignIn'
 import SignUp from './pages/SignUp'
 import AddProperty from './pages/AddProperty'
 import PropertyView from './pages/PropertyView'
 import RoommateView from './pages/RoommateView'
 import ProfilePage from './pages/ProfilePage'
+import Settings from './pages/Settings'
+import Chat from './pages/Chat'
+import About from './pages/About'
 
 function App() {
   return (
@@ -20,11 +24,15 @@ function App() {
           <Route path="home" element={<Home />} />
           <Route path="properties" element={<Properties />} />
           <Route path="roommates" element={<Roommates />} />
+          <Route path="search" element={<SearchResults />} />
           <Route path="add-property" element={<AddProperty />} />
           <Route path="edit-property/:propertyId" element={<AddProperty />} />
           <Route path="property/:propertyId" element={<PropertyView />} />
           <Route path="roommate/:roommateId" element={<RoommateView />} />
           <Route path="profile" element={<ProfilePage />} />
+          <Route path="settings" element={<Settings />} />
+          <Route path="chat" element={<Chat />} />
+          <Route path="about" element={<About />} />
           <Route path="signin" element={<SignIn />} />
           <Route path="signup" element={<SignUp />} />
         </Route>

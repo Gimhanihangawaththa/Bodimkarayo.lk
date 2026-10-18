@@ -1,6 +1,6 @@
 import { ReviewItem } from "./ReviewItem";
 
-export function ReviewsList({ reviews, reviewCount, onDeleteReview }) {
+export function ReviewsList({ reviews, reviewCount, onDeleteReview, currentUserId }) {
   if (!reviews || reviews.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -17,7 +17,13 @@ export function ReviewsList({ reviews, reviewCount, onDeleteReview }) {
           <ReviewItem
             key={review.id}
             review={review}
-            onDelete={onDeleteReview}
+            onDelete={
+              currentUserId != null &&
+              review.reviewerId != null &&
+              Number(review.reviewerId) === Number(currentUserId)
+                ? onDeleteReview
+                : undefined
+            }
           />
         ))}
       </div>

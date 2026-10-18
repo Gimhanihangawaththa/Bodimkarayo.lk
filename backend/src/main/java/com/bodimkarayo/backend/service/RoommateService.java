@@ -7,12 +7,16 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Locale;
 
 @Service
 public class RoommateService {
 
     @Autowired
     private RoommateRepository roommateRepository;
+
+    @Autowired(required = false)
+    private com.bodimkarayo.backend.search.SearchIndexService searchIndexService;
 
     public List<RoommatePost> getAllPosts() {
         return roommateRepository.findAll();
@@ -23,7 +27,11 @@ public class RoommateService {
     }
 
     public RoommatePost createPost(RoommatePost post) {
-        return (RoommatePost) roommateRepository.save(post);
+        RoommatePost savedPost = (RoommatePost) roommateRepository.save(post);
+        if (searchIndexService != null) {
+            searchIndexService.syncRoommate(savedPost);
+        }
+        return savedPost;
     }
 
     public RoommatePost updatePost(Long id, RoommatePost updatedPost) throws Throwable {
@@ -43,10 +51,176 @@ public class RoommateService {
         post.setBudget(updatedPost.getBudget());
         post.setPoster(updatedPost.getPoster());
 
-        return (RoommatePost) roommateRepository.save(post);
+        RoommatePost savedPost = (RoommatePost) roommateRepository.save(post);
+        if (searchIndexService != null) {
+            searchIndexService.syncRoommate(savedPost);
+        }
+        return savedPost;
     }
 
     public void deletePost(Long id) {
         roommateRepository.deleteById(id);
+        if (searchIndexService != null) {
+            searchIndexService.removeRoommate(id);
+        }
+    }
+
+    public List<RoommatePost> searchRoommates(
+            String keyword,
+            String location,
+            String gender,
+            Integer minAge,
+            Integer maxAge,
+            String occupation,
+            String roomTypePreference,
+            Boolean smokingPreference,
+            Boolean petFriendly,
+            String foodPreference,
+            Double minBudget,
+            Double maxBudget
+    ) {
+        if (searchIndexService != null) {
+            try {
+                return searchIndexService.searchRoommates(
+                        keyword,
+                        location,
+                        null,
+                        gender,
+                        occupation,
+                        null,
+                        roomTypePreference,
+                        smokingPreference,
+                        petFriendly,
+                        foodPreference,
+                        minBudget,
+                        maxBudget
+                );
+            } catch (Exception ex) {
+                System.err.println("SearchIndexService roommate search error, falling back to database: " + ex.getMessage());
+            }
+        }
+        return roommateRepository.findAll().stream()
+                .filter(post -> matchesRoommate(post, keyword, location, gender, minAge, maxAge, occupation, roomTypePreference, smokingPreference, petFriendly, foodPreference, minBudget, maxBudget))
+                .toList();
+    }
+
+    private boolean matchesRoommate(
+            RoommatePost post,
+            String keyword,
+            String location,
+            String gender,
+            Integer minAge,
+            Integer maxAge,
+            String occupation,
+            String roomTypePreference,
+            Boolean smokingPreference,
+            Boolean petFriendly,
+            String foodPreference,
+            Double minBudget,
+            Double maxBudget
+    ) {
+        String posterName = post.getPoster() != null ? post.getPoster().getFullName() : "";
+        String posterEmail = post.getPoster() != null ? post.getPoster().getEmail() : "";
+        String searchableText = joinText(
+                post.getGender(),
+                post.getOccupation(),
+                post.getLocation(),
+                post.getBio(),
+                post.getAbout(),
+                post.getInterests(),
+                post.getPreferences(),
+                post.getPreferredLocation(),
+                post.getMoveInDate(),
+                posterName,
+                posterEmail
+        );
+
+        return matchesKeyword(searchableText, keyword)
+                && matchesText(post.getLocation(), location)
+                && matchesGender(post.getGender(), gender)
+                && matchesAge(post.getAge(), minAge, maxAge)
+                && matchesText(post.getOccupation(), occupation)
+                && matchesText(post.getPreferences(), roomTypePreference)
+                && matchesBooleanText(post.getPreferences(), smokingPreference)
+                && matchesBooleanText(post.getPreferences(), petFriendly)
+                && matchesText(post.getPreferences(), foodPreference)
+                && matchesPrice(post.getBudget(), minBudget, maxBudget);
+    }
+
+    private boolean matchesKeyword(String source, String keyword) {
+        return keyword == null || keyword.isBlank() || containsIgnoreCase(source, keyword);
+    }
+
+    private boolean matchesText(String source, String expected) {
+        return expected == null || expected.isBlank() || containsIgnoreCase(source, expected);
+    }
+
+    private boolean matchesGender(String source, String expected) {
+        if (expected == null || expected.isBlank()) {
+            return true;
+        }
+        return source != null && source.trim().equalsIgnoreCase(expected.trim());
+    }
+
+    private boolean matchesAge(Integer age, Integer minAge, Integer maxAge) {
+        if (age == null) {
+            return true;
+        }
+        boolean aboveMin = minAge == null || age >= minAge;
+        boolean belowMax = maxAge == null || age <= maxAge;
+        return aboveMin && belowMax;
+    }
+
+    private boolean matchesPrice(Double actual, Double minBudget, Double maxBudget) {
+        if (actual == null) {
+            return false;
+        }
+
+        boolean aboveMin = minBudget == null || minBudget <= 0 || actual >= minBudget;
+        boolean belowMax = maxBudget == null || maxBudget <= 0 || actual <= maxBudget;
+        return aboveMin && belowMax;
+    }
+
+    private boolean matchesBooleanText(String actual, Boolean expected) {
+        if (expected == null) {
+            return true;
+        }
+
+        return toBoolean(actual) == expected;
+    }
+
+    private boolean toBoolean(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
+        return normalized.equals("true")
+                || normalized.equals("yes")
+                || normalized.equals("1")
+                || normalized.equals("smoking")
+                || normalized.equals("smoker")
+                || normalized.equals("pet friendly")
+                || normalized.equals("pets allowed")
+                || normalized.equals("yes, pets allowed")
+                || normalized.equals("allowed")
+                || normalized.equals("allow");
+    }
+
+    private String joinText(String... values) {
+        StringBuilder builder = new StringBuilder();
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                if (builder.length() > 0) {
+                    builder.append(' ');
+                }
+                builder.append(value.trim());
+            }
+        }
+        return builder.toString();
+    }
+
+    private boolean containsIgnoreCase(String source, String needle) {
+        return source != null && needle != null && source.toLowerCase(Locale.ROOT).contains(needle.trim().toLowerCase(Locale.ROOT));
     }
 }

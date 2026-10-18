@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { LocationMap } from "../components/LocationMap";
-import { OwnerCard } from "../components/OwnerCard";
-import { PropertyImageViewer } from "../components/PropertyImageViewer";
-import { PropertyOffers } from "../components/PropertyOffers";
-import { PropertySpecifications } from "../components/PropertySpecifications";
-import { ReviewsList } from "../components/ReviewsList";
-import { AddReview } from "../components/AddReview";
-import { InfoPill } from "../components/ui/InfoPill";
-import { SectionCard } from "../components/ui/SectionCard";
 import { propertyService, reviewService } from "../services";
+import { SectionCard } from "../components/ui/SectionCard";
+import { InfoPill } from "../components/ui/InfoPill";
+import { PropertyImageViewer } from "../components/PropertyImageViewer";
+import { PropertySpecifications } from "../components/PropertySpecifications";
+import { PropertyOffers } from "../components/PropertyOffers";
+import { AddReview } from "../components/AddReview";
+import { ReviewsList } from "../components/ReviewsList";
+import { OwnerCard } from "../components/OwnerCard";
 
 const sampleProperty = {
   id: 1,
@@ -109,6 +110,8 @@ const normalizeProperty = (propertyData) => {
     address: propertyData.address ?? propertyData.location ?? "Address not available",
     availableFrom: propertyData.availableFrom ?? "TBD",
     numberOfPeople: propertyData.numberOfPeople ?? "N/A",
+    genderPreference: propertyData.genderPreference ?? "Both",
+    suitableFor: propertyData.suitableFor ?? "Any",
     rating: typeof propertyData.rating === "number" ? propertyData.rating : 0,
     offers: propertyData.offers ?? [],
     highlights: propertyData.highlights ?? [],
@@ -119,10 +122,13 @@ const normalizeProperty = (propertyData) => {
 
 export default function PropertyView() {
   const { propertyId } = useParams();
+  const navigate = useNavigate();
+  const { user: authUser } = useAuth();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
 
@@ -135,6 +141,18 @@ export default function PropertyView() {
         // Fetch property data from backend
         const propertyData = await propertyService.getPropertyById(propertyId);
         setProperty(normalizeProperty(propertyData));
+
+        if (authUser?.id) {
+          try {
+            const status = await propertyService.getFavoriteStatus(authUser.id, propertyId);
+            setIsFavorite(Boolean(status?.favorited));
+          } catch (favErr) {
+            console.error("Error loading favorite status:", favErr);
+            setIsFavorite(false);
+          }
+        } else {
+          setIsFavorite(false);
+        }
 
         // Fetch reviews for this property
         setReviewsLoading(true);
@@ -157,6 +175,7 @@ export default function PropertyView() {
           // Use sample data without showing error
           setProperty(sampleProperty);
           setReviews(sampleProperty.reviews);
+          setIsFavorite(false);
           setError(null); // Clear error when using fallback
         } else {
           // Show error for other types of errors
@@ -174,27 +193,66 @@ export default function PropertyView() {
     if (propertyId) {
       fetchProperty();
     }
-  }, [propertyId]);
+  }, [propertyId, authUser?.id]);
 
   const handleMessageOwner = () => {
-    alert(`Message sent to ${property?.owner.name}`);
+    if (!authUser) {
+      navigate('/signin');
+      return;
+    }
+    
+    if (property?.owner?.id) {
+      navigate('/chat', { state: { recipientId: property.owner.id } });
+    } else {
+      alert("Owner information not available.");
+    }
   };
 
   const handleScheduleVisit = () => {
     alert("Visit scheduled! The owner will confirm a time.");
   };
 
-  const handleFavorite = () => {
-    setIsFavorite((prev) => !prev);
+  const handleFavorite = async () => {
+    if (!authUser?.id) {
+      alert("Please sign in to save properties to your profile.");
+      return;
+    }
+    if (!propertyId || favoriteLoading) {
+      return;
+    }
+
+    const next = !isFavorite;
+    setFavoriteLoading(true);
+    try {
+      if (next) {
+        await propertyService.addFavoriteProperty(authUser.id, propertyId);
+      } else {
+        await propertyService.removeFavoriteProperty(authUser.id, propertyId);
+      }
+      setIsFavorite(next);
+    } catch (err) {
+      console.error("Error updating favorite:", err);
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        "Could not update favorites. Please try again.";
+      alert(message);
+    } finally {
+      setFavoriteLoading(false);
+    }
   };
 
-  const handleAddReview = async (newReview) => {
+  const handleAddReview = async ({ rating, text }) => {
+    if (!authUser?.id) {
+      alert("Please sign in to post a review.");
+      return;
+    }
     try {
-      // Submit review to backend
-      const createdReview = await reviewService.createReview(propertyId, newReview);
-
-      // Add the new review to the list
-      setReviews((prevReviews) => [createdReview, ...prevReviews]);
+      const createdReview = await reviewService.createReview(propertyId, { rating, text });
+      setReviews((prevReviews) => {
+        const withoutDup = prevReviews.filter((r) => r.reviewerId !== authUser.id);
+        return [createdReview, ...withoutDup];
+      });
       alert("Thank you for your review!");
     } catch (err) {
       console.error("Error adding review:", err);
@@ -261,77 +319,126 @@ export default function PropertyView() {
     );
   }
 
+  const reviewAverage =
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : null;
+  const roundedStarCount =
+    reviewAverage != null ? Math.min(5, Math.max(0, Math.round(reviewAverage))) : 0;
+  const ratingLabel =
+    reviews.length === 0
+      ? "No reviews yet"
+      : `${reviewAverage.toFixed(1)} average · ${reviews.length} review${reviews.length !== 1 ? "s" : ""}`;
+
+  const getGenderPillLabel = (gender) => {
+    if (!gender || gender.toLowerCase() === 'both' || gender.toLowerCase() === 'any') return "🚻 Male & Female (Both)";
+    if (gender.toLowerCase().includes('male') && !gender.toLowerCase().includes('female')) return "👨 Male Only";
+    if (gender.toLowerCase().includes('female')) return "👩 Female Only";
+    return `🚻 ${gender}`;
+  };
+
+  const getSuitableForPillLabel = (suitable) => {
+    if (!suitable || suitable.toLowerCase() === 'any') return "🌐 Open to Anyone";
+    const parts = suitable.split(',').map((s) => s.trim()).filter(Boolean);
+    if (parts.length === 1) {
+      const single = parts[0];
+      if (single.toLowerCase().includes('student')) return "🎓 University Students";
+      if (single.toLowerCase().includes('professional')) return "💼 Working Professionals";
+      if (single.toLowerCase().includes('couple')) return "💑 Couples";
+      if (single.toLowerCase().includes('family')) return "👨‍👩‍👧‍👦 Family Friendly";
+      return `🎯 ${single}`;
+    }
+    return `🎯 ${parts.join(' & ')}`;
+  };
+
   const detailItems = [
-    { label: "Bedrooms", value: property.bedrooms },
-    { label: "Bathrooms", value: property.bathrooms },
-    { label: "Kitchens", value: property.kitchens },
-    { label: "Size", value: property.sizeSqft },
-    { label: "Floor", value: property.floor },
-    { label: "Furnished", value: property.furnished },
-    { label: "Parking", value: property.parking },
-    { label: "Security", value: property.security },
-    { label: "Pets", value: property.petsAllowed },
-    { label: "Year Built", value: property.yearBuilt },
-  ];
+    { label: "Gender Requirement", value: property.genderPreference ? getGenderPillLabel(property.genderPreference) : "Both / Any", icon: "🚻" },
+    { label: "Ideal For", value: property.suitableFor ? getSuitableForPillLabel(property.suitableFor) : "Any / All Tenants", icon: "🎯" },
+    { label: "Capacity", value: property.numberOfPeople, icon: "👥" },
+    { label: "Bedrooms", value: property.bedrooms, icon: "🛏️" },
+    { label: "Bathrooms", value: property.bathrooms, icon: "🚿" },
+    { label: "Kitchens", value: property.kitchens, icon: "🍳" },
+    { label: "Size", value: property.sizeSqft, icon: "📐" },
+    { label: "Floor", value: property.floor, icon: "🏢" },
+    { label: "Furnished", value: property.furnished, icon: "🛋️" },
+    { label: "Parking", value: property.parking, icon: "🚗" },
+    { label: "Security", value: property.security, icon: "🛡️" },
+    { label: "Pets Allowed", value: property.petsAllowed, icon: "🐾" },
+    { label: "Year Built", value: property.yearBuilt, icon: "🏗️" },
+  ].filter((item) => {
+    if (item.value == null || item.value === '' || item.value === 0 || item.value === '0') return false;
+    return true;
+  });
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900">
-        <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-blue-500/30 blur-3xl" />
-        <div className="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-emerald-400/30 blur-3xl" />
-        <div className="mx-auto max-w-7xl px-4 py-10 text-white">
+      <div className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-slate-800 to-blue-950">
+        <div className="absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#3488c3]/25 blur-3xl" />
+        <div className="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-emerald-400/20 blur-3xl" />
+        <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 py-10 text-white">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center">
             <div className="flex-1">
               <div className="flex flex-wrap gap-2">
                 <InfoPill label={property.type} tone="blue" />
                 <InfoPill label={`Available from ${property.availableFrom}`} tone="emerald" />
-                <InfoPill label={`Up to ${property.numberOfPeople} people`} tone="amber" />
+                <InfoPill label={`👥 ${property.numberOfPeople}`} tone="amber" />
+                <InfoPill label={getGenderPillLabel(property.genderPreference)} tone="blue" />
+                <InfoPill label={getSuitableForPillLabel(property.suitableFor)} tone="purple" />
               </div>
-              <h1 className="mt-4 text-3xl font-bold md:text-4xl">{property.title}</h1>
-              <p className="mt-2 text-sm text-slate-200">{property.address}</p>
+              <h1 className="mt-4 text-3xl font-extrabold md:text-4xl tracking-tight text-white">{property.title}</h1>
+              <p className="mt-2 text-sm text-slate-200 font-medium">📍 {property.address}</p>
               <div className="mt-3 flex items-center gap-3 text-sm text-slate-200">
-                <span className="flex items-center gap-1 text-yellow-400">
+                <span className="flex items-center gap-1 text-amber-400 font-bold">
                   {Array.from({ length: 5 }).map((_, index) => (
-                    <span key={index} className={index < Math.round(property.rating) ? "" : "opacity-30"}>
+                    <span key={index} className={index < roundedStarCount ? "" : "opacity-30"}>
                       ★
                     </span>
                   ))}
                 </span>
-                <span className="text-slate-300">{property.rating} rating</span>
-                <span className="text-slate-400">•</span>
-                <span className="text-slate-300">{property.location}</span>
+                <span className="text-slate-300 font-semibold">{ratingLabel}</span>
+                <span className="text-slate-500">•</span>
+                <span className="text-slate-300 font-semibold">{property.location}</span>
               </div>
             </div>
 
-            <div className="w-full max-w-sm rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur">
-              <p className="text-sm uppercase tracking-[0.2em] text-slate-200">Monthly rent</p>
-              <p className="mt-2 text-4xl font-bold text-white">Rs {property.price}</p>
-              <p className="mt-1 text-sm text-slate-300">/{property.priceRange}</p>
+            <div className="w-full max-w-sm rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl shadow-2xl">
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-300">Monthly rent</p>
+              <p className="mt-2 text-4xl font-extrabold text-white">
+                Rs {typeof property.price === 'number' ? property.price.toLocaleString() : property.price}
+              </p>
+              <p className="mt-1 text-xs text-slate-300">/{property.priceRange}</p>
               <div className="mt-5 space-y-3">
                 <button
                   type="button"
                   onClick={handleMessageOwner}
-                  className="w-full rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
+                  className="w-full rounded-2xl bg-[#3488c3] hover:bg-[#2978b3] px-4 py-3.5 text-sm font-extrabold text-white transition shadow-lg shadow-[#3488c3]/30 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  Message Owner
+                  <span>💬</span>
+                  <span>Message Owner</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleScheduleVisit}
-                  className="w-full rounded-xl border border-white/30 px-4 py-3 text-sm font-semibold text-white transition hover:border-white"
+                  className="w-full rounded-2xl border border-white/30 px-4 py-3 text-sm font-bold text-white transition hover:bg-white/10 cursor-pointer flex items-center justify-center gap-2"
                 >
-                  Schedule a Visit
+                  <span>📅</span>
+                  <span>Schedule a Visit</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleFavorite}
-                  className={`w-full rounded-xl px-4 py-3 text-sm font-semibold transition ${
+                  disabled={favoriteLoading}
+                  className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2 ${
                     isFavorite
-                      ? "bg-rose-500 text-white hover:bg-rose-600"
+                      ? "bg-rose-500 text-white hover:bg-rose-600 shadow-md shadow-rose-500/20"
                       : "bg-white/20 text-white hover:bg-white/30"
                   }`}
                 >
-                  {isFavorite ? "Saved to Favorites" : "Save to Favorites"}
+                  {favoriteLoading
+                    ? "Saving..."
+                    : isFavorite
+                      ? "❤️ Saved to Favorites"
+                      : "🤍 Save to Favorites"}
                 </button>
               </div>
             </div>
@@ -339,7 +446,7 @@ export default function PropertyView() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-4 py-10">
+      <div className="w-full max-w-[1920px] mx-auto px-4 md:px-8 lg:px-12 py-10">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-2">
             <SectionCard title="Gallery" subtitle="Swipe through images" icon={<span>🖼️</span>}>
@@ -347,15 +454,37 @@ export default function PropertyView() {
             </SectionCard>
 
             <SectionCard title="Overview" subtitle="Everything you need to know" icon={<span>✨</span>}>
-              <p className="text-base leading-relaxed text-slate-600">{property.description}</p>
-              <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
-                {detailItems.map((item) => (
-                  <div key={item.label} className="rounded-xl bg-slate-50 p-4">
-                    <p className="text-xs uppercase tracking-widest text-slate-400">{item.label}</p>
-                    <p className="mt-2 text-sm font-semibold text-slate-700">{item.value}</p>
-                  </div>
-                ))}
-              </div>
+              {property.description && (
+                <div className="mb-6 p-4.5 rounded-2xl bg-slate-50/80 border-l-4 border-l-[#3488c3] border border-slate-200/60 shadow-2xs">
+                  <p className="text-[11px] font-extrabold text-[#3488c3] uppercase tracking-wider mb-1">
+                    Property Description
+                  </p>
+                  <p className="text-sm md:text-base leading-relaxed text-slate-700 font-medium">{property.description}</p>
+                </div>
+              )}
+
+              {detailItems.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5">
+                  {detailItems.map((item) => (
+                    <div 
+                      key={item.label} 
+                      className="flex items-center gap-3.5 p-3.5 rounded-2xl bg-slate-50/90 border border-slate-200/70 hover:bg-[#eaf4fb]/50 transition"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-center text-lg shrink-0">
+                        {item.icon}
+                      </div>
+                      <div className="overflow-hidden">
+                        <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider block truncate">
+                          {item.label}
+                        </span>
+                        <span className="text-xs md:text-sm font-extrabold text-slate-900 mt-0.5 block truncate">
+                          {typeof item.value === 'boolean' ? (item.value ? 'Yes' : 'No') : item.value}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </SectionCard>
 
             <SectionCard title="Specifications" icon={<span>🏡</span>}>
@@ -404,11 +533,18 @@ export default function PropertyView() {
             </SectionCard>
 
             <SectionCard title={`Reviews (${reviews.length})`} icon={<span>⭐</span>}>
-              <AddReview onSubmit={handleAddReview} userName="Current User" />
+              {authUser?.id ? (
+                <AddReview onSubmit={handleAddReview} />
+              ) : (
+                <p className="mb-6 text-sm text-slate-600">
+                  Sign in to share your experience and rate this property.
+                </p>
+              )}
               <ReviewsList
                 reviews={reviews}
                 reviewCount={reviews.length}
                 onDeleteReview={handleDeleteReview}
+                currentUserId={authUser?.id}
               />
             </SectionCard>
           </div>

@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-export function AddReview({ onSubmit, userName = "You" }) {
+export function AddReview({ onSubmit }) {
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -16,20 +16,7 @@ export function AddReview({ onSubmit, userName = "You" }) {
     setIsSubmitting(true);
 
     try {
-      const newReview = {
-        id: Date.now(),
-        author: userName,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userName}`,
-        rating: rating,
-        text: reviewText,
-        date: new Date().toLocaleDateString("en-US", {
-          year: "numeric",
-          month: "short",
-          day: "numeric",
-        }),
-      };
-
-      await onSubmit(newReview);
+      await onSubmit({ rating, text: reviewText.trim() });
       setReviewText("");
       setRating(5);
     } finally {
@@ -53,11 +40,20 @@ export function AddReview({ onSubmit, userName = "You" }) {
                 key={star}
                 type="button"
                 onClick={() => setRating(star)}
-                className={`text-2xl transition-transform hover:scale-110 ${
-                  star <= rating ? "text-yellow-400" : "text-gray-300"
-                }`}
+                className="text-2xl transition-transform hover:scale-110"
               >
-                ⭐
+                <svg
+                  className="w-7 h-7"
+                  viewBox="0 0 24 24"
+                  fill={star <= rating ? "#facc15" : "none"}
+                  stroke="#facc15"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                </svg>
               </button>
             ))}
           </div>
@@ -94,7 +90,7 @@ export function AddReview({ onSubmit, userName = "You" }) {
         <button
           type="submit"
           disabled={isSubmitting || reviewText.trim().length < 10}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded-lg transition"
+          className="w-full bg-[#3488c3] hover:bg-[#2978b3] disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-extrabold py-3 px-4 rounded-2xl transition shadow-md shadow-[#3488c3]/20 cursor-pointer"
         >
           {isSubmitting ? "Posting..." : "Post Review"}
         </button>

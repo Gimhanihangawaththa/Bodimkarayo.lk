@@ -22,7 +22,7 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private void seedAdmins() {
-        // Create 4 admins if they don't exist
+        
         createAdminIfNotExists("Admin One", "admin1@bodimkarayo.lk", "admin123");
         createAdminIfNotExists("Admin Two", "admin2@bodimkarayo.lk", "admin123");
         createAdminIfNotExists("Admin Three", "admin3@bodimkarayo.lk", "admin123");
