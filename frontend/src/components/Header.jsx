@@ -90,6 +90,30 @@ export default function Header() {
     setUserMenuOpen(false)
   }, [location.pathname])
 
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (user && token) {
+      const fetchUnread = async () => {
+        try {
+          const res = await fetch(`http://localhost:4000/api/chat/unread-count/${user.id}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            const count = await res.json();
+            setUnreadCount(count);
+          }
+        } catch (err) {
+          console.error("Error fetching unread count", err);
+        }
+      };
+
+      fetchUnread();
+      const interval = setInterval(fetchUnread, 30000); // Check every 30s
+      return () => clearInterval(interval);
+    }
+  }, [user, token]);
+
   const handleLogout = () => {
     logout()
     setUserMenuOpen(false)
@@ -110,7 +134,6 @@ export default function Header() {
 
   const userInitial = user && user.fullName ? user.fullName.charAt(0).toUpperCase() : '👤'
   const userName = user && user.fullName ? user.fullName : 'User'
-
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs transition-all">
       <div className="w-full px-4 md:px-8 py-3 min-h-[76px] flex items-center justify-between gap-4">
