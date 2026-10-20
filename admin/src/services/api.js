@@ -21,9 +21,13 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
+    const status = error.response?.status;
+    if (status === 401 || status === 403) {
+      // 401: Token expired or invalid
+      // 403: Forbidden (role revoked or account suspended)
       localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminData');
+      localStorage.removeItem('userId');
       // Dispatch an event to logout the user
       window.dispatchEvent(new Event('auth:unauthorized'));
     }
