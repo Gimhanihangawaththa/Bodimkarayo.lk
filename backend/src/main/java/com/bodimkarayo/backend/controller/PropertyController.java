@@ -62,6 +62,20 @@ public class PropertyController {
                 .orElseThrow(() -> new RuntimeException("Property not found"));
     }
 
+    @GetMapping("/owner/{ownerId}")
+    public List<Property> getPropertiesByOwner(@PathVariable Long ownerId) {
+        return propertyService.getPropertiesByOwner(ownerId);
+    }
+
+    @PutMapping("/{id}/availability")
+    public Property updateAvailability(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
+        String status = payload.get("status");
+        if (status == null || status.isBlank()) {
+            throw new RuntimeException("Status is required (ACTIVE or RENTED)");
+        }
+        return propertyService.updatePropertyStatus(id, status);
+    }
+
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public Property create(@RequestBody Property property) {
         return propertyService.createProperty(property);

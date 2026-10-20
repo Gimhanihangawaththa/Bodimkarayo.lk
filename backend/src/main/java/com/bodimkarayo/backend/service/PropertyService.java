@@ -1,6 +1,7 @@
 package com.bodimkarayo.backend.service;
 
 import com.bodimkarayo.backend.model.Property;
+import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.repository.PropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
@@ -27,7 +28,53 @@ public class PropertyService {
     private com.bodimkarayo.backend.search.SearchIndexService searchIndexService;
 
     public List<Property> getAllProperties() {
-        return propertyRepository.findAll();
+        return propertyRepository.findAll().stream()
+                .filter(p -> p.getStatus() == null || "ACTIVE".equalsIgnoreCase(p.getStatus()))
+                .collect(Collectors.toList());
+    }
+
+    public List<Property> getAllPropertiesForAdmin(String status) {
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            return propertyRepository.findByStatusOrderByIdDesc(status.toUpperCase());
+        }
+        return propertyRepository.findAllByOrderByIdDesc();
+    }
+
+    public List<Property> getPropertiesByOwner(Long ownerId) {
+        User owner = new User();
+        owner.setId(ownerId);
+        return propertyRepository.findByOwnerOrderByIdDesc(owner);
+    }
+
+    public Property updatePropertyStatus(Long id, String status) {
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+        property.setStatus(status.toUpperCase());
+        return propertyRepository.save(property);
+    }
+
+    public Property approveProperty(Long id) {
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+        property.setStatus("ACTIVE");
+        property.setRejectionReason(null);
+        Property saved = propertyRepository.save(property);
+        if (searchIndexService != null) {
+            searchIndexService.syncProperty(saved);
+        }
+        return saved;
+    }
+
+    public Property rejectProperty(Long id, String reason) {
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+        property.setStatus("REJECTED");
+        property.setRejectionReason(reason);
+        Property saved = propertyRepository.save(property);
+        if (searchIndexService != null) {
+            searchIndexService.removeProperty(id);
+        }
+        return saved;
     }
 
     public Optional<Property> getPropertyById(Long id) {
@@ -35,8 +82,11 @@ public class PropertyService {
     }
 
     public Property createProperty(Property property) {
+        if (property.getStatus() == null || property.getStatus().isBlank()) {
+            property.setStatus("PENDING");
+        }
         Property savedProperty = propertyRepository.save(property);
-        if (searchIndexService != null) {
+        if ("ACTIVE".equalsIgnoreCase(savedProperty.getStatus()) && searchIndexService != null) {
             searchIndexService.syncProperty(savedProperty);
         }
         return savedProperty;
@@ -236,6 +286,11 @@ public class PropertyService {
                 joinList(property.getRules()),
                 joinList(property.getNearby())
         );
+
+        boolean isActive = property.getStatus() == null || "ACTIVE".equalsIgnoreCase(property.getStatus());
+        if (!isActive) {
+            return false;
+        }
 
         return matchesKeyword(searchableText, keyword)
                 && matchesText(property.getLocation(), location)
