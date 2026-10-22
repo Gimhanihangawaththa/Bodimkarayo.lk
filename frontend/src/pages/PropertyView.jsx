@@ -2,9 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { LocationMap } from "../components/LocationMap";
-import { propertyService, reviewService } from "../services";
-import { SectionCard } from "../components/ui/SectionCard";
+import { propertyService, reviewService, reportService } from "../services";
 import { InfoPill } from "../components/ui/InfoPill";
+import { SectionCard } from "../components/ui/SectionCard";
 import { PropertyImageViewer } from "../components/PropertyImageViewer";
 import { PropertySpecifications } from "../components/PropertySpecifications";
 import { PropertyOffers } from "../components/PropertyOffers";
@@ -131,6 +131,10 @@ export default function PropertyView() {
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("Fake or misleading listing");
+  const [reportDetails, setReportDetails] = useState("");
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -283,6 +287,37 @@ export default function PropertyView() {
           "Failed to delete review. Please try again.";
         alert(errorMessage);
       }
+    }
+  };
+
+  const handleOpenReport = () => {
+    if (!authUser) {
+      alert("Please sign in to report this listing.");
+      navigate("/signin");
+      return;
+    }
+    setIsReportModalOpen(true);
+  };
+
+  const handleSubmitReport = async (e) => {
+    e.preventDefault();
+    if (!reportReason) return;
+    setIsSubmittingReport(true);
+    try {
+      await reportService.submitReport({
+        targetType: "PROPERTY",
+        targetId: property.id,
+        targetTitle: property.title,
+        reason: reportReason,
+        details: reportDetails,
+      });
+      alert("Report submitted successfully. Our admin team will investigate.");
+      setIsReportModalOpen(false);
+      setReportDetails("");
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to submit report. Please try again.");
+    } finally {
+      setIsSubmittingReport(false);
     }
   };
 
@@ -440,6 +475,13 @@ export default function PropertyView() {
                       ? "❤️ Saved to Favorites"
                       : "🤍 Save to Favorites"}
                 </button>
+                <button
+                  type="button"
+                  onClick={handleOpenReport}
+                  className="w-full text-xs font-semibold text-slate-300 hover:text-rose-300 transition flex items-center justify-center gap-1.5 pt-1 cursor-pointer"
+                >
+                  <span>🚩</span> Report this listing
+                </button>
               </div>
             </div>
           </div>
@@ -583,6 +625,71 @@ export default function PropertyView() {
           </div>
         </div>
       </div>
+      {/* Report Modal */}
+      {isReportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl animate-in fade-in">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <span>🚩</span> Report Listing
+              </h3>
+              <button 
+                type="button"
+                onClick={() => setIsReportModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 text-xl font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Help us keep Bodimkarayo.lk safe and accurate. Why are you reporting "{property.title}"?
+            </p>
+            <form onSubmit={handleSubmitReport} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Reason</label>
+                <select
+                  value={reportReason}
+                  onChange={(e) => setReportReason(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#3488c3] outline-none"
+                >
+                  <option value="Fake or misleading listing">Fake or misleading listing</option>
+                  <option value="Incorrect contact information / unreachable">Incorrect contact information / unreachable</option>
+                  <option value="Scam or fraudulent demands">Scam or fraudulent demands</option>
+                  <option value="Already rented out / unavailable">Already rented out / unavailable</option>
+                  <option value="Inappropriate photos or description">Inappropriate photos or description</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">Additional Details (Optional)</label>
+                <textarea
+                  value={reportDetails}
+                  onChange={(e) => setReportDetails(e.target.value)}
+                  placeholder="Describe the issue with this listing..."
+                  rows="3"
+                  className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:ring-2 focus:ring-[#3488c3] outline-none"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsReportModalOpen(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingReport}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-sm font-bold text-white shadow-md shadow-rose-200 transition cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmittingReport ? 'Submitting...' : 'Submit Report'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -3,15 +3,20 @@ package com.bodimkarayo.backend.controller;
 import com.bodimkarayo.backend.dto.AuthResponse;
 import com.bodimkarayo.backend.dto.TokenRefreshRequest;
 import com.bodimkarayo.backend.dto.TokenRefreshResponse;
+import com.bodimkarayo.backend.dto.UserProfileResponse;
 import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.service.AuthService;
+import com.bodimkarayo.backend.service.UserService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 
@@ -21,6 +26,9 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private UserService userService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthResponse> register(@RequestBody User user, HttpServletResponse response) {
@@ -34,6 +42,14 @@ public class AuthController {
         AuthResponse authResponse = authService.login(user.getEmail(), user.getPassword());
         setRefreshTokenCookie(response, authResponse.getRefreshToken());
         return ResponseEntity.ok(authResponse);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserProfileResponse> getCurrentUser(Authentication authentication) {
+        if (authentication == null || !(authentication.getPrincipal() instanceof User user)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
+        return ResponseEntity.ok(userService.getUserProfile(user.getId()));
     }
 
     @PostMapping("/refresh")

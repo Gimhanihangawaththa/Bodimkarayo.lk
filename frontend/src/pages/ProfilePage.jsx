@@ -167,19 +167,19 @@ export default function ProfilePage() {
       }
 
       try {
-        const allProperties = await propertyService.getAllProperties();
-        const userProps = Array.isArray(allProperties)
-          ? allProperties.filter((prop) => prop.owner && prop.owner.id === authUser.id)
-          : [];
+        const userProps = await propertyService.getPropertiesByOwner(authUser.id);
+        const list = Array.isArray(userProps) ? userProps : [];
 
         // Transform properties for display
-        const transformedProperties = userProps.map((prop) => ({
+        const transformedProperties = list.map((prop) => ({
           id: prop.id,
           image: prop.images && prop.images.length > 0 ? prop.images[0] : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400',
           title: prop.title || 'Property',
           location: prop.location || 'Location not specified',
           price: prop.rent || 0,
           type: prop.propertyType || 'Property',
+          status: prop.status || 'PENDING',
+          rejectionReason: prop.rejectionReason,
           bedrooms: prop.bedrooms || 0,
           bathrooms: prop.bathrooms || 0,
           available: prop.availableFrom || 'TBD',
@@ -413,6 +413,22 @@ export default function ProfilePage() {
         error?.message ||
         "Failed to delete property. Please try again.";
       alert(message);
+    }
+  };
+
+  const handleToggleAvailability = async (e, propertyId, currentStatus) => {
+    e.stopPropagation();
+    const newStatus = currentStatus === 'ACTIVE' ? 'RENTED' : 'ACTIVE';
+    try {
+      await propertyService.updateAvailability(propertyId, newStatus);
+      setUser((prev) => ({
+        ...prev,
+        userProperties: prev.userProperties.map((p) =>
+          p.id === propertyId ? { ...p, status: newStatus } : p
+        ),
+      }));
+    } catch (err) {
+      alert("Failed to update listing status. Please try again.");
     }
   };
 
@@ -736,6 +752,24 @@ export default function ProfilePage() {
                         alt={property.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
+                      {/* Listing Moderation Status Badge */}
+                      <span className={`absolute top-3 left-3 px-2.5 py-1 rounded-full text-[11px] font-bold shadow-md uppercase tracking-wider ${
+                        property.status === 'ACTIVE'
+                          ? 'bg-emerald-600 text-white'
+                          : property.status === 'RENTED'
+                          ? 'bg-slate-700 text-white'
+                          : property.status === 'REJECTED'
+                          ? 'bg-rose-600 text-white'
+                          : 'bg-amber-500 text-white animate-pulse'
+                      }`}>
+                        {property.status === 'ACTIVE'
+                          ? 'Active'
+                          : property.status === 'RENTED'
+                          ? 'Rented'
+                          : property.status === 'REJECTED'
+                          ? 'Rejected'
+                          : 'Pending Review'}
+                      </span>
                       <span className="absolute top-3 right-3 bg-[#3488c3] text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
                         {property.type}
                       </span>
@@ -745,11 +779,35 @@ export default function ProfilePage() {
                       <div>
                         <span className="text-[11px] font-extrabold text-[#3488c3] tracking-wide uppercase">{property.location}</span>
                         <h3 className="text-base font-bold text-slate-900 mt-0.5 group-hover:text-[#3488c3] transition-colors line-clamp-1">{property.title}</h3>
+                        {property.status === 'REJECTED' && property.rejectionReason && (
+                          <div className="mt-2 text-xs text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-2 leading-relaxed">
+                            <span className="font-bold block">Feedback:</span> {property.rejectionReason}
+                          </div>
+                        )}
+                        {property.status === 'PENDING' && (
+                          <p className="mt-2 text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 font-medium border border-amber-200">
+                            Listing is awaiting admin review before becoming public.
+                          </p>
+                        )}
                       </div>
 
-                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
-                        <p className="font-extrabold text-slate-900 text-base">Rs {property.price.toLocaleString()}<span className="text-xs font-normal text-slate-500"> /mo</span></p>
-                        <div className="flex gap-2">
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                        <p className="font-extrabold text-slate-900 text-base">Rs {property.price?.toLocaleString?.() || property.price}<span className="text-xs font-normal text-slate-500"> /mo</span></p>
+                        <div className="flex items-center gap-1.5">
+                          {(property.status === 'ACTIVE' || property.status === 'RENTED') && (
+                            <button
+                              type="button"
+                              onClick={(e) => handleToggleAvailability(e, property.id, property.status)}
+                              className={`text-[11px] font-bold px-2.5 py-1.5 rounded-xl transition cursor-pointer border ${
+                                property.status === 'ACTIVE'
+                                  ? 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200'
+                              }`}
+                              title={property.status === 'ACTIVE' ? 'Mark as Rented Out' : 'Mark as Available'}
+                            >
+                              {property.status === 'ACTIVE' ? 'Mark Rented' : 'Mark Available'}
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={(e) => {

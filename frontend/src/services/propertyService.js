@@ -216,6 +216,34 @@ const propertyService = {
       throw error;
     }
   },
+
+  /**
+   * Get all properties for a specific owner (including pending/rejected/rented)
+   * Backend: GET /api/properties/owner/:ownerId
+   */
+  getPropertiesByOwner: async (ownerId) => {
+    try {
+      const response = await apiClient.get(`/properties/owner/${ownerId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching properties for owner ${ownerId}:`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Toggle availability between ACTIVE and RENTED
+   * Backend: PUT /api/properties/:id/availability
+   */
+  updateAvailability: async (propertyId, status) => {
+    try {
+      const response = await apiClient.put(`/properties/${propertyId}/availability`, { status });
+      return response.data;
+    } catch (error) {
+      console.error(`Error updating availability for property ${propertyId}:`, error);
+      throw error;
+    }
+  },
 };
 
 export default propertyService;

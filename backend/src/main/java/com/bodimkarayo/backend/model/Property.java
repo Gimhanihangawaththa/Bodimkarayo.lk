@@ -62,4 +62,23 @@ public class Property {
 
     @ManyToOne
     private User owner;
+
+    @Builder.Default
+    private String status = "PENDING"; // PENDING, ACTIVE, REJECTED, RENTED
+
+    private String rejectionReason;
+
+    @org.hibernate.annotations.CreationTimestamp
+    @Column(updatable = false)
+    private java.time.LocalDateTime createdAt;
+
+    @org.hibernate.annotations.UpdateTimestamp
+    private java.time.LocalDateTime updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.status == null || this.status.isBlank()) {
+            this.status = "PENDING";
+        }
+    }
 }

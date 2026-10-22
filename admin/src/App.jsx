@@ -5,6 +5,9 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import Dashboard from './pages/Dashboard/Dashboard';
 import Users from './pages/Users/Users';
 import Properties from './pages/Properties/Properties';
+import Roommates from './pages/Roommates/Roommates';
+import Reviews from './pages/Reviews/Reviews';
+import Reports from './pages/Reports/Reports';
 import Settings from './pages/Settings/Settings';
 import Login from './pages/Login/Login';
 
@@ -19,6 +22,9 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="users" element={<Users />} />
           <Route path="properties" element={<Properties />} />
+          <Route path="roommates" element={<Roommates />} />
+          <Route path="reviews" element={<Reviews />} />
+          <Route path="reports" element={<Reports />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Route>

@@ -5,32 +5,57 @@ import apiClient from '../services/api';
 const AdminAuthContext = createContext();
 
 export const AdminAuthProvider = ({ children }) => {
-  const [admin, setAdmin] = useState(null);
+  // Synchronous read prevents flash of unauthenticated state on page refresh
+  const [admin, setAdmin] = useState(() => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const adminData = localStorage.getItem('adminData');
+      if (token && adminData) {
+        return JSON.parse(adminData);
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  });
+
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is logged in on mount
+    // Validate session with live database on mount
     const checkAuth = async () => {
       const token = localStorage.getItem('adminToken');
-      if (token) {
-        try {
-          // You might want to create a /api/auth/me endpoint in the future to verify token
-          // For now, if we have a token, we assume they are logged in.
-          // Realistically, the first API call will fail if the token is invalid
-          // and the interceptor will log them out.
-          const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
-          setAdmin(adminData);
-        } catch (error) {
-          logout();
-        }
+      if (!token) {
+        setLoading(false);
+        return;
       }
-      setLoading(false);
+
+      try {
+        const response = await apiClient.get('/auth/me');
+        const user = response.data;
+
+        // Verify active status and admin role
+        if (user.role !== 'ADMIN' || user.isActive === false) {
+          throw new Error('Access denied. Admin privileges required.');
+        }
+
+        setAdmin(user);
+        localStorage.setItem('adminData', JSON.stringify(user));
+        if (user.id) {
+          localStorage.setItem('userId', String(user.id));
+        }
+      } catch (error) {
+        console.warn('Session verification failed, logging out:', error);
+        logout();
+      } finally {
+        setLoading(false);
+      }
     };
 
     checkAuth();
 
-    // Listen for unauthorized events from api interceptor
+    // Listen for unauthorized/forbidden events from api interceptor
     const handleUnauthorized = () => logout();
     window.addEventListener('auth:unauthorized', handleUnauthorized);
     
@@ -42,7 +67,7 @@ export const AdminAuthProvider = ({ children }) => {
       const response = await apiClient.post('/auth/login', { email, password });
       
       // Ensure the user actually has the ADMIN role
-      const role = response.data.user.role; 
+      const role = response.data.user?.role; 
       
       if (role !== 'ADMIN') {
         throw new Error('Access denied. Admin privileges required.');
@@ -52,6 +77,9 @@ export const AdminAuthProvider = ({ children }) => {
       
       localStorage.setItem('adminToken', token);
       localStorage.setItem('adminData', JSON.stringify(user));
+      if (user?.id) {
+        localStorage.setItem('userId', String(user.id));
+      }
       
       setAdmin(user);
       navigate('/');
@@ -65,6 +93,7 @@ export const AdminAuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminData');
+    localStorage.removeItem('userId');
     setAdmin(null);
     navigate('/login');
   };
