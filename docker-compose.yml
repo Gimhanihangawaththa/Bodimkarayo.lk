@@ -73,6 +73,18 @@ services:
     ports:
       - "5173:80"
 
+  admin:
+    build:
+      context: ./admin
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: bodimkarayo-admin
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5174:80"
+
 volumes:
   mariadb_data:
   elasticsearch_data:

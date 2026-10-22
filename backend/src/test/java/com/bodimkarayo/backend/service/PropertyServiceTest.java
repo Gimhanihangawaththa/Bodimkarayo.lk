@@ -63,6 +63,7 @@ class PropertyServiceTest {
                 .furnished("Furnished")
                 .parking("Available")
                 .petsAllowed("No")
+                .status("ACTIVE")
                 .owner(testOwner)
                 .images(new ArrayList<>(List.of("https://res.cloudinary.com/demo/image1.jpg")))
                 .build();
