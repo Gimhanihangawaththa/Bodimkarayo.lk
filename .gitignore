@@ -1,3 +1,10 @@
 .env
 .DS_Store
 .scannerwork/
+
+# Terraform ignores
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
