@@ -8,3 +8,7 @@
 *.tfstate.*
 *.tfvars
 
+# JMeter outputs
+jmeter.log
+tests/performance/*.jtl
+tests/performance/report/
