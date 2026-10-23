@@ -12,3 +12,6 @@
 jmeter.log
 tests/performance/*.jtl
 tests/performance/report/
+
+# Selenium screenshots
+tests/e2e/screenshots/
