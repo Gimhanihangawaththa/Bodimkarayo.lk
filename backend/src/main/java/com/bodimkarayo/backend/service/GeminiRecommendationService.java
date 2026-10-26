@@ -37,37 +37,49 @@ public class GeminiRecommendationService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     public List<RecommendationResponse> getRecommendations(RecommendationRequest request) {
-        List<Property> allProperties = propertyRepository.findAll();
-        List<RoommatePost> allRoommates = roommateRepository.findAll();
+        String matchType = request.getMatchType();
+        boolean onlyRoommates = "ROOMMATE".equalsIgnoreCase(matchType);
+        boolean onlyProperties = "PROPERTY".equalsIgnoreCase(matchType) || matchType == null || matchType.isEmpty();
+
+        List<Property> allProperties = onlyRoommates ? Collections.emptyList() : propertyRepository.findAll();
+        List<RoommatePost> allRoommates = onlyProperties ? Collections.emptyList() : roommateRepository.findAll();
         
         StringBuilder prompt = new StringBuilder();
         prompt.append("You are an AI Matchmaker for Bodimkarayo.lk in Sri Lanka. ");
-        prompt.append("A user is looking for a place or a roommate with the following preferences:\n");
+        if (onlyRoommates) {
+            prompt.append("A user is looking for a COMPATIBLE ROOMMATE/FLATMATE with the following preferences:\n");
+        } else {
+            prompt.append("A user is looking for a BOARDING PLACE/PROPERTY with the following preferences:\n");
+        }
         if(request.getPreferences() != null) prompt.append("- Preferences: ").append(request.getPreferences()).append("\n");
         if(request.getMaxBudget() != null) prompt.append("- Max Budget: Rs ").append(request.getMaxBudget()).append("\n");
         if(request.getPreferredLocation() != null) prompt.append("- Preferred Location: ").append(request.getPreferredLocation()).append("\n");
         if(request.getPropertyType() != null) prompt.append("- Property Type: ").append(request.getPropertyType()).append("\n");
         
-        prompt.append("\nHere is a list of available properties:\n");
-        for (Property p : allProperties) {
-            prompt.append(String.format("ID: %d | Title: %s | Location: %s | Rent: Rs %.2f | Type: %s | Gender: %s | Suitable For: %s | Capacity: %s | Offers: %s | Highlights: %s\n",
-                    p.getId(), p.getTitle(), p.getLocation(), p.getRent(), p.getPropertyType(), 
-                    p.getGenderPreference(), p.getSuitableFor(), p.getNumberOfPeople(),
-                    p.getOffers(), p.getHighlights()));
+        if (!onlyRoommates) {
+            prompt.append("\nHere is a list of available properties:\n");
+            for (Property p : allProperties) {
+                prompt.append(String.format("ID: %d | Title: %s | Location: %s | Rent: Rs %.2f | Type: %s | Gender: %s | Suitable For: %s | Capacity: %s | Offers: %s | Highlights: %s\n",
+                        p.getId(), p.getTitle(), p.getLocation(), p.getRent(), p.getPropertyType(), 
+                        p.getGenderPreference(), p.getSuitableFor(), p.getNumberOfPeople(),
+                        p.getOffers(), p.getHighlights()));
+            }
         }
         
-        prompt.append("\nHere is a list of available roommate posts:\n");
-        for (RoommatePost r : allRoommates) {
-            prompt.append(String.format("ID: %d | Gender: %s | Age: %s | Location: %s | Budget: Rs %.2f | Interests: %s | Bio: %s\n",
-                    r.getId(), r.getGender(), r.getAge(), r.getLocation(), r.getBudget(), r.getInterests(), r.getBio()));
+        if (!onlyProperties) {
+            prompt.append("\nHere is a list of available roommate posts:\n");
+            for (RoommatePost r : allRoommates) {
+                prompt.append(String.format("ID: %d | Gender: %s | Age: %s | Location: %s | Budget: Rs %.2f | Interests: %s | Bio: %s\n",
+                        r.getId(), r.getGender(), r.getAge(), r.getLocation(), r.getBudget(), r.getInterests(), r.getBio()));
+            }
         }
         
-        prompt.append("\nPlease recommend the top 3 best matching items (can be properties or roommate posts) from the lists above based on what the user is looking for. ");
+        prompt.append("\nPlease recommend the top 5 best matching items from the list above based on what the user is looking for. ");
         prompt.append("Respond STRICTLY in JSON format as a list of objects. Each object should have exactly three keys: ");
         prompt.append("\"type\" (must be exactly \"PROPERTY\" or \"ROOMMATE\"), \"itemId\" (the integer ID), and \"aiExplanation\" (a 1-sentence personalized explanation of why it's a good match). ");
         prompt.append("Do not include markdown formatting blocks like ```json.");
 
-        String url = apiUrl + "?key=" + apiKey;
+        String url = apiUrl;
         
         Map<String, Object> requestBody = new HashMap<>();
         Map<String, Object> part = new HashMap<>();
@@ -80,6 +92,9 @@ public class GeminiRecommendationService {
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
+        if (apiKey != null && !apiKey.trim().isEmpty()) {
+            headers.set("x-goog-api-key", apiKey.trim());
+        }
         HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
         try {

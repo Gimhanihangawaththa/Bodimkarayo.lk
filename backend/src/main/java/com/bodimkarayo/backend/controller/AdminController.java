@@ -14,7 +14,6 @@ import com.bodimkarayo.backend.repository.UserRepository;
 import com.bodimkarayo.backend.service.AdminLogService;
 import com.bodimkarayo.backend.service.PropertyService;
 import com.bodimkarayo.backend.service.ReportService;
-import com.bodimkarayo.backend.service.ReviewService;
 import com.bodimkarayo.backend.service.RoommateService;
 import com.bodimkarayo.backend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,9 +52,6 @@ public class AdminController {
 
     @Autowired
     private ReportService reportService;
-
-    @Autowired
-    private ReviewService reviewService;
 
     @Autowired
     private RoommateService roommateService;

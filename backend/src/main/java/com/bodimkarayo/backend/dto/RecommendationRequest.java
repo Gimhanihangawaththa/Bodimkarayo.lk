@@ -8,4 +8,5 @@ public class RecommendationRequest {
     private Double maxBudget;
     private String preferredLocation;
     private String propertyType;
+    private String matchType; // "PROPERTY" or "ROOMMATE"
 }

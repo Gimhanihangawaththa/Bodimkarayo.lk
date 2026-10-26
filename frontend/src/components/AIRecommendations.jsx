@@ -11,6 +11,7 @@ export default function AIRecommendations() {
   const [preferredLocation, setPreferredLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
+  const [matchType, setMatchType] = useState('PROPERTY');
   const [error, setError] = useState('');
   const [autoMatched, setAutoMatched] = useState(false);
 
@@ -45,7 +46,7 @@ export default function AIRecommendations() {
     fetchUserPreferences();
   }, [user, token]);
 
-  const fetchRecommendations = async (prefs, budget, location) => {
+  const fetchRecommendations = async (prefs, budget, location, type = matchType) => {
     if (!prefs?.trim()) return;
     
     setLoading(true);
@@ -55,7 +56,8 @@ export default function AIRecommendations() {
       const response = await apiClient.post('/recommendations', {
         preferences: prefs,
         maxBudget: budget ? parseFloat(budget) : null,
-        preferredLocation: location || null
+        preferredLocation: location || null,
+        matchType: type
       });
       
       if (response.data && response.data.length > 0) {
@@ -83,7 +85,7 @@ export default function AIRecommendations() {
 
   return (
     <section className="py-12 md:py-16 bg-white">
-      <div className="max-w-7xl mx-auto px-4">
+      <div className="max-w-7xl xl:max-w-[1440px] mx-auto px-4">
         <div className={`rounded-3xl p-6 md:p-10 relative overflow-hidden transition-all duration-500 ${
           autoMatched ? 'bg-gradient-to-br from-blue-50/80 via-white to-sky-50/60 border border-blue-100 shadow-xl' : 'bg-gradient-to-br from-slate-50/80 via-white to-blue-50/40 border border-slate-200/80 shadow-md'
         }`}>
@@ -132,6 +134,34 @@ export default function AIRecommendations() {
             
             {!autoMatched && (
               <form onSubmit={handleGetRecommendations} className="space-y-6 bg-white/90 backdrop-blur-md p-6 md:p-8 rounded-2xl border border-slate-200/80 shadow-xs">
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">I am looking for</label>
+                  <div className="inline-flex p-1 bg-slate-100 rounded-2xl w-fit border border-slate-200/80 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setMatchType('PROPERTY')}
+                      className={`px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                        matchType === 'PROPERTY'
+                          ? 'bg-white text-[#3488c3] shadow-sm scale-[1.02]'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <span>🏠</span> Boarding Places
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMatchType('ROOMMATE')}
+                      className={`px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                        matchType === 'ROOMMATE'
+                          ? 'bg-white text-[#3488c3] shadow-sm scale-[1.02]'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <span>👥</span> Roommates
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">Your Preferences</label>
                   <textarea 
@@ -210,7 +240,7 @@ export default function AIRecommendations() {
 
             {!loading && recommendations.length > 0 && (
               <div className="animate-fade-in">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
                   {recommendations.map((rec, index) => {
                     const isProperty = rec.type === 'PROPERTY' || rec.property;
                     const item = isProperty ? rec.property : rec.roommatePost;
@@ -227,42 +257,41 @@ export default function AIRecommendations() {
                     const targetUrl = isProperty ? `/property/${item.id}` : `/roommate/${item.id}`;
                     
                     return (
-                      <div key={index} className="group bg-white rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col border border-gray-100 overflow-hidden transform hover:-translate-y-2">
-                        <div className="relative h-56 overflow-hidden">
+                      <div key={index} className="group bg-white rounded-xl shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col border border-gray-100 overflow-hidden transform hover:-translate-y-1">
+                        <div className="relative h-36 overflow-hidden">
                           <img 
                             src={image} 
                             alt={title} 
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
-                          <div className="absolute top-4 right-4 z-10">
-                            <span className="bg-white/90 backdrop-blur-md text-indigo-600 text-[10px] font-black px-3 py-1.5 rounded-lg shadow-sm border border-indigo-50 uppercase tracking-tighter">
+                          <div className="absolute top-2.5 right-2.5 z-10">
+                            <span className="bg-white/95 backdrop-blur-md text-indigo-600 text-[9px] font-black px-2 py-0.5 rounded-md shadow-xs border border-indigo-50 uppercase tracking-tight">
                               {isProperty ? 'Boarding' : 'Roommate'}
                             </span>
                           </div>
-                          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
-                            <p className="text-white font-black text-xl">
+                          <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                            <p className="text-white font-black text-sm">
                               Rs {price?.toLocaleString()}
-                              <span className="text-xs font-normal opacity-80 ml-1">/mo</span>
+                              <span className="text-[10px] font-normal opacity-80 ml-1">/mo</span>
                             </p>
                           </div>
                         </div>
                         
-                        <div className="p-6 flex-grow flex flex-col">
-                          <h4 className="font-bold text-gray-900 text-lg mb-1 group-hover:text-indigo-600 transition-colors line-clamp-1">{title}</h4>
-                          <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-1">
+                        <div className="p-3.5 flex-grow flex flex-col">
+                          <h4 className="font-bold text-gray-900 text-xs mb-1 group-hover:text-indigo-600 transition-colors line-clamp-1" title={title}>
+                            {title}
+                          </h4>
+                          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
                             <span className="text-indigo-500">📍</span> {location}
                           </p>
                           
-                          <div className="bg-gray-50 p-4 rounded-xl text-sm mb-6 border border-gray-100 flex-grow relative group-hover:bg-indigo-50/30 transition-colors">
-                            <svg className="absolute -top-2 -left-2 w-6 h-6 text-indigo-200 opacity-50" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C20.1216 16 21.017 16.8954 21.017 18V21C21.017 22.1046 20.1216 23 19.017 23H16.017C14.9124 23 14.017 22.1046 14.017 21ZM14.017 21C14.017 22.1046 14.9124 23 16.017 23H19.017C20.1216 23 21.017 22.1046 21.017 21V18C21.017 16.8954 20.1216 16 19.017 16H16.017C14.9124 16 14.017 16.8954 14.017 18V21ZM5.017 21L5.017 18C5.017 16.8954 5.91243 16 7.017 16H10.017C11.1216 16 12.017 16.8954 12.017 18V21C12.017 22.1046 11.1216 23 10.017 23H7.017C5.91243 23 5.017 22.1046 5.017 21ZM5.017 21C5.017 22.1046 5.91243 23 7.017 23H10.017C11.1216 23 12.017 22.1046 12.017 21V18C12.017 16.8954 11.1216 16 10.017 16H7.017C5.91243 16 5.017 16.8954 5.017 18V21ZM12.017 0L12.017 3C12.017 4.10457 11.1216 5 10.017 5H7.017C5.91243 5 5.017 4.10457 5.017 3V0C5.017 -1.10457 5.91243 -2 7.017 -2H10.017C11.1216 -2 12.017 -1.10457 12.017 0ZM12.017 0C12.017 -1.10457 11.1216 -2 10.017 -2H7.017C5.91243 -2 5.017 -1.10457 5.017 0V3C5.017 4.10457 5.91243 5 7.017 5H10.017C11.1216 5 12.017 4.10457 12.017 3V0Z" />
-                            </svg>
-                            <p className="italic text-gray-600 leading-relaxed">"{rec.aiExplanation}"</p>
+                          <div className="bg-gray-50/80 p-2.5 rounded-lg text-xs mb-3 border border-gray-100 flex-grow relative group-hover:bg-indigo-50/30 transition-colors">
+                            <p className="italic text-gray-600 text-[11px] leading-relaxed line-clamp-3">"{rec.aiExplanation}"</p>
                           </div>
                           
                           <button 
                             onClick={() => navigate(targetUrl)}
-                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-100 hover:shadow-indigo-200"
+                            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all shadow-sm shadow-indigo-100 hover:shadow-indigo-200"
                           >
                             Explore Match
                           </button>
