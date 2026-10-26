@@ -7,10 +7,12 @@ class RecommendationProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
   List<RecommendationModel> _recommendations = [];
   bool _isLoading = false;
+  bool _hasSearched = false;
   String? _errorMessage;
 
   List<RecommendationModel> get recommendations => _recommendations;
   bool get isLoading => _isLoading;
+  bool get hasSearched => _hasSearched;
   String? get errorMessage => _errorMessage;
 
   Future<bool> fetchRecommendations({
@@ -20,6 +22,7 @@ class RecommendationProvider with ChangeNotifier {
     String? propertyType,
   }) async {
     _isLoading = true;
+    _hasSearched = true;
     _errorMessage = null;
     notifyListeners();
 

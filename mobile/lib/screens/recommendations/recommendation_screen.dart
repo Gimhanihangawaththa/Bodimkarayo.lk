@@ -19,6 +19,8 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
   final TextEditingController _locationController = TextEditingController();
   String _selectedPropertyType = 'Any';
 
+  final ScrollController _scrollController = ScrollController();
+
   final List<String> _propertyTypes = ['Any', 'Single Room', 'Shared Room', 'Annex', 'House', 'Apartment'];
 
   @override
@@ -26,10 +28,11 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
     _promptController.dispose();
     _budgetController.dispose();
     _locationController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  void _getRecommendations() {
+  Future<void> _getRecommendations() async {
     if (_promptController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please describe what kind of place or roommate you need.')),
@@ -41,12 +44,24 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
     final String? location = _locationController.text.trim().isNotEmpty ? _locationController.text.trim() : null;
     final String? propType = _selectedPropertyType != 'Any' ? _selectedPropertyType : null;
 
-    context.read<RecommendationProvider>().fetchRecommendations(
+    await context.read<RecommendationProvider>().fetchRecommendations(
           preferences: _promptController.text.trim(),
           maxBudget: budget,
           preferredLocation: location,
           propertyType: propType,
         );
+
+    if (mounted) {
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted && _scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -67,6 +82,7 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
         foregroundColor: const Color(0xFF0A2463),
       ),
       body: SingleChildScrollView(
+        controller: _scrollController,
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,11 +236,44 @@ class _RecommendationScreenState extends State<RecommendationScreen> {
             const SizedBox(height: 24),
 
             // Results Section
-            if (recommendationProvider.errorMessage != null)
+            if (recommendationProvider.errorMessage != null) ...[
               Container(
+                width: double.infinity,
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(10)),
                 child: Text(recommendationProvider.errorMessage!, style: TextStyle(color: Colors.red.shade700)),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            if (recommendationProvider.hasSearched &&
+                !recommendationProvider.isLoading &&
+                recommendationProvider.recommendations.isEmpty &&
+                recommendationProvider.errorMessage == null)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'No direct matches found',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0A2463)),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Try increasing your budget or broadening your location and property type criteria.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                    ),
+                  ],
+                ),
               ),
 
             if (recommendationProvider.recommendations.isNotEmpty) ...[
