@@ -12,11 +12,13 @@ class PropertyProvider with ChangeNotifier {
   List<PropertyModel> _favoriteProperties = [];
   final Set<int> _favoriteIds = {};
   bool _isLoading = false;
+  String? _errorMessage;
 
   List<PropertyModel> get properties => _properties;
   List<PropertyModel> get favoriteProperties => _favoriteProperties;
   Set<int> get favoriteIds => _favoriteIds;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
   bool isFavorite(int propertyId) => _favoriteIds.contains(propertyId);
 
@@ -128,6 +130,7 @@ class PropertyProvider with ChangeNotifier {
 
   Future<bool> addProperty(PropertyModel property) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -137,9 +140,14 @@ class PropertyProvider with ChangeNotifier {
         _isLoading = false;
         notifyListeners();
         return true;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        _errorMessage = 'Session expired or unauthenticated. Please sign in.';
+      } else {
+        _errorMessage = 'Failed to create property (Error ${response.statusCode})';
       }
     } catch (e) {
       debugPrint('Add property error: $e');
+      _errorMessage = 'Network connection error. Please try again.';
     }
 
     _isLoading = false;
@@ -149,44 +157,74 @@ class PropertyProvider with ChangeNotifier {
 
   Future<bool> addPropertyMultipart(PropertyModel property, List<XFile> imageFiles) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
-      final fields = <String, String>{
-        'title': property.title,
-        'description': property.description,
-        'location': property.location,
-        'price': property.rent.toString(),
-        if (property.propertyType != null) 'propertyType': property.propertyType!,
-        if (property.availableFrom != null) 'availableFrom': property.availableFrom!,
-        if (property.address != null) 'address': property.address!,
-        if (property.numberOfPeople != null) 'numberOfPeople': property.numberOfPeople!,
-        if (property.bedrooms != null) 'bedrooms': property.bedrooms.toString(),
-        if (property.kitchens != null) 'kitchens': property.kitchens.toString(),
-        if (property.bathrooms != null) 'bathrooms': property.bathrooms.toString(),
-        if (property.floor != null) 'floor': property.floor!,
-        if (property.furnished != null) 'furnished': property.furnished!,
-        if (property.parking != null) 'parking': property.parking!,
-        if (property.petsAllowed != null) 'petsAllowed': property.petsAllowed!,
-        if (property.offers != null && property.offers!.isNotEmpty)
-          'offers': property.offers!.join(','),
-        if (property.highlights != null && property.highlights!.isNotEmpty)
-          'highlights': property.highlights!.join(','),
-        if (property.rules != null && property.rules!.isNotEmpty)
-          'rules': property.rules!.join(','),
-        if (property.nearby != null && property.nearby!.isNotEmpty)
-          'nearby': property.nearby!.join(','),
-      };
-
-      final response = await _apiService.uploadMultipleFiles('/properties', fields, imageFiles);
+      // Step 1: Create property via JSON endpoint first
+      final response = await _apiService.post('/properties', property.toJson());
       if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        final newId = data['id'];
+
+        // Step 2: Upload images if any
+        if (newId != null && imageFiles.isNotEmpty) {
+          try {
+            await _apiService.uploadMultipleFiles('/properties/$newId/images', {}, imageFiles);
+          } catch (imgErr) {
+            debugPrint('Image upload warning: $imgErr');
+          }
+        }
+
         await fetchProperties();
         _isLoading = false;
         notifyListeners();
         return true;
+      } else if (response.statusCode == 401 || response.statusCode == 403) {
+        _errorMessage = 'Session expired or unauthenticated. Please sign in.';
+      } else {
+        // Fallback: try multipart /properties endpoint directly
+        final fields = <String, String>{
+          'title': property.title,
+          'description': property.description,
+          'location': property.location,
+          'price': property.rent.toString(),
+          if (property.propertyType != null) 'propertyType': property.propertyType!,
+          if (property.availableFrom != null) 'availableFrom': property.availableFrom!,
+          if (property.address != null) 'address': property.address!,
+          if (property.numberOfPeople != null) 'numberOfPeople': property.numberOfPeople!,
+          if (property.bedrooms != null) 'bedrooms': property.bedrooms.toString(),
+          if (property.kitchens != null) 'kitchens': property.kitchens.toString(),
+          if (property.bathrooms != null) 'bathrooms': property.bathrooms.toString(),
+          if (property.floor != null) 'floor': property.floor!,
+          if (property.furnished != null) 'furnished': property.furnished!,
+          if (property.parking != null) 'parking': property.parking!,
+          if (property.petsAllowed != null) 'petsAllowed': property.petsAllowed!,
+          if (property.offers != null && property.offers!.isNotEmpty)
+            'offers': property.offers!.join(','),
+          if (property.highlights != null && property.highlights!.isNotEmpty)
+            'highlights': property.highlights!.join(','),
+          if (property.rules != null && property.rules!.isNotEmpty)
+            'rules': property.rules!.join(','),
+          if (property.nearby != null && property.nearby!.isNotEmpty)
+            'nearby': property.nearby!.join(','),
+        };
+
+        final mpResponse = await _apiService.uploadMultipleFiles('/properties', fields, imageFiles);
+        if (mpResponse.statusCode == 200 || mpResponse.statusCode == 201) {
+          await fetchProperties();
+          _isLoading = false;
+          notifyListeners();
+          return true;
+        } else if (mpResponse.statusCode == 401 || mpResponse.statusCode == 403) {
+          _errorMessage = 'Session expired or unauthenticated. Please sign in.';
+        } else {
+          _errorMessage = 'Server error (${mpResponse.statusCode}). Please try again.';
+        }
       }
     } catch (e) {
       debugPrint('Add property multipart error: $e');
+      _errorMessage = 'Failed to submit property. Check your connection.';
     }
 
     _isLoading = false;

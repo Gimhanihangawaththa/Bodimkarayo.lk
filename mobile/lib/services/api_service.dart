@@ -172,7 +172,7 @@ class ApiService {
     return response;
   }
 
-  Future<http.Response> uploadFile(String endpoint, String fieldName, XFile file) async {
+  Future<http.Response> _sendSingleMultipart(String endpoint, String fieldName, XFile file) async {
     final token = await getToken();
     final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$endpoint'));
     
@@ -200,7 +200,18 @@ class ApiService {
     return await http.Response.fromStream(streamedResponse);
   }
 
-  Future<http.Response> uploadMultipleFiles(
+  Future<http.Response> uploadFile(String endpoint, String fieldName, XFile file) async {
+    var response = await _sendSingleMultipart(endpoint, fieldName, file);
+    if (response.statusCode == 401) {
+      final refreshed = await _refreshToken();
+      if (refreshed) {
+        response = await _sendSingleMultipart(endpoint, fieldName, file);
+      }
+    }
+    return response;
+  }
+
+  Future<http.Response> _sendMultipart(
     String endpoint,
     Map<String, String> fields,
     List<XFile> files,
@@ -234,5 +245,20 @@ class ApiService {
 
     final streamedResponse = await request.send();
     return await http.Response.fromStream(streamedResponse);
+  }
+
+  Future<http.Response> uploadMultipleFiles(
+    String endpoint,
+    Map<String, String> fields,
+    List<XFile> files,
+  ) async {
+    var response = await _sendMultipart(endpoint, fields, files);
+    if (response.statusCode == 401) {
+      final refreshed = await _refreshToken();
+      if (refreshed) {
+        response = await _sendMultipart(endpoint, fields, files);
+      }
+    }
+    return response;
   }
 }

@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../models/property_model.dart';
 import '../../providers/property_provider.dart';
+import '../../providers/auth_provider.dart';
+import '../auth/sign_in_screen.dart';
 import '../../theme/app_theme.dart';
 
 class AddPropertyScreen extends StatefulWidget {
@@ -76,6 +78,29 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   }
 
   Future<void> _submitForm() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    if (!authProvider.isAuthenticated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please sign in first to publish a property.'),
+          backgroundColor: Colors.orange.shade800,
+          action: SnackBarAction(
+            label: 'Sign In',
+            textColor: Colors.white,
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SignInScreen()),
+            ),
+          ),
+        ),
+      );
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const SignInScreen()),
+      );
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
@@ -117,8 +142,22 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
         );
         Navigator.pop(context);
       } else {
+        final errorMsg = provider.errorMessage ?? 'Operation failed. Please try again.';
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Operation failed. Please try again.'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(errorMsg),
+            backgroundColor: Colors.red,
+            action: errorMsg.contains('sign in') || errorMsg.contains('unauthenticated')
+                ? SnackBarAction(
+                    label: 'Sign In',
+                    textColor: Colors.white,
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const SignInScreen()),
+                    ),
+                  )
+                : null,
+          ),
         );
       }
     }
@@ -127,6 +166,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   @override
   Widget build(BuildContext context) {
     final isEdit = widget.property != null;
+    final isAuthenticated = context.watch<AuthProvider>().isAuthenticated;
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
@@ -149,6 +189,36 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    if (!isAuthenticated)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF7ED),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFFDBA74)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.info_outline, color: Color(0xFFEA580C), size: 20),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Text(
+                                'Please sign in to publish your property listing.',
+                                style: TextStyle(color: Color(0xFF9A3412), fontSize: 13, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const SignInScreen()),
+                              ),
+                              child: const Text('Sign In', style: TextStyle(color: Color(0xFFEA580C), fontWeight: FontWeight.bold)),
+                            ),
+                          ],
+                        ),
+                      ),
+
                     // Photos Section
                     _buildSectionTitle('Property Photos'),
                     Container(
