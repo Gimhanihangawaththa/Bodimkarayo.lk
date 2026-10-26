@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'dart:ui';
+import 'package:provider/provider.dart';
 import 'home/home_screen.dart';
 import 'properties/properties_screen.dart';
 import 'roommates/roommates_screen.dart';
+import 'chat/chat_list_screen.dart';
 import 'profile/profile_screen.dart';
 import 'properties/add_property_screen.dart';
+import '../providers/chat_provider.dart';
+import '../providers/auth_provider.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -20,51 +24,67 @@ class _MainScreenState extends State<MainScreen> {
     HomeScreen(),
     PropertiesScreen(),
     RoommatesScreen(),
+    ChatListScreen(),
     ProfileScreen(),
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authUser = context.read<AuthProvider>().user;
+      if (authUser != null && authUser.id != null) {
+        context.read<ChatProvider>().fetchUnreadCount(authUser.id!);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final unreadCount = context.watch<ChatProvider>().unreadCount;
+
     return Scaffold(
       extendBody: true,
       body: Stack(
         children: [
-          // Global Light Blue to White Gradient Background
+          // Background Gradient
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Color(0xFFE0F2FE), // Very light blue
+                  Color(0xFFE0F2FE),
                   Colors.white,
                 ],
                 stops: [0.0, 1.0],
               ),
             ),
           ),
-          // Screens on top
           _screens[_currentIndex],
         ],
       ),
-      floatingActionButton: _currentIndex == 1 
-        ? Padding(
-            padding: const EdgeInsets.only(bottom: 15),// Move it above the custom nav bar
-            child: FloatingActionButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AddPropertyScreen())),
-              backgroundColor: const Color(0xFF0A2463),
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
-          )
-        : null,
+      floatingActionButton: _currentIndex == 1
+          ? Padding(
+              padding: const EdgeInsets.only(bottom: 15),
+              child: FloatingActionButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AddPropertyScreen()),
+                ),
+                backgroundColor: const Color(0xFF0A2463),
+                child: const Icon(Icons.add, color: Colors.white),
+              ),
+            )
+          : null,
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.only(left: 16, right: 16, bottom: 24),
+        margin: const EdgeInsets.only(left: 14, right: 14, bottom: 20),
         decoration: BoxDecoration(
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(30),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 20,
               offset: const Offset(0, 10),
             ),
@@ -80,13 +100,13 @@ class _MainScreenState extends State<MainScreen> {
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Colors.white.withOpacity(0.3),
-                    Colors.white.withOpacity(0.1),
+                    Colors.white.withValues(alpha: 0.5),
+                    Colors.white.withValues(alpha: 0.2),
                   ],
                 ),
                 borderRadius: BorderRadius.circular(30),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.7),
                   width: 1.2,
                 ),
               ),
@@ -101,30 +121,43 @@ class _MainScreenState extends State<MainScreen> {
                 },
                 type: BottomNavigationBarType.fixed,
                 selectedItemColor: const Color(0xFF0A2463),
-                unselectedItemColor: const Color(0xFF3E92CC).withOpacity(0.6),
+                unselectedItemColor: const Color(0xFF3E92CC).withValues(alpha: 0.7),
                 showSelectedLabels: true,
                 showUnselectedLabels: true,
-                selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 11),
-                items: const [
-                  BottomNavigationBarItem(
-                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.home_outlined)),
-                    activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.home)),
+                selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 10),
+                items: [
+                  const BottomNavigationBarItem(
+                    icon: Icon(Icons.home_outlined),
+                    activeIcon: Icon(Icons.home),
                     label: 'Home',
                   ),
-                  BottomNavigationBarItem(
-                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.business_outlined)),
-                    activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.business)),
+                  const BottomNavigationBarItem(
+                    icon: Icon(Icons.business_outlined),
+                    activeIcon: Icon(Icons.business),
                     label: 'Properties',
                   ),
-                  BottomNavigationBarItem(
-                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.people_outlined)),
-                    activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.people)),
+                  const BottomNavigationBarItem(
+                    icon: Icon(Icons.people_outlined),
+                    activeIcon: Icon(Icons.people),
                     label: 'Roommates',
                   ),
                   BottomNavigationBarItem(
-                    icon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.person_outline)),
-                    activeIcon: Padding(padding: EdgeInsets.only(bottom: 4), child: Icon(Icons.person)),
+                    icon: Badge(
+                      isLabelVisible: unreadCount > 0,
+                      label: Text('$unreadCount'),
+                      child: const Icon(Icons.chat_bubble_outline),
+                    ),
+                    activeIcon: Badge(
+                      isLabelVisible: unreadCount > 0,
+                      label: Text('$unreadCount'),
+                      child: const Icon(Icons.chat_bubble),
+                    ),
+                    label: 'Chat',
+                  ),
+                  const BottomNavigationBarItem(
+                    icon: Icon(Icons.person_outline),
+                    activeIcon: Icon(Icons.person),
                     label: 'Profile',
                   ),
                 ],

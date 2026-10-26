@@ -75,7 +75,7 @@ class _SignInScreenState extends State<SignInScreen> {
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.1),
+                color: Colors.white.withValues(alpha: 0.1),
               ),
             ),
           ),
@@ -87,7 +87,7 @@ class _SignInScreenState extends State<SignInScreen> {
               height: 400,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF0A2463).withOpacity(0.2),
+                color: const Color(0xFF0A2463).withValues(alpha: 0.2),
               ),
             ),
           ),
@@ -116,15 +116,15 @@ class _SignInScreenState extends State<SignInScreen> {
                       child: Container(
                         padding: const EdgeInsets.all(32.0),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.1),
+                          color: Colors.white.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             width: 1.5,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
+                              color: Colors.black.withValues(alpha: 0.1),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             )
@@ -134,27 +134,45 @@ class _SignInScreenState extends State<SignInScreen> {
                           mainAxisSize: MainAxisSize.min,
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
-                            // Logo Placeholder
+                            // Brand Logo
                             Center(
                               child: Column(
                                 children: [
                                   Container(
-                                    width: 50,
-                                    height: 50,
+                                    padding: const EdgeInsets.all(8),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue.withOpacity(0.3),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.white.withOpacity(0.5)),
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(16),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withValues(alpha: 0.15),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
                                     ),
-                                    child: const Icon(Icons.maps_home_work, color: Colors.white, size: 30),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: Image.asset(
+                                        'assets/logo.png',
+                                        height: 48,
+                                        fit: BoxFit.contain,
+                                        errorBuilder: (_, __, ___) => const Icon(
+                                          Icons.home_work_rounded,
+                                          color: Color(0xFF0A2463),
+                                          size: 40,
+                                        ),
+                                      ),
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: 10),
                                   const Text(
-                                    'BODIMKARAYO',
+                                    'BODIMKARAYO.LK',
                                     style: TextStyle(
                                       color: Colors.white,
                                       letterSpacing: 2,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 13,
                                     ),
                                   ),
                                 ],
@@ -296,9 +314,9 @@ class _SignInScreenState extends State<SignInScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.5)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
       ),
       child: TextField(
         controller: controller,

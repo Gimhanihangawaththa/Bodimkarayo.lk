@@ -31,7 +31,7 @@ class GlassCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(borderRadius),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 20,
             offset: const Offset(0, 10),
           )
@@ -45,13 +45,13 @@ class GlassCard extends StatelessWidget {
             padding: padding,
             decoration: BoxDecoration(
               color: isDark 
-                  ? const Color(0xFF0A2463).withOpacity(0.85)
-                  : Colors.white.withOpacity(0.4),
+                  ? const Color(0xFF0A2463).withValues(alpha: 0.85)
+                  : Colors.white.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
                 color: isDark 
-                    ? Colors.white.withOpacity(0.1)
-                    : Colors.white.withOpacity(0.6),
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : Colors.white.withValues(alpha: 0.6),
                 width: 1.5,
               ),
               gradient: isDark ? const LinearGradient(

@@ -38,10 +38,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickImage() async {
+    final authProvider = context.read<AuthProvider>();
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
+    if (image != null && mounted) {
       setState(() => _isLoading = true);
-      final success = await context.read<AuthProvider>().uploadProfileImage(image);
+      final success = await authProvider.uploadProfileImage(image);
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(

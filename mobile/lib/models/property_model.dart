@@ -21,6 +21,8 @@ class PropertyModel {
   final List<String>? rules;
   final List<String>? nearby;
   final List<String>? images;
+  final String? badge;
+  final double? rating;
 
   PropertyModel({
     this.id,
@@ -45,6 +47,8 @@ class PropertyModel {
     this.rules,
     this.nearby,
     this.images,
+    this.badge,
+    this.rating,
   });
 
   factory PropertyModel.fromJson(Map<String, dynamic> json) {
@@ -71,6 +75,8 @@ class PropertyModel {
       rules: json['rules'] != null ? List<String>.from(json['rules']) : [],
       nearby: json['nearby'] != null ? List<String>.from(json['nearby']) : [],
       images: json['images'] != null ? List<String>.from(json['images']) : [],
+      badge: json['badge'],
+      rating: (json['rating'] as num?)?.toDouble() ?? 4.8,
     );
   }
 
@@ -98,6 +104,8 @@ class PropertyModel {
       'rules': rules,
       'nearby': nearby,
       'images': images,
+      'badge': badge,
+      'rating': rating,
     };
   }
 }

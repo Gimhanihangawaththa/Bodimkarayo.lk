@@ -27,10 +27,13 @@ class AuthProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final token = data['token'];
+        final refreshToken = data['refreshToken'];
         final userData = data['user'];
 
+        await _apiService.saveTokens(token: token, refreshToken: refreshToken);
+
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('auth_token', token);
+        await prefs.setString('user_data', jsonEncode(userData));
 
         _user = UserModel.fromJson(userData);
         _isLoading = false;
@@ -55,7 +58,7 @@ class AuthProvider with ChangeNotifier {
         'fullName': fullName,
         'email': email,
         'password': password,
-        'role': 'USER', // Default role
+        'role': 'USER',
       });
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -73,8 +76,7 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> logout() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('auth_token');
+    await _apiService.clearTokens();
     _user = null;
     notifyListeners();
   }
@@ -84,12 +86,19 @@ class AuthProvider with ChangeNotifier {
     if (token == null) return;
 
     try {
-      // In a real app, you'd get the ID from the token or use a /me endpoint
-      // For now, let's assume we can fetch it if we had stored the ID or just logout if fail
-      if (_user != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final userDataStr = prefs.getString('user_data');
+      if (userDataStr != null) {
+        _user = UserModel.fromJson(jsonDecode(userDataStr));
+        notifyListeners();
+      }
+
+      if (_user != null && _user!.id != null) {
         final response = await _apiService.get('/users/${_user!.id}/profile');
         if (response.statusCode == 200) {
-          _user = UserModel.fromJson(jsonDecode(response.body));
+          final data = jsonDecode(response.body);
+          _user = UserModel.fromJson(data);
+          await prefs.setString('user_data', jsonEncode(data));
           notifyListeners();
         }
       }
@@ -103,9 +112,15 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await _apiService.put('/users/${updatedUser.id}/profile', updatedUser.toJson());
+      final response = await _apiService.put(
+        '/users/${updatedUser.id}/profile',
+        updatedUser.toJson(),
+      );
       if (response.statusCode == 200) {
-        _user = UserModel.fromJson(jsonDecode(response.body));
+        final data = jsonDecode(response.body);
+        _user = UserModel.fromJson(data);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_data', jsonEncode(data));
         _isLoading = false;
         notifyListeners();
         return true;
@@ -120,13 +135,17 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<bool> uploadProfileImage(XFile file) async {
+    if (_user == null || _user!.id == null) return false;
     _isLoading = true;
     notifyListeners();
 
     try {
       final response = await _apiService.uploadFile('/users/${_user!.id}/profile-image', 'image', file);
       if (response.statusCode == 200) {
-        _user = UserModel.fromJson(jsonDecode(response.body));
+        final data = jsonDecode(response.body);
+        _user = UserModel.fromJson(data);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_data', jsonEncode(data));
         _isLoading = false;
         notifyListeners();
         return true;
@@ -137,6 +156,34 @@ class AuthProvider with ChangeNotifier {
 
     _isLoading = false;
     notifyListeners();
+    return false;
+  }
+
+  Future<bool> changePassword(String currentPassword, String newPassword) async {
+    if (_user == null || _user!.id == null) return false;
+    try {
+      final response = await _apiService.put('/users/${_user!.id}/change-password', {
+        'oldPassword': currentPassword,
+        'newPassword': newPassword,
+      });
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Change password error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteAccount() async {
+    if (_user == null || _user!.id == null) return false;
+    try {
+      final response = await _apiService.delete('/users/${_user!.id}');
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        await logout();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Delete account error: $e');
+    }
     return false;
   }
 }

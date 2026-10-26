@@ -36,8 +36,23 @@ public class ChatController {
         return chatService.getUnreadCountForUser(userId);
     }
 
+    @Autowired(required = false)
+    private org.springframework.messaging.simp.SimpMessagingTemplate messagingTemplate;
+
+    @PostMapping("/messages")
+    public ChatMessage sendMessage(@RequestBody com.bodimkarayo.backend.dto.ChatMessageRequest request) {
+        ChatMessage savedMessage = chatService.saveMessage(request);
+        if (messagingTemplate != null && savedMessage.getChatRoom() != null) {
+            ChatRoom room = savedMessage.getChatRoom();
+            messagingTemplate.convertAndSend("/topic/messages." + room.getUser1().getId(), savedMessage);
+            messagingTemplate.convertAndSend("/topic/messages." + room.getUser2().getId(), savedMessage);
+        }
+        return savedMessage;
+    }
+
     @PostMapping("/mark-read/{roomId}/{userId}")
     public void markAsRead(@PathVariable Long roomId, @PathVariable Long userId) {
         chatService.markAsRead(roomId, userId);
     }
 }
+

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/roommate_model.dart';
+import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/roommate_provider.dart';
+import '../../providers/chat_provider.dart';
+import '../chat/chat_conversation_screen.dart';
 import 'apply_roommate_screen.dart';
 
 class RoommateViewScreen extends StatefulWidget {
@@ -51,7 +54,7 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
           if (isOwner)
             IconButton(
               icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _showDeleteDialog(context),
+              onPressed: _showDeleteDialog,
             ),
         ],
       ),
@@ -67,7 +70,7 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
                   ],
                 ),
                 padding: const EdgeInsets.all(20),
@@ -76,44 +79,110 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: NetworkImage(currentRoommate.gender == 'FEMALE' 
-                        ? "https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=400"
-                        : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400"),
+                      backgroundImage: NetworkImage(
+                        currentRoommate.image != null && currentRoommate.image!.isNotEmpty
+                            ? currentRoommate.image!
+                            : (currentRoommate.gender.toUpperCase() == 'FEMALE'
+                                ? "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400"
+                                : "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400"),
+                      ),
                     ),
                     const SizedBox(width: 20),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Roommate Post',
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  currentRoommate.name ?? 'Roommate Profile',
+                                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (currentRoommate.isVerified)
+                                const Icon(Icons.verified, color: Color(0xFF2563EB), size: 20),
+                            ],
                           ),
                           const SizedBox(height: 4),
-                          Text(
-                            currentRoommate.occupation,
-                            style: TextStyle(color: Colors.grey[700], fontSize: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEAF4FB),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              currentRoommate.occupation,
+                              style: const TextStyle(color: Color(0xFF246FA8), fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           Text(
-                            '${currentRoommate.location} • ${currentRoommate.age ?? 'N/A'} yrs',
-                            style: TextStyle(color: Colors.grey[500], fontSize: 14),
+                            '${currentRoommate.location} • ${currentRoommate.age ?? '24'} yrs',
+                            style: TextStyle(color: Colors.grey[600], fontSize: 13),
                           ),
                           const SizedBox(height: 8),
                           Row(
                             children: [
-                              const Icon(Icons.star, color: Colors.amber, size: 20),
-                              const SizedBox(width: 4),
-                              Text('4.5 rating', style: TextStyle(color: Colors.grey[700])),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${currentRoommate.matchPercentage ?? 95}% Match',
+                                  style: const TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold, fontSize: 11),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              if (currentRoommate.budget != null)
+                                Text(
+                                  'Max Rs ${(currentRoommate.budget! / 1000).toStringAsFixed(0)}k/mo',
+                                  style: const TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
                             ],
                           ),
                           const SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: () {},
+                          ElevatedButton.icon(
+                            onPressed: () async {
+                              final authUser = context.read<AuthProvider>().user;
+                              if (authUser == null || authUser.id == null) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: const Text('Please sign in to message this roommate'),
+                                    action: SnackBarAction(label: 'Sign In', onPressed: () => Navigator.pushNamed(context, '/signin')),
+                                  ),
+                                );
+                                return;
+                              }
+                              final targetId = currentRoommate.posterId ?? 1;
+                              if (authUser.id == targetId) {
+                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This is your own post!')));
+                                return;
+                              }
+                              final chatProvider = context.read<ChatProvider>();
+                              final navigator = Navigator.of(context);
+                              final room = await chatProvider.getOrCreateRoom(authUser.id!, targetId);
+                              if (room != null && mounted) {
+                                navigator.push(
+                                  MaterialPageRoute(
+                                    builder: (context) => ChatConversationScreen(
+                                      roomId: room.id,
+                                      targetUser: UserModel(id: targetId, email: 'roommate@bodimkarayo.lk', fullName: 'Roommate Poster'),
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 18),
+                            label: const Text('Message Roommate', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[600],
+                              backgroundColor: const Color(0xFF0A2463),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
-                            child: const Text('Send Connection Request'),
                           ),
                         ],
                       ),
@@ -193,7 +262,7 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       padding: const EdgeInsets.all(20),
@@ -219,7 +288,11 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
     );
   }
 
-  void _showDeleteDialog(BuildContext context) {
+  void _showDeleteDialog() {
+    final roommateProvider = context.read<RoommateProvider>();
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -233,14 +306,15 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(dialogContext); // close dialog
-              final success = await context.read<RoommateProvider>().deleteRoommate(widget.roommate.id!);
-              if (success && mounted) {
-                Navigator.pop(context); // close view screen
-                ScaffoldMessenger.of(context).showSnackBar(
+              final success = await roommateProvider.deleteRoommate(widget.roommate.id!);
+              if (!mounted) return;
+              if (success) {
+                navigator.pop(); // close view screen
+                messenger.showSnackBar(
                   const SnackBar(content: Text('Post deleted successfully')),
                 );
-              } else if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+              } else {
+                messenger.showSnackBar(
                   const SnackBar(content: Text('Failed to delete post')),
                 );
               }

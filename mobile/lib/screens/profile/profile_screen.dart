@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/property_provider.dart';
-import '../../models/property_model.dart';
+import '../../services/api_service.dart';
 import '../../widgets/glass_card.dart';
 import '../properties/add_property_screen.dart';
+import '../properties/property_view_screen.dart';
 import 'edit_profile_screen.dart';
+import 'change_password_screen.dart';
+import '../about/about_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -15,37 +18,122 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  // Keeping some mock data for fields not yet in backend
-  final Map<String, dynamic> mockExtraData = {
-    "age": 28,
-    "occupation": "Software Engineer",
-    "location": "Colombo 3",
-    "bio": "Friendly and professional. Looking for a comfortable living space.",
-    "avatarUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
-    "about": "I'm a software engineer with a passion for building great products. I'm organized, clean, and respectful of shared spaces.",
-    "phone": "+94 71 234 5678",
-    "interests": ["Technology", "Cooking", "Reading", "Fitness", "Travel"],
-  };
+  int _selectedTab = 0; // 0: My Properties, 1: Saved Favorites
 
-  void _deleteProperty(BuildContext context, int id) {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final user = context.read<AuthProvider>().user;
+      if (user != null && user.id != null) {
+        context.read<PropertyProvider>().fetchFavorites(user.id!);
+      }
+    });
+  }
+
+  void _showServerConfigDialog() {
+    final controller = TextEditingController(text: ApiService.baseUrl);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Backend API Server', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Set server URL for your device or emulator:',
+              style: TextStyle(fontSize: 13, color: Colors.grey),
+            ),
+            const SizedBox(height: 10),
+            TextField(
+              controller: controller,
+              decoration: InputDecoration(
+                hintText: 'e.g. http://10.0.2.2:4000/api',
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              ApiService.setCustomBaseUrl(controller.text.trim());
+              Navigator.pop(dialogCtx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('API Server updated: ${controller.text.trim()}')),
+              );
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0A2463)),
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _deleteProperty(int id) {
+    final propertyProvider = Provider.of<PropertyProvider>(context, listen: false);
+    final messenger = ScaffoldMessenger.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
         title: const Text('Delete Property'),
         content: const Text('Are you sure you want to delete this property?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
-              final success = await Provider.of<PropertyProvider>(context, listen: false).deleteProperty(id);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(success ? 'Deleted successfully' : 'Delete failed')),
+              Navigator.pop(dialogCtx);
+              final success = await propertyProvider.deleteProperty(id);
+              if (!mounted) return;
+              messenger.showSnackBar(
+                SnackBar(content: Text(success ? 'Deleted successfully' : 'Delete failed')),
+              );
+            },
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteAccountDialog() {
+    final auth = context.read<AuthProvider>();
+    final nav = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+
+    showDialog(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Delete Account', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+        content: const Text(
+          'Are you sure you want to delete your account? This action is permanent and cannot be undone.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(dialogCtx);
+              final success = await auth.deleteAccount();
+              if (!mounted) return;
+              if (success) {
+                nav.pushReplacementNamed('/signin');
+              } else {
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('Failed to delete account.')),
                 );
               }
             },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Delete Permanently', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
@@ -64,11 +152,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('Please login to view your profile'),
+              Icon(Icons.person_outline, size: 64, color: Colors.grey.shade400),
+              const SizedBox(height: 16),
+              const Text('Please login to view your profile', style: TextStyle(fontSize: 16)),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => Navigator.pushReplacementNamed(context, '/signin'),
-                child: const Text('Login'),
+                onPressed: () => Navigator.pushNamed(context, '/signin'),
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0A2463)),
+                child: const Text('Sign In', style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -76,9 +167,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
     }
 
-    // For now, filtering properties by title or just showing all to demonstrate
-    // In a real app, we'd filter by user ID or have a /my-properties endpoint
-    final myProperties = propertyProvider.properties; 
+    final myProperties = propertyProvider.properties;
+    final favoriteProperties = propertyProvider.favoriteProperties;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -97,14 +187,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.edit, color: Color(0xFF0A2463)),
+                          icon: const Icon(Icons.settings_outlined, color: Color(0xFF0A2463)),
+                          tooltip: 'Server Settings',
+                          onPressed: _showServerConfigDialog,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit_outlined, color: Color(0xFF0A2463)),
+                          tooltip: 'Edit Profile',
                           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen())),
                         ),
                         IconButton(
                           icon: const Icon(Icons.logout, color: Color(0xFF0A2463)),
+                          tooltip: 'Logout',
                           onPressed: () async {
+                            final nav = Navigator.of(context);
                             await authProvider.logout();
-                            if (mounted) Navigator.pushReplacementNamed(context, '/signin');
+                            if (!mounted) return;
+                            nav.pushReplacementNamed('/signin');
                           },
                         ),
                       ],
@@ -112,29 +211,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                
-                // Header
+
+                // User Header Card
                 GlassCard(
                   isDark: true,
                   padding: const EdgeInsets.all(20),
                   child: Row(
                     children: [
                       CircleAvatar(
-                        radius: 40,
-                        backgroundImage: NetworkImage(user.profilePictureUrl ?? mockExtraData['avatarUrl']),
+                        radius: 36,
+                        backgroundColor: Colors.white24,
+                        backgroundImage: user.profilePictureUrl != null && user.profilePictureUrl!.isNotEmpty
+                            ? NetworkImage(user.profilePictureUrl!)
+                            : null,
+                        child: user.profilePictureUrl == null || user.profilePictureUrl!.isEmpty
+                            ? Text(
+                                user.fullName?.isNotEmpty == true ? user.fullName![0].toUpperCase() : 'U',
+                                style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
+                              )
+                            : null,
                       ),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(user.fullName ?? 'User', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
-                            Text(user.email, style: TextStyle(color: Colors.white.withOpacity(0.8))),
+                            Text(user.fullName ?? 'User', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                            Text(user.email, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13)),
                             const SizedBox(height: 8),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                               decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(12)),
-                              child: Text(user.role ?? 'USER', style: const TextStyle(color: Colors.white, fontSize: 12)),
+                              child: Text(user.role ?? 'USER', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -142,32 +250,153 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 20),
 
-                // My Properties Section
-                _buildCardSection(
-                  title: 'My Properties',
-                  trailing: IconButton(
-                    icon: const Icon(Icons.add_circle, color: Color(0xFF0A2463)),
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AddPropertyScreen())),
-                  ),
-                  content: myProperties.isEmpty 
-                    ? const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 20),
-                        child: Text('You haven\'t posted any properties yet.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
-                      )
-                    : ListView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: myProperties.length,
-                        itemBuilder: (context, index) {
-                          final prop = myProperties[index];
-                          return Container(
+                // Tab Switcher: My Properties vs Favorites
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedTab = 0),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _selectedTab == 0 ? const Color(0xFF0A2463) : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: _selectedTab == 0 ? const Color(0xFF0A2463) : Colors.grey.shade300),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'My Properties (${myProperties.length})',
+                            style: TextStyle(
+                              color: _selectedTab == 0 ? Colors.white : Colors.black87,
+                              fontWeight: _selectedTab == 0 ? FontWeight.bold : FontWeight.normal,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedTab = 1),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _selectedTab == 1 ? const Color(0xFF0A2463) : Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: _selectedTab == 1 ? const Color(0xFF0A2463) : Colors.grey.shade300),
+                          ),
+                          alignment: Alignment.center,
+                          child: Text(
+                            'Saved (${favoriteProperties.length})',
+                            style: TextStyle(
+                              color: _selectedTab == 1 ? Colors.white : Colors.black87,
+                              fontWeight: _selectedTab == 1 ? FontWeight.bold : FontWeight.normal,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                // Tab Content
+                if (_selectedTab == 0) ...[
+                  // My Properties List
+                  if (myProperties.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                      child: const Center(
+                        child: Text('You have not posted any properties yet.', style: TextStyle(color: Colors.grey)),
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: myProperties.length,
+                      itemBuilder: (context, index) {
+                        final prop = myProperties[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  prop.images != null && prop.images!.isNotEmpty ? prop.images![0] : 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=200',
+                                  width: 60,
+                                  height: 60,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(width: 60, height: 60, color: Colors.grey.shade300),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(prop.title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                    Text('Rs. ${prop.rent}', style: TextStyle(color: Colors.blue[800], fontSize: 13)),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
+                                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AddPropertyScreen(property: prop))),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+                                onPressed: () => _deleteProperty(prop.id!),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                ] else ...[
+                  // Favorite / Saved Properties
+                  if (favoriteProperties.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                      child: const Center(
+                        child: Text('No saved properties yet. Tap the heart icon on any boarding to save it!', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                      ),
+                    )
+                  else
+                    ListView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: favoriteProperties.length,
+                      itemBuilder: (context, index) {
+                        final prop = favoriteProperties[index];
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (context) => PropertyViewScreen(property: prop)));
+                          },
+                          child: Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.5),
+                              color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
+                              ],
                             ),
                             child: Row(
                               children: [
@@ -175,7 +404,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                   child: Image.network(
                                     prop.images != null && prop.images!.isNotEmpty ? prop.images![0] : 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=200',
-                                    width: 60, height: 60, fit: BoxFit.cover,
+                                    width: 60,
+                                    height: 60,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) => Container(width: 60, height: 60, color: Colors.grey.shade300),
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -188,52 +420,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     ],
                                   ),
                                 ),
-                                IconButton(
-                                  icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
-                                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AddPropertyScreen(property: prop))),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-                                  onPressed: () => _deleteProperty(context, prop.id!),
-                                ),
+                                const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
                               ],
                             ),
-                          );
+                          ),
+                        );
+                      },
+                    ),
+                ],
+                const SizedBox(height: 24),
+
+                // Settings & Actions Section
+                Container(
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.lock_reset, color: Color(0xFF0A2463)),
+                        title: const Text('Change Password'),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const ChangePasswordScreen()));
                         },
                       ),
-                ),
-                const SizedBox(height: 20),
-
-                // About
-                _buildCardSection(
-                  title: 'About',
-                  content: Text(user.about ?? mockExtraData['about'], style: const TextStyle(height: 1.5)),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.info_outline, color: Color(0xFF0A2463)),
+                        title: const Text('About Bodimkarayo'),
+                        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                        onTap: () {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutScreen()));
+                        },
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.delete_forever, color: Colors.red),
+                        title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
+                        onTap: _showDeleteAccountDialog,
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 100),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildCardSection({required String title, Widget? trailing, required Widget content}) {
-    return GlassCard(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF0A2463))),
-              if (trailing != null) trailing,
-            ],
-          ),
-          const SizedBox(height: 16),
-          content,
-        ],
       ),
     );
   }

@@ -12,6 +12,10 @@ class RoommateModel {
   final String? moveInDate;
   final double? budget;
   final int? posterId;
+  final String? name;
+  final String? image;
+  final int? matchPercentage;
+  final bool isVerified;
 
   RoommateModel({
     this.id,
@@ -27,13 +31,22 @@ class RoommateModel {
     this.moveInDate,
     this.budget,
     this.posterId,
+    this.name,
+    this.image,
+    this.matchPercentage,
+    this.isVerified = true,
   });
 
   factory RoommateModel.fromJson(Map<String, dynamic> json) {
+    final posterObj = json['poster'] as Map<String, dynamic>?;
+    final fallbackImg = (json['gender']?.toString().toUpperCase() == 'FEMALE')
+        ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500'
+        : 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500';
+
     return RoommateModel(
-      id: json['id'],
+      id: json['id'] is int ? json['id'] : (int.tryParse(json['id']?.toString() ?? '')),
       gender: json['gender'] ?? '',
-      age: json['age'],
+      age: json['age'] is int ? json['age'] : (int.tryParse(json['age']?.toString() ?? '')),
       occupation: json['occupation'] ?? '',
       location: json['location'] ?? '',
       bio: json['bio'] ?? '',
@@ -43,7 +56,11 @@ class RoommateModel {
       preferredLocation: json['preferredLocation'],
       moveInDate: json['moveInDate'],
       budget: (json['budget'] as num?)?.toDouble(),
-      posterId: json['poster'] != null ? json['poster']['id'] : null,
+      posterId: posterObj != null ? posterObj['id'] : json['posterId'],
+      name: json['name'] ?? posterObj?['fullName'] ?? 'Roommate',
+      image: json['image'] ?? posterObj?['profilePictureUrl'] ?? fallbackImg,
+      matchPercentage: json['matchPercentage'] ?? 95,
+      isVerified: json['verified'] ?? json['isVerified'] ?? true,
     );
   }
 
@@ -61,6 +78,10 @@ class RoommateModel {
       'preferredLocation': preferredLocation,
       'moveInDate': moveInDate,
       'budget': budget,
+      'name': name,
+      'image': image,
+      'matchPercentage': matchPercentage,
+      'isVerified': isVerified,
     };
   }
 }

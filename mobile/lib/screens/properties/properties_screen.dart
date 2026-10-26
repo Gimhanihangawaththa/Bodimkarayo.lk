@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../providers/property_provider.dart';
 import '../../widgets/property_card.dart';
 import '../../widgets/glass_card.dart';
-import 'add_property_screen.dart';
 
 class PropertiesScreen extends StatefulWidget {
   const PropertiesScreen({super.key});
@@ -81,16 +80,16 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
                           'Browse through all available properties',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                           ),
                         ),
                         const SizedBox(height: 24),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1),
                           ),
                           child: Row(
                             children: [
@@ -159,7 +158,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
                       if (!propertyProvider.isLoading)
                         Text(
                           'Showing ${propertyProvider.properties.length} properties',
-                          style: TextStyle(color: const Color(0xFF0A2463).withOpacity(0.6)),
+                          style: TextStyle(color: const Color(0xFF0A2463).withValues(alpha: 0.6)),
                         ),
                     ],
                   ),
@@ -179,7 +178,7 @@ class _PropertiesScreenState extends State<PropertiesScreen> {
                       padding: const EdgeInsets.all(50.0),
                       child: Column(
                         children: [
-                          Icon(Icons.home_work_outlined, size: 64, color: Colors.grey.withOpacity(0.5)),
+                          Icon(Icons.home_work_outlined, size: 64, color: Colors.grey.withValues(alpha: 0.5)),
                           const SizedBox(height: 16),
                           const Text(
                             'No properties found',

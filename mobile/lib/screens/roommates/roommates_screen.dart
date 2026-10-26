@@ -95,16 +95,16 @@ class _RoommatesScreenState extends State<RoommatesScreen> {
                           'Connect with verified roommates across Sri Lanka',
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.white.withOpacity(0.8),
+                            color: Colors.white.withValues(alpha: 0.8),
                           ),
                         ),
                         const SizedBox(height: 24),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: Colors.white.withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(30),
-                            border: Border.all(color: Colors.white.withOpacity(0.4), width: 1),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1),
                           ),
                           child: Row(
                             children: [
@@ -173,7 +173,7 @@ class _RoommatesScreenState extends State<RoommatesScreen> {
                       if (!roommateProvider.isLoading)
                         Text(
                           'Showing ${roommateProvider.roommates.length} roommates',
-                          style: TextStyle(color: const Color(0xFF0A2463).withOpacity(0.6)),
+                          style: TextStyle(color: const Color(0xFF0A2463).withValues(alpha: 0.6)),
                         ),
                     ],
                   ),
@@ -193,7 +193,7 @@ class _RoommatesScreenState extends State<RoommatesScreen> {
                       padding: const EdgeInsets.all(50.0),
                       child: Column(
                         children: [
-                          Icon(Icons.people_outline, size: 64, color: Colors.grey.withOpacity(0.5)),
+                          Icon(Icons.people_outline, size: 64, color: Colors.grey.withValues(alpha: 0.5)),
                           const SizedBox(height: 16),
                           const Text(
                             'No roommates found',
