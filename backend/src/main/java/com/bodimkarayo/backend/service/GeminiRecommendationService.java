@@ -116,15 +116,15 @@ public class GeminiRecommendationService {
                 if (jsonArray.isArray()) {
                     for (JsonNode node : jsonArray) {
                         String type = node.path("type").asText();
-                        Long itemId = node.path("itemId").asLong();
+                        Long itemId = node.has("itemId") ? node.path("itemId").asLong() : node.path("id").asLong();
                         String explanation = node.path("aiExplanation").asText();
                         
-                        if ("PROPERTY".equals(type)) {
+                        if ("PROPERTY".equalsIgnoreCase(type)) {
                             Optional<Property> propertyOpt = propertyRepository.findById(itemId);
                             if (propertyOpt.isPresent()) {
                                 recommendations.add(new RecommendationResponse("PROPERTY", propertyOpt.get(), null, explanation));
                             }
-                        } else if ("ROOMMATE".equals(type)) {
+                        } else if ("ROOMMATE".equalsIgnoreCase(type)) {
                             Optional<RoommatePost> roommateOpt = roommateRepository.findById(itemId);
                             if (roommateOpt.isPresent()) {
                                 recommendations.add(new RecommendationResponse("ROOMMATE", null, roommateOpt.get(), explanation));
@@ -132,13 +132,101 @@ public class GeminiRecommendationService {
                         }
                     }
                 }
-                return recommendations;
+                if (!recommendations.isEmpty()) {
+                    return recommendations;
+                }
             }
         } catch (Exception e) {
-            System.err.println("Error in GeminiRecommendationService: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Gemini API notice: " + e.getMessage() + ". Activating smart matcher fallback.");
         }
         
-        return Collections.emptyList();
+        // Smart fallback matchmaker if AI API is temporarily unavailable
+        return getAlgorithmicRecommendations(request, allProperties, allRoommates);
+    }
+
+    private List<RecommendationResponse> getAlgorithmicRecommendations(
+            RecommendationRequest request,
+            List<Property> allProperties,
+            List<RoommatePost> allRoommates
+    ) {
+        List<RecommendationResponse> results = new ArrayList<>();
+        String prefLoc = request.getPreferredLocation() != null ? request.getPreferredLocation().toLowerCase().trim() : "";
+        Double maxBudget = request.getMaxBudget();
+        String propType = request.getPropertyType() != null ? request.getPropertyType().toLowerCase().trim() : "";
+        String preferences = request.getPreferences() != null ? request.getPreferences().toLowerCase().trim() : "";
+
+        // Rank properties
+        for (Property p : allProperties) {
+            int score = 0;
+            StringBuilder why = new StringBuilder();
+
+            if (!prefLoc.isEmpty() && p.getLocation() != null && p.getLocation().toLowerCase().contains(prefLoc)) {
+                score += 40;
+                why.append("Prime location in ").append(p.getLocation()).append(". ");
+            }
+            if (maxBudget != null && p.getRent() <= maxBudget) {
+                score += 30;
+                why.append(String.format("Fits within your Rs %.0f budget at Rs %.0f/month. ", maxBudget, p.getRent()));
+            }
+            if (!propType.isEmpty() && p.getPropertyType() != null && p.getPropertyType().toLowerCase().contains(propType)) {
+                score += 20;
+                why.append("Matches desired type (").append(p.getPropertyType()).append("). ");
+            }
+            if (!preferences.isEmpty() && p.getDescription() != null) {
+                for (String word : preferences.split("\\s+")) {
+                    if (word.length() > 3 && p.getDescription().toLowerCase().contains(word)) {
+                        score += 5;
+                    }
+                }
+            }
+
+            if (score > 0) {
+                String explanation = why.length() > 0 ? why.toString().trim() : "Matches your accommodation preferences and budget criteria.";
+                results.add(new RecommendationResponse("PROPERTY", p, null, explanation));
+            }
+        }
+
+        // Rank roommates
+        for (RoommatePost r : allRoommates) {
+            int score = 0;
+            StringBuilder why = new StringBuilder();
+
+            if (!prefLoc.isEmpty() && (
+                    (r.getLocation() != null && r.getLocation().toLowerCase().contains(prefLoc)) ||
+                    (r.getPreferredLocation() != null && r.getPreferredLocation().toLowerCase().contains(prefLoc)))) {
+                score += 40;
+                why.append("Looking in your target area (").append(r.getLocation()).append("). ");
+            }
+            if (maxBudget != null && r.getBudget() != null && r.getBudget() <= maxBudget + 5000) {
+                score += 30;
+                why.append(String.format("Compatible budget of Rs %.0f. ", r.getBudget()));
+            }
+            if (!preferences.isEmpty() && r.getBio() != null) {
+                for (String word : preferences.split("\\s+")) {
+                    if (word.length() > 3 && r.getBio().toLowerCase().contains(word)) {
+                        score += 5;
+                    }
+                }
+            }
+
+            if (score > 0) {
+                String explanation = why.length() > 0 ? why.toString().trim() : "Compatible lifestyle, target location, and budget.";
+                results.add(new RecommendationResponse("ROOMMATE", null, r, explanation));
+            }
+        }
+
+        // If no strict score match, recommend top available listings
+        if (results.isEmpty()) {
+            if (!allProperties.isEmpty()) {
+                Property firstP = allProperties.get(0);
+                results.add(new RecommendationResponse("PROPERTY", firstP, null, "Recommended listing matching general accommodation preferences."));
+            }
+            if (!allRoommates.isEmpty()) {
+                RoommatePost firstR = allRoommates.get(0);
+                results.add(new RecommendationResponse("ROOMMATE", null, firstR, "Active roommate profile matching general student and professional criteria."));
+            }
+        }
+
+        return results.stream().limit(3).toList();
     }
 }

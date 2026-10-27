@@ -1,10 +1,12 @@
 package com.bodimkarayo.backend.controller;
 
 import com.bodimkarayo.backend.model.Property;
-
+import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.service.PropertyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -76,8 +78,19 @@ public class PropertyController {
         return propertyService.updatePropertyStatus(id, status);
     }
 
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User user) {
+            return user;
+        }
+        return null;
+    }
+
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public Property create(@RequestBody Property property) {
+        if (property.getOwner() == null) {
+            property.setOwner(getCurrentUser());
+        }
         return propertyService.createProperty(property);
     }
 
@@ -130,13 +143,18 @@ public class PropertyController {
                 .highlights(parseStringList(highlights))
                 .rules(parseStringList(rules))
                 .nearby(parseStringList(nearby))
+                .owner(getCurrentUser())
                 .build();
 
         Property savedProperty = propertyService.createProperty(property);
 
-        // Upload images asynchronously in background
+        // Upload images if provided
         if (imageFiles != null && !imageFiles.isEmpty()) {
-            propertyService.uploadPropertyImagesAsync(savedProperty.getId(), imageFiles);
+            try {
+                savedProperty = propertyService.uploadPropertyImages(savedProperty.getId(), imageFiles);
+            } catch (Exception e) {
+                System.err.println("Failed to upload images for property: " + e.getMessage());
+            }
         }
 
         return savedProperty;

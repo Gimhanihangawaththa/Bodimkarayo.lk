@@ -45,17 +45,17 @@ public class CloudinaryService {
             Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
                     "resource_type", "image",
                     "public_id", publicId,
-                    "overwrite", false,
-                    "folder", "bodimkarayo/properties"
+                    "overwrite", false
             ));
             Object secureUrl = result.get("secure_url");
-            if (secureUrl == null) {
-                throw new RuntimeException("Cloudinary upload failed to return a secure URL");
+            if (secureUrl != null && !secureUrl.toString().isBlank()) {
+                return secureUrl.toString();
             }
-            return secureUrl.toString();
-        } catch (IOException ex) {
-            throw new RuntimeException("Failed to upload property image", ex);
+        } catch (Exception ex) {
+            System.err.println("Cloudinary property image upload failed: " + ex.getMessage() + ". Falling back to data URL.");
+            return toDataUrl(file);
         }
+        return toDataUrl(file);
     }
 
     public String uploadUserProfileImage(MultipartFile file, Long userId) {
@@ -70,17 +70,17 @@ public class CloudinaryService {
                     "resource_type", "image",
                     "public_id", publicId,
                     "overwrite", true,
-                    "invalidate", true,
-                    "folder", "bodimkarayo/users"
+                    "invalidate", true
             ));
             Object secureUrl = result.get("secure_url");
-            if (secureUrl == null) {
-                throw new RuntimeException("Cloudinary upload failed to return a secure URL");
+            if (secureUrl != null && !secureUrl.toString().isBlank()) {
+                return secureUrl.toString();
             }
-            return secureUrl.toString();
-        } catch (IOException ex) {
-            throw new RuntimeException("Failed to upload profile image", ex);
+        } catch (Exception ex) {
+            System.err.println("Cloudinary profile image upload failed for user " + userId + ": " + ex.getMessage() + ". Falling back to data URL.");
+            return toDataUrl(file);
         }
+        return toDataUrl(file);
     }
 
     public void deleteImageByUrl(String imageUrl) {
@@ -135,12 +135,44 @@ public class CloudinaryService {
 
     private String toDataUrl(MultipartFile file) {
         try {
+            byte[] bytes = file.getBytes();
             String contentType = file.getContentType();
             if (contentType == null || contentType.isBlank()) {
                 contentType = "image/png";
             }
 
-            String encoded = Base64.getEncoder().encodeToString(file.getBytes());
+            if (bytes.length > 250 * 1024) {
+                try {
+                    java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(bytes);
+                    java.awt.image.BufferedImage originalImage = javax.imageio.ImageIO.read(bais);
+                    if (originalImage != null) {
+                        int maxDim = 800;
+                        int width = originalImage.getWidth();
+                        int height = originalImage.getHeight();
+                        if (width > maxDim || height > maxDim) {
+                            double scale = Math.min((double) maxDim / width, (double) maxDim / height);
+                            int targetWidth = Math.max(1, (int) (width * scale));
+                            int targetHeight = Math.max(1, (int) (height * scale));
+
+                            java.awt.image.BufferedImage resizedImage = new java.awt.image.BufferedImage(
+                                    targetWidth, targetHeight, java.awt.image.BufferedImage.TYPE_INT_RGB);
+                            java.awt.Graphics2D g = resizedImage.createGraphics();
+                            g.setRenderingHint(java.awt.RenderingHints.KEY_INTERPOLATION, java.awt.RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                            g.drawImage(originalImage, 0, 0, targetWidth, targetHeight, null);
+                            g.dispose();
+
+                            java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                            javax.imageio.ImageIO.write(resizedImage, "jpg", baos);
+                            bytes = baos.toByteArray();
+                            contentType = "image/jpeg";
+                        }
+                    }
+                } catch (Exception resizeEx) {
+                    // Fall back to original bytes if resize cannot process image
+                }
+            }
+
+            String encoded = Base64.getEncoder().encodeToString(bytes);
             return "data:" + contentType + ";base64," + encoded;
         } catch (IOException ex) {
             throw new RuntimeException("Failed to process image upload", ex);

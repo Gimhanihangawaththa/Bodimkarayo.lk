@@ -6,6 +6,7 @@ import com.bodimkarayo.backend.repository.PropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -159,6 +160,7 @@ public class PropertyService {
      * Synchronous method to upload images and update property
      * Returns the updated property with images
      */
+    @Transactional
     public Property uploadPropertyImages(Long propertyId, List<MultipartFile> imageFiles) {
         try {
             if (imageFiles == null || imageFiles.isEmpty()) {
@@ -176,19 +178,19 @@ public class PropertyService {
             // Wait for all uploads to complete
             List<String> imageUrls = uploadFutures.stream()
                     .map(CompletableFuture::join)
+                    .filter(url -> url != null && !url.isBlank())
                     .collect(Collectors.toList());
 
-            // Update property with images
-            Property property = propertyRepository.findById(propertyId)
-                    .orElseThrow(() -> new RuntimeException("Property not found"));
+            // Update property with images using join fetch to avoid LazyInitializationException
+            Property property = propertyRepository.findByIdWithImages(propertyId)
+                    .orElseGet(() -> propertyRepository.findById(propertyId)
+                            .orElseThrow(() -> new RuntimeException("Property not found")));
             
             // Append new images to existing images (don't replace)
             List<String> existingImages = property.getImages();
-            if (existingImages == null) {
-                existingImages = new ArrayList<>();
-            }
-            existingImages.addAll(imageUrls);
-            property.setImages(existingImages);
+            List<String> updatedImages = (existingImages == null) ? new ArrayList<>() : new ArrayList<>(existingImages);
+            updatedImages.addAll(imageUrls);
+            property.setImages(updatedImages);
             property = propertyRepository.save(property);
             if (searchIndexService != null) {
                 searchIndexService.syncProperty(property);
