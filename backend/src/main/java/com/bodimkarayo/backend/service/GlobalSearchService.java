@@ -24,7 +24,23 @@ public class GlobalSearchService {
     @Autowired
     private RoommateRepository roommateRepository;
 
+    @Autowired(required = false)
+    private com.bodimkarayo.backend.search.SearchIndexService searchIndexService;
+
     public Map<String, Object> globalSearch(String keyword) {
+        if (searchIndexService != null) {
+            try {
+                Map<String, Object> esResults = searchIndexService.globalSearch(keyword);
+                List<?> propList = (List<?>) esResults.get("properties");
+                List<?> roomList = (List<?>) esResults.get("roommates");
+                if ((propList != null && !propList.isEmpty()) || (roomList != null && !roomList.isEmpty())) {
+                    return esResults;
+                }
+            } catch (Exception ex) {
+                System.err.println("SearchIndexService global search error, falling back to database: " + ex.getMessage());
+            }
+        }
+
         Map<String, Object> results = new HashMap<>();
 
         if (keyword == null || keyword.isBlank()) {
@@ -88,6 +104,9 @@ public class GlobalSearchService {
                 property.getLocation(),
                 property.getAddress(),
                 property.getPropertyType(),
+                property.getGenderPreference(),
+                property.getSuitableFor(),
+                property.getNumberOfPeople(),
                 joinList(property.getHighlights()),
                 joinList(property.getNearby()),
                 joinList(property.getOffers())

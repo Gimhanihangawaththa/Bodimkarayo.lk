@@ -1,10 +1,12 @@
 package com.bodimkarayo.backend.service;
 
 import com.bodimkarayo.backend.model.Property;
+import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.repository.PropertyRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
@@ -23,8 +25,57 @@ public class PropertyService {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired(required = false)
+    private com.bodimkarayo.backend.search.SearchIndexService searchIndexService;
+
     public List<Property> getAllProperties() {
-        return propertyRepository.findAll();
+        return propertyRepository.findAll().stream()
+                .filter(p -> p.getStatus() == null || "ACTIVE".equalsIgnoreCase(p.getStatus()))
+                .collect(Collectors.toList());
+    }
+
+    public List<Property> getAllPropertiesForAdmin(String status) {
+        if (status != null && !status.isBlank() && !"ALL".equalsIgnoreCase(status)) {
+            return propertyRepository.findByStatusOrderByIdDesc(status.toUpperCase());
+        }
+        return propertyRepository.findAllByOrderByIdDesc();
+    }
+
+    public List<Property> getPropertiesByOwner(Long ownerId) {
+        User owner = new User();
+        owner.setId(ownerId);
+        return propertyRepository.findByOwnerOrderByIdDesc(owner);
+    }
+
+    public Property updatePropertyStatus(Long id, String status) {
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+        property.setStatus(status.toUpperCase());
+        return propertyRepository.save(property);
+    }
+
+    public Property approveProperty(Long id) {
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+        property.setStatus("ACTIVE");
+        property.setRejectionReason(null);
+        Property saved = propertyRepository.save(property);
+        if (searchIndexService != null) {
+            searchIndexService.syncProperty(saved);
+        }
+        return saved;
+    }
+
+    public Property rejectProperty(Long id, String reason) {
+        Property property = propertyRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Property not found"));
+        property.setStatus("REJECTED");
+        property.setRejectionReason(reason);
+        Property saved = propertyRepository.save(property);
+        if (searchIndexService != null) {
+            searchIndexService.removeProperty(id);
+        }
+        return saved;
     }
 
     public Optional<Property> getPropertyById(Long id) {
@@ -32,7 +83,13 @@ public class PropertyService {
     }
 
     public Property createProperty(Property property) {
+        if (property.getStatus() == null || property.getStatus().isBlank()) {
+            property.setStatus("PENDING");
+        }
         Property savedProperty = propertyRepository.save(property);
+        if ("ACTIVE".equalsIgnoreCase(savedProperty.getStatus()) && searchIndexService != null) {
+            searchIndexService.syncProperty(savedProperty);
+        }
         return savedProperty;
     }
 
@@ -48,6 +105,8 @@ public class PropertyService {
         property.setAvailableFrom(updatedProperty.getAvailableFrom());
         property.setAddress(updatedProperty.getAddress());
         property.setNumberOfPeople(updatedProperty.getNumberOfPeople());
+        property.setGenderPreference(updatedProperty.getGenderPreference());
+        property.setSuitableFor(updatedProperty.getSuitableFor());
         property.setBedrooms(updatedProperty.getBedrooms());
         property.setKitchens(updatedProperty.getKitchens());
         property.setBathrooms(updatedProperty.getBathrooms());
@@ -65,11 +124,17 @@ public class PropertyService {
         property.setOwner(updatedProperty.getOwner());
 
         Property savedProperty = propertyRepository.save(property);
+        if (searchIndexService != null) {
+            searchIndexService.syncProperty(savedProperty);
+        }
         return savedProperty;
     }
 
     public void deleteProperty(Long id) {
         propertyRepository.deleteById(id);
+        if (searchIndexService != null) {
+            searchIndexService.removeProperty(id);
+        }
     }
 
     public Property removePropertyImage(Long propertyId, String imageUrl) {
@@ -95,6 +160,7 @@ public class PropertyService {
      * Synchronous method to upload images and update property
      * Returns the updated property with images
      */
+    @Transactional
     public Property uploadPropertyImages(Long propertyId, List<MultipartFile> imageFiles) {
         try {
             if (imageFiles == null || imageFiles.isEmpty()) {
@@ -112,20 +178,23 @@ public class PropertyService {
             // Wait for all uploads to complete
             List<String> imageUrls = uploadFutures.stream()
                     .map(CompletableFuture::join)
+                    .filter(url -> url != null && !url.isBlank())
                     .collect(Collectors.toList());
 
-            // Update property with images
-            Property property = propertyRepository.findById(propertyId)
-                    .orElseThrow(() -> new RuntimeException("Property not found"));
+            // Update property with images using join fetch to avoid LazyInitializationException
+            Property property = propertyRepository.findByIdWithImages(propertyId)
+                    .orElseGet(() -> propertyRepository.findById(propertyId)
+                            .orElseThrow(() -> new RuntimeException("Property not found")));
             
             // Append new images to existing images (don't replace)
             List<String> existingImages = property.getImages();
-            if (existingImages == null) {
-                existingImages = new ArrayList<>();
-            }
-            existingImages.addAll(imageUrls);
-            property.setImages(existingImages);
+            List<String> updatedImages = (existingImages == null) ? new ArrayList<>() : new ArrayList<>(existingImages);
+            updatedImages.addAll(imageUrls);
+            property.setImages(updatedImages);
             property = propertyRepository.save(property);
+            if (searchIndexService != null) {
+                searchIndexService.syncProperty(property);
+            }
             
             System.out.println("Property " + propertyId + " images uploaded successfully: " + imageUrls.size() + " new images added");
             return property;
@@ -159,11 +228,35 @@ public class PropertyService {
             Integer bathrooms,
             Boolean furnished,
             Boolean parking,
+            Boolean petsAllowed,
+            String genderPreference,
+            String suitableFor
+    ) {
+        if (searchIndexService != null) {
+            try {
+                return searchIndexService.searchProperties(keyword, location, propertyType, minPrice, maxPrice, bedrooms, bathrooms, furnished, parking, petsAllowed, genderPreference, suitableFor);
+            } catch (Exception ex) {
+                System.err.println("SearchIndexService search error, falling back to database: " + ex.getMessage());
+            }
+        }
+        return propertyRepository.findAll().stream()
+                .filter(property -> matchesProperty(property, keyword, location, propertyType, minPrice, maxPrice, bedrooms, bathrooms, furnished, parking, petsAllowed, genderPreference, suitableFor))
+                .toList();
+    }
+
+    public List<Property> searchProperties(
+            String keyword,
+            String location,
+            String propertyType,
+            Double minPrice,
+            Double maxPrice,
+            Integer bedrooms,
+            Integer bathrooms,
+            Boolean furnished,
+            Boolean parking,
             Boolean petsAllowed
     ) {
-        return propertyRepository.findAll().stream()
-                .filter(property -> matchesProperty(property, keyword, location, propertyType, minPrice, maxPrice, bedrooms, bathrooms, furnished, parking, petsAllowed))
-                .toList();
+        return searchProperties(keyword, location, propertyType, minPrice, maxPrice, bedrooms, bathrooms, furnished, parking, petsAllowed, null, null);
     }
 
     private boolean matchesProperty(
@@ -177,7 +270,9 @@ public class PropertyService {
             Integer bathrooms,
             Boolean furnished,
             Boolean parking,
-            Boolean petsAllowed
+            Boolean petsAllowed,
+            String genderPreference,
+            String suitableFor
     ) {
         String searchableText = joinText(
                 property.getTitle(),
@@ -185,11 +280,19 @@ public class PropertyService {
                 property.getLocation(),
                 property.getAddress(),
                 property.getPropertyType(),
+                property.getGenderPreference(),
+                property.getSuitableFor(),
+                property.getNumberOfPeople(),
                 joinList(property.getOffers()),
                 joinList(property.getHighlights()),
                 joinList(property.getRules()),
                 joinList(property.getNearby())
         );
+
+        boolean isActive = property.getStatus() == null || "ACTIVE".equalsIgnoreCase(property.getStatus());
+        if (!isActive) {
+            return false;
+        }
 
         return matchesKeyword(searchableText, keyword)
                 && matchesText(property.getLocation(), location)
@@ -200,7 +303,35 @@ public class PropertyService {
                 && matchesNumber(property.getBathrooms(), bathrooms)
                 && matchesBooleanText(property.getFurnished(), furnished)
                 && matchesBooleanText(property.getParking(), parking)
-                && matchesBooleanText(property.getPetsAllowed(), petsAllowed);
+                && matchesBooleanText(property.getPetsAllowed(), petsAllowed)
+                && matchesGenderPreference(property.getGenderPreference(), genderPreference)
+                && matchesSuitableFor(property.getSuitableFor(), suitableFor);
+    }
+
+    private boolean matchesGenderPreference(String actual, String expected) {
+        if (expected == null || expected.isBlank() || expected.equalsIgnoreCase("Any") || expected.equalsIgnoreCase("All")) {
+            return true;
+        }
+        if (actual == null || actual.isBlank()) {
+            return true;
+        }
+        if (actual.equalsIgnoreCase("Both") || actual.equalsIgnoreCase("Any")) {
+            return true;
+        }
+        return containsIgnoreCase(actual, expected) || containsIgnoreCase(expected, actual);
+    }
+
+    private boolean matchesSuitableFor(String actual, String expected) {
+        if (expected == null || expected.isBlank() || expected.equalsIgnoreCase("Any") || expected.equalsIgnoreCase("All")) {
+            return true;
+        }
+        if (actual == null || actual.isBlank()) {
+            return true;
+        }
+        if (actual.equalsIgnoreCase("Any") || actual.equalsIgnoreCase("Anyone")) {
+            return true;
+        }
+        return containsIgnoreCase(actual, expected) || containsIgnoreCase(expected, actual);
     }
 
     private boolean matchesKeyword(String source, String keyword) {

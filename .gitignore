@@ -1,2 +1,17 @@
 .env
 .DS_Store
+.scannerwork/
+
+# Terraform ignores
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# JMeter outputs
+jmeter.log
+tests/performance/*.jtl
+tests/performance/report/
+
+# Selenium screenshots
+tests/e2e/screenshots/

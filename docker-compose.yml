@@ -51,11 +51,13 @@ services:
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-bodim_user}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-StrongPassword123!}
       SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      APP_SEARCH_ELASTICSEARCH_ENABLED: "true"
       SERVER_PORT: 4000
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-should-be-at-least-32-characters-long-for-security}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
     ports:
       - "4000:4000"
 
@@ -69,7 +71,19 @@ services:
     depends_on:
       - backend
     ports:
-      - "5173:80"
+      - "${FRONTEND_PORT:-5175}:80"
+
+  admin:
+    build:
+      context: ./admin
+      args:
+        VITE_API_BASE_URL: /api
+    container_name: bodimkarayo-admin
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5174:80"
 
 volumes:
   mariadb_data:

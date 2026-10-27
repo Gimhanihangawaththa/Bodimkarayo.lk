@@ -11,6 +11,7 @@ export default function AIRecommendations() {
   const [preferredLocation, setPreferredLocation] = useState('');
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState([]);
+  const [matchType, setMatchType] = useState('PROPERTY');
   const [error, setError] = useState('');
   const [autoMatched, setAutoMatched] = useState(false);
 
@@ -45,7 +46,7 @@ export default function AIRecommendations() {
     fetchUserPreferences();
   }, [user, token]);
 
-  const fetchRecommendations = async (prefs, budget, location) => {
+  const fetchRecommendations = async (prefs, budget, location, type = matchType) => {
     if (!prefs?.trim()) return;
     
     setLoading(true);
@@ -55,7 +56,8 @@ export default function AIRecommendations() {
       const response = await apiClient.post('/recommendations', {
         preferences: prefs,
         maxBudget: budget ? parseFloat(budget) : null,
-        preferredLocation: location || null
+        preferredLocation: location || null,
+        matchType: type
       });
       
       if (response.data && response.data.length > 0) {
@@ -82,36 +84,36 @@ export default function AIRecommendations() {
   };
 
   return (
-    <section className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className={`rounded-3xl p-10 relative overflow-hidden transition-all duration-500 ${
-          autoMatched ? 'bg-gradient-to-br from-indigo-50 via-white to-blue-50 border border-indigo-100 shadow-xl' : 'bg-gray-50 border border-gray-200'
+    <section className="py-12 md:py-16 bg-white">
+      <div className="max-w-7xl xl:max-w-[1440px] mx-auto px-4">
+        <div className={`rounded-3xl p-6 md:p-10 relative overflow-hidden transition-all duration-500 ${
+          autoMatched ? 'bg-gradient-to-br from-blue-50/80 via-white to-sky-50/60 border border-blue-100 shadow-xl' : 'bg-gradient-to-br from-slate-50/80 via-white to-blue-50/40 border border-slate-200/80 shadow-md'
         }`}>
-          {/* Decorative elements */}
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-200 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
-          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-200 rounded-full blur-3xl opacity-20 pointer-events-none"></div>
+          {/* Decorative ambient lighting */}
+          <div className="absolute -top-24 -right-24 w-72 h-72 bg-[#3488c3]/15 rounded-full blur-3xl opacity-70 pointer-events-none" />
+          <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-sky-300/20 rounded-full blur-3xl opacity-60 pointer-events-none" />
 
           <div className="relative z-10">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-10 gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                  <div className="w-12 h-12 bg-gradient-to-tr from-[#3488c3] to-[#2978b3] rounded-2xl flex items-center justify-center text-white shadow-md shadow-[#3488c3]/25 shrink-0">
                     <span className="text-xl">✨</span>
                   </div>
-                  <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">AI Matchmaker</h2>
-                  {autoMatched && (
-                    <span className="bg-indigo-600 text-white text-[10px] uppercase tracking-widest font-black px-3 py-1 rounded-full shadow-sm ml-2">
-                      Personalized
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">AI Matchmaker</h2>
+                    <span className="bg-[#3488c3]/10 text-[#3488c3] border border-[#3488c3]/20 text-[11px] font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                      Smart Search
                     </span>
-                  )}
+                  </div>
                 </div>
                 {!autoMatched && (
-                  <p className="text-gray-600 font-medium max-w-xl">
-                    Describe your ideal boarding place, we will find the perfect matches for your lifestyle and budget.
+                  <p className="text-slate-600 font-medium text-sm md:text-base max-w-xl">
+                    Describe your ideal boarding place or lifestyle, and our AI will find the perfect matches for your budget.
                   </p>
                 )}
                 {autoMatched && recommendations.length > 0 && (
-                  <p className="text-gray-500 font-medium">
+                  <p className="text-slate-500 font-medium text-sm">
                     Based on your profile, we've found these perfect matches for you.
                   </p>
                 )}
@@ -120,7 +122,7 @@ export default function AIRecommendations() {
               {autoMatched && (
                 <button 
                   onClick={() => setAutoMatched(false)}
-                  className="text-indigo-600 hover:text-indigo-800 text-sm font-bold flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-indigo-50 transition-colors"
+                  className="text-[#3488c3] hover:text-[#2978b3] text-sm font-bold flex items-center gap-2 px-4 py-2 rounded-xl hover:bg-blue-50 transition-colors"
                 >
                   <span>Edit Preferences</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,67 +133,95 @@ export default function AIRecommendations() {
             </div>
             
             {!autoMatched && (
-              <form onSubmit={handleGetRecommendations} className="space-y-6 mb-12 bg-white/60 backdrop-blur-md p-8 rounded-2xl border border-white shadow-inner">
+              <form onSubmit={handleGetRecommendations} className="space-y-6 bg-white/90 backdrop-blur-md p-6 md:p-8 rounded-2xl border border-slate-200/80 shadow-xs">
                 <div>
-                  <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Your Preferences</label>
+                  <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">I am looking for</label>
+                  <div className="inline-flex p-1 bg-slate-100 rounded-2xl w-fit border border-slate-200/80 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => setMatchType('PROPERTY')}
+                      className={`px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                        matchType === 'PROPERTY'
+                          ? 'bg-white text-[#3488c3] shadow-sm scale-[1.02]'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <span>🏠</span> Boarding Places
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMatchType('ROOMMATE')}
+                      className={`px-5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                        matchType === 'ROOMMATE'
+                          ? 'bg-white text-[#3488c3] shadow-sm scale-[1.02]'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      <span>👥</span> Roommates
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">Your Preferences</label>
                   <textarea 
                     value={preferences}
                     onChange={(e) => setPreferences(e.target.value)}
-                    placeholder="e.g. I am a vegetarian student looking for a quiet place with WiFi and a friendly environment..."
-                    className="w-full px-5 py-4 rounded-xl border border-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none shadow-sm text-gray-700 placeholder-gray-300 resize-none"
+                    placeholder="e.g. I am a vegetarian engineering student looking for a quiet boarding room with WiFi and friendly flatmates..."
+                    className="w-full px-4 py-3.5 rounded-xl border border-slate-200 focus:ring-4 focus:ring-[#3488c3]/15 focus:border-[#3488c3] transition-all outline-none shadow-xs text-slate-800 text-sm placeholder:text-slate-400 resize-none font-medium"
                     rows="3"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Location</label>
+                    <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">Preferred Location</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">📍</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">📍</span>
                       <input 
                         type="text"
                         value={preferredLocation}
                         onChange={(e) => setPreferredLocation(e.target.value)}
-                        placeholder="e.g. Colombo 07"
-                        className="w-full pl-10 pr-5 py-4 rounded-xl border border-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none shadow-sm text-gray-700"
+                        placeholder="e.g. Katubedda, Colombo 07, Malabe"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-[#3488c3]/15 focus:border-[#3488c3] transition-all outline-none shadow-xs text-slate-800 text-sm font-medium"
                       />
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Max Budget</label>
+                    <label className="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2.5">Max Budget (LKR)</label>
                     <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">Rs</span>
+                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rs</span>
                       <input 
                         type="number"
                         value={maxBudget}
                         onChange={(e) => setMaxBudget(e.target.value)}
                         placeholder="e.g. 25000"
-                        className="w-full pl-12 pr-5 py-4 rounded-xl border border-gray-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none shadow-sm text-gray-700"
+                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-[#3488c3]/15 focus:border-[#3488c3] transition-all outline-none shadow-xs text-slate-800 text-sm font-medium"
                       />
                     </div>
                   </div>
                 </div>
                 
-                {error && <p className="text-red-500 text-sm font-bold flex items-center gap-2 animate-bounce">
+                {error && <p className="text-red-600 text-xs font-bold flex items-center gap-2">
                   <span>⚠️</span> {error}
                 </p>}
                 
                 <button 
                   type="submit" 
                   disabled={loading}
-                  className={`w-full md:w-auto px-10 py-4 rounded-xl font-black text-white shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95 ${
-                    loading ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 hover:shadow-indigo-200 shadow-indigo-100'
+                  className={`w-full md:w-auto px-8 py-3.5 rounded-xl font-bold text-sm text-white shadow-md transition-all flex items-center justify-center gap-2.5 active:scale-95 cursor-pointer ${
+                    loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-[#3488c3] hover:bg-[#2978b3] shadow-[#3488c3]/25'
                   }`}
                 >
                   {loading ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                      <span>Thinking...</span>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      <span>Finding Matches...</span>
                     </>
                   ) : (
                     <>
                       <span>Find My Match</span>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6" />
                       </svg>
                     </>
                   )}
@@ -210,7 +240,7 @@ export default function AIRecommendations() {
 
             {!loading && recommendations.length > 0 && (
               <div className="animate-fade-in">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
                   {recommendations.map((rec, index) => {
                     const isProperty = rec.type === 'PROPERTY' || rec.property;
                     const item = isProperty ? rec.property : rec.roommatePost;
@@ -227,42 +257,41 @@ export default function AIRecommendations() {
                     const targetUrl = isProperty ? `/property/${item.id}` : `/roommate/${item.id}`;
                     
                     return (
-                      <div key={index} className="group bg-white rounded-2xl shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col border border-gray-100 overflow-hidden transform hover:-translate-y-2">
-                        <div className="relative h-56 overflow-hidden">
+                      <div key={index} className="group bg-white rounded-xl shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col border border-gray-100 overflow-hidden transform hover:-translate-y-1">
+                        <div className="relative h-36 overflow-hidden">
                           <img 
                             src={image} 
                             alt={title} 
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
-                          <div className="absolute top-4 right-4 z-10">
-                            <span className="bg-white/90 backdrop-blur-md text-indigo-600 text-[10px] font-black px-3 py-1.5 rounded-lg shadow-sm border border-indigo-50 uppercase tracking-tighter">
+                          <div className="absolute top-2.5 right-2.5 z-10">
+                            <span className="bg-white/95 backdrop-blur-md text-indigo-600 text-[9px] font-black px-2 py-0.5 rounded-md shadow-xs border border-indigo-50 uppercase tracking-tight">
                               {isProperty ? 'Boarding' : 'Roommate'}
                             </span>
                           </div>
-                          <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/60 to-transparent">
-                            <p className="text-white font-black text-xl">
+                          <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-black/70 via-black/30 to-transparent">
+                            <p className="text-white font-black text-sm">
                               Rs {price?.toLocaleString()}
-                              <span className="text-xs font-normal opacity-80 ml-1">/mo</span>
+                              <span className="text-[10px] font-normal opacity-80 ml-1">/mo</span>
                             </p>
                           </div>
                         </div>
                         
-                        <div className="p-6 flex-grow flex flex-col">
-                          <h4 className="font-bold text-gray-900 text-lg mb-1 group-hover:text-indigo-600 transition-colors line-clamp-1">{title}</h4>
-                          <p className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-4 flex items-center gap-1">
+                        <div className="p-3.5 flex-grow flex flex-col">
+                          <h4 className="font-bold text-gray-900 text-xs mb-1 group-hover:text-indigo-600 transition-colors line-clamp-1" title={title}>
+                            {title}
+                          </h4>
+                          <p className="text-gray-400 text-[10px] font-bold uppercase tracking-wider mb-2 flex items-center gap-1">
                             <span className="text-indigo-500">📍</span> {location}
                           </p>
                           
-                          <div className="bg-gray-50 p-4 rounded-xl text-sm mb-6 border border-gray-100 flex-grow relative group-hover:bg-indigo-50/30 transition-colors">
-                            <svg className="absolute -top-2 -left-2 w-6 h-6 text-indigo-200 opacity-50" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M14.017 21L14.017 18C14.017 16.8954 14.9124 16 16.017 16H19.017C20.1216 16 21.017 16.8954 21.017 18V21C21.017 22.1046 20.1216 23 19.017 23H16.017C14.9124 23 14.017 22.1046 14.017 21ZM14.017 21C14.017 22.1046 14.9124 23 16.017 23H19.017C20.1216 23 21.017 22.1046 21.017 21V18C21.017 16.8954 20.1216 16 19.017 16H16.017C14.9124 16 14.017 16.8954 14.017 18V21ZM5.017 21L5.017 18C5.017 16.8954 5.91243 16 7.017 16H10.017C11.1216 16 12.017 16.8954 12.017 18V21C12.017 22.1046 11.1216 23 10.017 23H7.017C5.91243 23 5.017 22.1046 5.017 21ZM5.017 21C5.017 22.1046 5.91243 23 7.017 23H10.017C11.1216 23 12.017 22.1046 12.017 21V18C12.017 16.8954 11.1216 16 10.017 16H7.017C5.91243 16 5.017 16.8954 5.017 18V21ZM12.017 0L12.017 3C12.017 4.10457 11.1216 5 10.017 5H7.017C5.91243 5 5.017 4.10457 5.017 3V0C5.017 -1.10457 5.91243 -2 7.017 -2H10.017C11.1216 -2 12.017 -1.10457 12.017 0ZM12.017 0C12.017 -1.10457 11.1216 -2 10.017 -2H7.017C5.91243 -2 5.017 -1.10457 5.017 0V3C5.017 4.10457 5.91243 5 7.017 5H10.017C11.1216 5 12.017 4.10457 12.017 3V0Z" />
-                            </svg>
-                            <p className="italic text-gray-600 leading-relaxed">"{rec.aiExplanation}"</p>
+                          <div className="bg-gray-50/80 p-2.5 rounded-lg text-xs mb-3 border border-gray-100 flex-grow relative group-hover:bg-indigo-50/30 transition-colors">
+                            <p className="italic text-gray-600 text-[11px] leading-relaxed line-clamp-3">"{rec.aiExplanation}"</p>
                           </div>
                           
                           <button 
                             onClick={() => navigate(targetUrl)}
-                            className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-indigo-100 hover:shadow-indigo-200"
+                            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-wider rounded-lg transition-all shadow-sm shadow-indigo-100 hover:shadow-indigo-200"
                           >
                             Explore Match
                           </button>

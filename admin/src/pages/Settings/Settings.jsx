@@ -49,7 +49,20 @@ const Settings = () => {
     setLoading(true);
 
     try {
-      const userId = localStorage.getItem('userId');
+      let userId = localStorage.getItem('userId');
+      if (!userId) {
+        try {
+          const adminData = JSON.parse(localStorage.getItem('adminData') || '{}');
+          userId = adminData.id;
+        } catch (e) {}
+      }
+
+      if (!userId) {
+        setErrorMessage('Admin session not found. Please log in again.');
+        setLoading(false);
+        return;
+      }
+
       await api.put(`/users/${userId}/change-password`, {
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword,

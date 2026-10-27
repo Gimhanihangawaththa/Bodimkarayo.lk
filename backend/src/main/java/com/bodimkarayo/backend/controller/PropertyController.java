@@ -1,10 +1,12 @@
 package com.bodimkarayo.backend.controller;
 
 import com.bodimkarayo.backend.model.Property;
-
+import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.service.PropertyService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,7 +38,9 @@ public class PropertyController {
             @RequestParam(required = false) Integer bathrooms,
             @RequestParam(required = false) Boolean furnished,
             @RequestParam(required = false) Boolean parking,
-            @RequestParam(required = false) Boolean petsAllowed
+            @RequestParam(required = false) Boolean petsAllowed,
+            @RequestParam(required = false) String genderPreference,
+            @RequestParam(required = false) String suitableFor
     ) {
         return propertyService.searchProperties(
                 keyword,
@@ -48,7 +52,9 @@ public class PropertyController {
                 bathrooms,
                 furnished,
                 parking,
-                petsAllowed
+                petsAllowed,
+                genderPreference,
+                suitableFor
         );
     }
 
@@ -58,8 +64,33 @@ public class PropertyController {
                 .orElseThrow(() -> new RuntimeException("Property not found"));
     }
 
+    @GetMapping("/owner/{ownerId}")
+    public List<Property> getPropertiesByOwner(@PathVariable Long ownerId) {
+        return propertyService.getPropertiesByOwner(ownerId);
+    }
+
+    @PutMapping("/{id}/availability")
+    public Property updateAvailability(@PathVariable Long id, @RequestBody java.util.Map<String, String> payload) {
+        String status = payload.get("status");
+        if (status == null || status.isBlank()) {
+            throw new RuntimeException("Status is required (ACTIVE or RENTED)");
+        }
+        return propertyService.updatePropertyStatus(id, status);
+    }
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof User user) {
+            return user;
+        }
+        return null;
+    }
+
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     public Property create(@RequestBody Property property) {
+        if (property.getOwner() == null) {
+            property.setOwner(getCurrentUser());
+        }
         return propertyService.createProperty(property);
     }
 
@@ -73,6 +104,8 @@ public class PropertyController {
             @RequestParam(required = false) String availableFrom,
             @RequestParam(required = false) String address,
             @RequestParam(required = false) String numberOfPeople,
+            @RequestParam(required = false) String genderPreference,
+            @RequestParam(required = false) String suitableFor,
             @RequestParam(required = false) String bedrooms,
             @RequestParam(required = false) String kitchens,
             @RequestParam(required = false) String bathrooms,
@@ -96,6 +129,8 @@ public class PropertyController {
                 .availableFrom(availableFrom)
                 .address(address)
                 .numberOfPeople(numberOfPeople)
+                .genderPreference(genderPreference)
+                .suitableFor(suitableFor)
                 .bedrooms(parseInteger(bedrooms))
                 .kitchens(parseInteger(kitchens))
                 .bathrooms(parseInteger(bathrooms))
@@ -108,13 +143,18 @@ public class PropertyController {
                 .highlights(parseStringList(highlights))
                 .rules(parseStringList(rules))
                 .nearby(parseStringList(nearby))
+                .owner(getCurrentUser())
                 .build();
 
         Property savedProperty = propertyService.createProperty(property);
 
-        // Upload images asynchronously in background
+        // Upload images if provided
         if (imageFiles != null && !imageFiles.isEmpty()) {
-            propertyService.uploadPropertyImagesAsync(savedProperty.getId(), imageFiles);
+            try {
+                savedProperty = propertyService.uploadPropertyImages(savedProperty.getId(), imageFiles);
+            } catch (Exception e) {
+                System.err.println("Failed to upload images for property: " + e.getMessage());
+            }
         }
 
         return savedProperty;

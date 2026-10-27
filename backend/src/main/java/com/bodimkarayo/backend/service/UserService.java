@@ -136,6 +136,9 @@ public class UserService {
             throw new BadRequestException("Current password is incorrect");
         }
 
+        // Validate new password against policy
+        AuthService.validatePassword(request.getNewPassword());
+
         // Update password
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
