@@ -49,8 +49,16 @@ export default function Settings() {
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
-      setPasswordError('New password must be at least 6 characters long');
+    if (passwordForm.newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters long');
+      return;
+    }
+
+    if (!/[A-Z]/.test(passwordForm.newPassword) ||
+        !/[a-z]/.test(passwordForm.newPassword) ||
+        !/[0-9]/.test(passwordForm.newPassword) ||
+        !/[^a-zA-Z0-9]/.test(passwordForm.newPassword)) {
+      setPasswordError('New password must contain uppercase, lowercase, a number, and a special character');
       return;
     }
 
@@ -204,7 +212,7 @@ export default function Settings() {
                       name="newPassword"
                       value={passwordForm.newPassword}
                       onChange={handlePasswordChange}
-                      placeholder="Enter your new password (min. 6 characters)"
+                      placeholder="Enter your new password (min. 8 chars, uppercase, number & symbol)"
                       className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
                       disabled={passwordLoading}
                     />

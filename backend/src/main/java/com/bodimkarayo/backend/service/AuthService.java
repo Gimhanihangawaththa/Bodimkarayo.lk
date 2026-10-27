@@ -32,6 +32,9 @@ public class AuthService {
 
     @Transactional
     public AuthResponse register(User user) {
+        // Enforce high-security password policy
+        validatePassword(user.getPassword());
+
         // Check if email already exists
         Optional<User> existing = userRepository.findByEmail(user.getEmail());
         if (existing.isPresent()) {
@@ -125,5 +128,23 @@ public class AuthService {
 
         user.setRole("OWNER");
         return userRepository.save(user);
+    }
+
+    public static void validatePassword(String password) {
+        if (password == null || password.trim().length() < 8) {
+            throw new BadRequestException("Password must be at least 8 characters long");
+        }
+        if (!password.matches(".*[A-Z].*")) {
+            throw new BadRequestException("Password must contain at least one uppercase letter");
+        }
+        if (!password.matches(".*[a-z].*")) {
+            throw new BadRequestException("Password must contain at least one lowercase letter");
+        }
+        if (!password.matches(".*[0-9].*")) {
+            throw new BadRequestException("Password must contain at least one number");
+        }
+        if (!password.matches(".*[^a-zA-Z0-9].*")) {
+            throw new BadRequestException("Password must contain at least one special character (e.g. !@#$%^&*)");
+        }
     }
 }

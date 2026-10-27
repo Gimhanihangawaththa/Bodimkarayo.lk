@@ -35,6 +35,31 @@ export default function SignUp() {
     e.preventDefault()
     setError('')
 
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long.')
+      return
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      setError('Password must contain at least one uppercase letter.')
+      return
+    }
+
+    if (!/[a-z]/.test(password)) {
+      setError('Password must contain at least one lowercase letter.')
+      return
+    }
+
+    if (!/[0-9]/.test(password)) {
+      setError('Password must contain at least one number.')
+      return
+    }
+
+    if (!/[^a-zA-Z0-9]/.test(password)) {
+      setError('Password must contain at least one special character (e.g. !@#$%^&*).')
+      return
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match.')
       return
@@ -143,6 +168,7 @@ export default function SignUp() {
                     className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200/90 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] focus:bg-white outline-none transition text-slate-900 shadow-xs"
                   />
                 </div>
+                <p className="text-[11px] text-slate-400 mt-1 font-medium">Min. 8 characters with uppercase, lowercase, number & symbol</p>
               </div>
 
               <div>

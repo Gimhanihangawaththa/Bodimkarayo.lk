@@ -73,11 +73,11 @@ class AuthServiceTest {
         User inputUser = User.builder()
                 .fullName("Test User")
                 .email("test@example.com")
-                .password("rawPassword123")
+                .password("RawPass@123")
                 .build();
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.empty());
-        when(passwordEncoder.encode("rawPassword123")).thenReturn("encodedPassword123");
+        when(passwordEncoder.encode("RawPass@123")).thenReturn("encodedPassword123");
         when(userRepository.save(any(User.class))).thenReturn(testUser);
         when(jwtUtil.generateAccessToken("test@example.com")).thenReturn("mock-access-token");
         when(refreshTokenService.createRefreshToken(any(User.class))).thenReturn(testRefreshToken);
@@ -97,13 +97,80 @@ class AuthServiceTest {
         User inputUser = User.builder()
                 .fullName("Test User")
                 .email("test@example.com")
-                .password("rawPassword123")
+                .password("RawPass@123")
                 .build();
 
         when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUser));
 
         assertThrows(BadRequestException.class, () -> authService.register(inputUser));
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("Should throw BadRequestException when registering with password shorter than 8 characters")
+    void register_ShortPassword_ThrowsException() {
+        User inputUser = User.builder()
+                .fullName("Test User")
+                .email("test@example.com")
+                .password("short")
+                .build();
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> authService.register(inputUser));
+        assertTrue(ex.getMessage().contains("at least 8 characters"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("Should throw BadRequestException when registering with null password")
+    void register_NullPassword_ThrowsException() {
+        User inputUser = User.builder()
+                .fullName("Test User")
+                .email("test@example.com")
+                .password(null)
+                .build();
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> authService.register(inputUser));
+        assertTrue(ex.getMessage().contains("at least 8 characters"));
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("Should throw BadRequestException when password lacks uppercase letter")
+    void register_MissingUppercase_ThrowsException() {
+        User inputUser = User.builder()
+                .fullName("Test User")
+                .email("test@example.com")
+                .password("rawpass@123")
+                .build();
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> authService.register(inputUser));
+        assertTrue(ex.getMessage().contains("uppercase"));
+    }
+
+    @Test
+    @DisplayName("Should throw BadRequestException when password lacks number")
+    void register_MissingNumber_ThrowsException() {
+        User inputUser = User.builder()
+                .fullName("Test User")
+                .email("test@example.com")
+                .password("RawPass@word")
+                .build();
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> authService.register(inputUser));
+        assertTrue(ex.getMessage().contains("number"));
+    }
+
+    @Test
+    @DisplayName("Should throw BadRequestException when password lacks special character")
+    void register_MissingSpecialChar_ThrowsException() {
+        User inputUser = User.builder()
+                .fullName("Test User")
+                .email("test@example.com")
+                .password("RawPass1234")
+                .build();
+
+        BadRequestException ex = assertThrows(BadRequestException.class, () -> authService.register(inputUser));
+        assertTrue(ex.getMessage().contains("special character"));
     }
 
     @Test
