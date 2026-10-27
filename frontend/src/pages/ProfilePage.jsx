@@ -910,32 +910,26 @@ export default function ProfilePage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Full Name</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">👤</span>
-                    <input
-                      type="text"
-                      name="name"
-                      value={editFormData.name}
-                      onChange={handleInputChange}
-                      placeholder="Enter full name"
-                      className="w-full pl-11 pr-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    name="name"
+                    value={editFormData.name}
+                    onChange={handleInputChange}
+                    placeholder="Enter full name"
+                    className="w-full px-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Email Address</label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm">✉️</span>
-                    <input
-                      type="email"
-                      name="email"
-                      value={editFormData.email}
-                      onChange={handleInputChange}
-                      placeholder="your.email@example.com"
-                      className="w-full pl-11 pr-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900"
-                    />
-                  </div>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editFormData.email}
+                    onChange={handleInputChange}
+                    placeholder="your.email@example.com"
+                    className="w-full px-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900"
+                  />
                 </div>
               </div>
             </div>
