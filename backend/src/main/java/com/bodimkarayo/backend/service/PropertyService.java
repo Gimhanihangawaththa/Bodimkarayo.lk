@@ -30,7 +30,8 @@ public class PropertyService {
 
     public List<Property> getAllProperties() {
         return propertyRepository.findAll().stream()
-                .filter(p -> p.getStatus() == null || "ACTIVE".equalsIgnoreCase(p.getStatus()))
+                .filter(p -> "ACTIVE".equalsIgnoreCase(p.getStatus()))
+                .filter(p -> p.getOwner() == null || !Boolean.FALSE.equals(p.getOwner().getIsActive()))
                 .collect(Collectors.toList());
     }
 
@@ -289,8 +290,11 @@ public class PropertyService {
                 joinList(property.getNearby())
         );
 
-        boolean isActive = property.getStatus() == null || "ACTIVE".equalsIgnoreCase(property.getStatus());
+        boolean isActive = "ACTIVE".equalsIgnoreCase(property.getStatus());
         if (!isActive) {
+            return false;
+        }
+        if (property.getOwner() != null && Boolean.FALSE.equals(property.getOwner().getIsActive())) {
             return false;
         }
 

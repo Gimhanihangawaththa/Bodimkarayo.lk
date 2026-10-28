@@ -16,6 +16,9 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
     @Query("SELECT r FROM ChatRoom r WHERE r.user1.id = :userId OR r.user2.id = :userId ORDER BY r.createdAt DESC")
     List<ChatRoom> findAllByUser(@Param("userId") Long userId);
 
+    @Query("SELECT r FROM ChatRoom r WHERE (r.user1.id = :userId OR r.user2.id = :userId) AND EXISTS (SELECT m FROM ChatMessage m WHERE m.chatRoom.id = r.id) ORDER BY (SELECT MAX(m2.timestamp) FROM ChatMessage m2 WHERE m2.chatRoom.id = r.id) DESC")
+    List<ChatRoom> findAllWithMessagesByUser(@Param("userId") Long userId);
+
     @Query("SELECT cr FROM ChatRoom cr WHERE (cr.user1 = :u1 AND cr.user2 = :u2) OR (cr.user1 = :u2 AND cr.user2 = :u1)")
     Optional<ChatRoom> findByUsers(@Param("u1") User u1, @Param("u2") User u2);
 }

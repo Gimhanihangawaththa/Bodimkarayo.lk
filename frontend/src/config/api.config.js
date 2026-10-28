@@ -37,8 +37,9 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    const isAuthError = error.response && (error.response.status === 401 || error.response.status === 403);
 
-    if (error.response && error.response.status === 401 && originalRequest && !originalRequest._retry) {
+    if (isAuthError && originalRequest && !originalRequest._retry) {
       const isAuthUrl = originalRequest.url?.includes('/auth/login') ||
                         originalRequest.url?.includes('/auth/register') ||
                         originalRequest.url?.includes('/auth/refresh');
@@ -64,6 +65,12 @@ apiClient.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken');
       if (!refreshToken) {
         isRefreshing = false;
+        localStorage.removeItem('authUser');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('refreshToken');
+        if (!window.location.pathname.includes('/signin')) {
+          window.location.href = '/signin';
+        }
         return Promise.reject(error);
       }
 
@@ -92,6 +99,9 @@ apiClient.interceptors.response.use(
         localStorage.removeItem('authUser');
         localStorage.removeItem('authToken');
         localStorage.removeItem('refreshToken');
+        if (!window.location.pathname.includes('/signin')) {
+          window.location.href = '/signin';
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

@@ -19,7 +19,9 @@ public class RoommateService {
     private com.bodimkarayo.backend.search.SearchIndexService searchIndexService;
 
     public List<RoommatePost> getAllPosts() {
-        return roommateRepository.findAll();
+        return roommateRepository.findAll().stream()
+                .filter(post -> post.getPoster() == null || !Boolean.FALSE.equals(post.getPoster().getIsActive()))
+                .toList();
     }
 
     public Optional<RoommatePost> getPostById(Long id) {
@@ -100,6 +102,7 @@ public class RoommateService {
             }
         }
         return roommateRepository.findAll().stream()
+                .filter(post -> post.getPoster() == null || !Boolean.FALSE.equals(post.getPoster().getIsActive()))
                 .filter(post -> matchesRoommate(post, keyword, location, gender, minAge, maxAge, occupation, roomTypePreference, smokingPreference, petFriendly, foodPreference, minBudget, maxBudget))
                 .toList();
     }
@@ -119,6 +122,9 @@ public class RoommateService {
             Double minBudget,
             Double maxBudget
     ) {
+        if (post.getPoster() != null && Boolean.FALSE.equals(post.getPoster().getIsActive())) {
+            return false;
+        }
         String posterName = post.getPoster() != null ? post.getPoster().getFullName() : "";
         String posterEmail = post.getPoster() != null ? post.getPoster().getEmail() : "";
         String searchableText = joinText(
