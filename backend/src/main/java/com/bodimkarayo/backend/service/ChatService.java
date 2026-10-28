@@ -29,7 +29,7 @@ public class ChatService {
     private UserRepository userRepository;
 
     public List<ChatRoomResponse> getRoomsForUser(Long userId) {
-        List<ChatRoom> rooms = chatRoomRepository.findAllWithMessagesByUser(userId);
+        List<ChatRoom> rooms = chatRoomRepository.findAllByUser(userId);
         return rooms.stream()
                 .filter(room -> room.getUser1() != null && room.getUser2() != null && !room.getUser1().getId().equals(room.getUser2().getId()))
                 .map(room -> {
@@ -73,7 +73,7 @@ public class ChatService {
     }
 
     public long getUnreadCountForUser(Long userId) {
-        List<ChatRoom> rooms = chatRoomRepository.findAllWithMessagesByUser(userId);
+        List<ChatRoom> rooms = chatRoomRepository.findAllByUser(userId);
         return rooms.stream()
                 .mapToLong(room -> chatMessageRepository.countByChatRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), userId))
                 .sum();
