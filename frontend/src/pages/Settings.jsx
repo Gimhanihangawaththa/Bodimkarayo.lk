@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../config/api.config';
 
 export default function Settings() {
-  const { user, token, logout } = useAuth();
+  const { user, token, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('account');
   const [isDeleting, setIsDeleting] = useState(false);
@@ -21,6 +21,151 @@ export default function Settings() {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordError, setPasswordError] = useState('');
+  // Account & Profile state
+  const [accountForm, setAccountForm] = useState({
+    fullName: user?.fullName || user?.name || '',
+    email: user?.email || '',
+    phoneNumber: user?.phoneNumber || user?.phone || '',
+  });
+  const [profileImageFile, setProfileImageFile] = useState(null);
+  const [previewImage, setPreviewImage] = useState(user?.profilePictureUrl || user?.avatarUrl || null);
+  const [accountLoading, setAccountLoading] = useState(false);
+  const [accountSuccess, setAccountSuccess] = useState('');
+  const [accountError, setAccountError] = useState('');
+
+  useEffect(() => {
+    if (user) {
+      setAccountForm((prev) => ({
+        fullName: prev.fullName || user.fullName || user.name || '',
+        email: prev.email || user.email || '',
+        phoneNumber: prev.phoneNumber || user.phoneNumber || user.phone || '',
+      }));
+      if (!previewImage && (user.profilePictureUrl || user.avatarUrl)) {
+        setPreviewImage(user.profilePictureUrl || user.avatarUrl);
+      }
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const fetchLatestProfile = async () => {
+      if (!user?.id) return;
+      try {
+        const response = await apiClient.get(`/users/${user.id}/profile`);
+        if (response.data) {
+          const profile = response.data;
+          setAccountForm((prev) => ({
+            ...prev,
+            fullName: profile.fullName || prev.fullName,
+            email: profile.email || prev.email,
+          }));
+          if (profile.profilePictureUrl) {
+            setPreviewImage(profile.profilePictureUrl);
+          }
+        }
+      } catch (err) {
+        // Fallback silently to current user context
+      }
+    };
+    fetchLatestProfile();
+  }, [user?.id]);
+
+  const handleAccountChange = (e) => {
+    const { name, value } = e.target;
+    setAccountForm((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleImageChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setAccountError('Please select a valid image file');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      setAccountError('Image size should be less than 5MB');
+      return;
+    }
+
+    setProfileImageFile(file);
+    setPreviewImage(URL.createObjectURL(file));
+    setAccountError('');
+  };
+
+  const handleAccountSubmit = async (e) => {
+    e.preventDefault();
+    setAccountError('');
+    setAccountSuccess('');
+
+    if (!accountForm.fullName.trim()) {
+      setAccountError('Full name is required');
+      return;
+    }
+
+    if (!accountForm.email.trim()) {
+      setAccountError('Email is required');
+      return;
+    }
+
+    setAccountLoading(true);
+
+    try {
+      let profilePictureUrl = previewImage;
+
+      // 1. Upload new image if chosen
+      if (profileImageFile && user?.id) {
+        try {
+          const imageFormData = new FormData();
+          imageFormData.append('image', profileImageFile);
+          const uploadRes = await apiClient.post(`/users/${user.id}/profile-image`, imageFormData);
+          if (uploadRes.data?.profilePictureUrl) {
+            profilePictureUrl = uploadRes.data.profilePictureUrl;
+          }
+        } catch (imgErr) {
+          console.error('Failed to upload profile picture:', imgErr);
+        }
+      }
+
+      // 2. Update user profile
+      const payload = {
+        fullName: accountForm.fullName.trim(),
+        email: accountForm.email.trim(),
+        profilePictureUrl,
+      };
+
+      const response = await apiClient.put(`/users/${user.id}/profile`, payload);
+      const updatedProfile = response.data;
+
+      const updatedUserData = {
+        ...user,
+        fullName: updatedProfile.fullName ?? payload.fullName,
+        name: updatedProfile.fullName ?? payload.fullName,
+        email: updatedProfile.email ?? payload.email,
+        profilePictureUrl: updatedProfile.profilePictureUrl ?? profilePictureUrl,
+        avatarUrl: updatedProfile.profilePictureUrl ?? profilePictureUrl,
+        ...(accountForm.phoneNumber ? { phoneNumber: accountForm.phoneNumber } : {}),
+      };
+
+      if (updateUser) {
+        updateUser(updatedUserData);
+      }
+
+      setAccountSuccess('Account information updated successfully!');
+      setProfileImageFile(null);
+    } catch (error) {
+      console.error('Error updating account:', error);
+      setAccountError(
+        error.response?.data?.message || 'Failed to update account information. Please try again.'
+      );
+    } finally {
+      setAccountLoading(false);
+    }
+  };
+
 
   // If user is not logged in, redirect to sign in
   if (!token) {
@@ -155,26 +300,105 @@ export default function Settings() {
         {/* Main Content Area */}
         <div className="flex-1 bg-white rounded-2xl shadow-xs border border-slate-200 min-h-[500px]">
 
-          {/* Account & Profile Tab (Dummy) */}
+          {/* Account & Profile Tab (Functional) */}
           {activeTab === 'account' && (
             <div className="p-6 md:p-8">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6">Account Information</h2>
-              <p className="text-slate-500 mb-8">Update your personal details here. (Coming soon)</p>
+              <h2 className="text-2xl font-bold text-slate-900 mb-2">Account Information</h2>
+              <p className="text-slate-500 mb-6">Update your personal details and public profile.</p>
 
-              <div className="space-y-6 max-w-lg opacity-60 pointer-events-none">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-                  <input type="text" value={user?.fullName || 'John Doe'} className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-50" readOnly />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Email Address</label>
-                  <input type="email" value={user?.email || 'john@example.com'} className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-50" readOnly />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Phone Number</label>
-                  <input type="tel" placeholder="+94 7X XXX XXXX" className="w-full px-4 py-2 border border-slate-300 rounded-lg bg-slate-50" readOnly />
-                </div>
-                <button className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-6 py-2.5 rounded-xl font-bold shadow-md shadow-[#3488c3]/20 transition-all cursor-pointer">Save Changes</button>
+              <div className="max-w-lg">
+                {accountSuccess && (
+                  <div className="mb-4 p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl font-medium text-sm">
+                    {accountSuccess}
+                  </div>
+                )}
+
+                {accountError && (
+                  <div className="mb-4 p-4 bg-red-50 border border-red-300 text-red-800 rounded-xl font-medium text-sm">
+                    {accountError}
+                  </div>
+                )}
+
+                <form onSubmit={handleAccountSubmit} className="space-y-6">
+                  {/* Profile Picture */}
+                  <div className="flex items-center gap-5 pb-6 border-b border-slate-100">
+                    <div className="relative w-20 h-20 rounded-full overflow-hidden bg-slate-100 border-2 border-slate-200 shrink-0 shadow-xs">
+                      {previewImage ? (
+                        <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-[#3488c3]/10 text-[#3488c3] text-2xl font-bold">
+                          {(accountForm.fullName || user?.fullName || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <label className="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl cursor-pointer transition">
+                        <span>Change Photo</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageChange}
+                          className="hidden"
+                          disabled={accountLoading}
+                        />
+                      </label>
+                      <p className="text-[11px] text-slate-400 mt-1.5 font-medium">Recommended: Square JPG, PNG (Max 5MB)</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Full Name</label>
+                    <input
+                      type="text"
+                      name="fullName"
+                      value={accountForm.fullName}
+                      onChange={handleAccountChange}
+                      placeholder="Enter your full name"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
+                      disabled={accountLoading}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Email Address</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={accountForm.email}
+                      onChange={handleAccountChange}
+                      placeholder="Enter your email address"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
+                      disabled={accountLoading}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-2">Phone Number</label>
+                    <input
+                      type="tel"
+                      name="phoneNumber"
+                      value={accountForm.phoneNumber}
+                      onChange={handleAccountChange}
+                      placeholder="+94 7X XXX XXXX"
+                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
+                      disabled={accountLoading}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={accountLoading}
+                    className={`w-full py-3 px-6 rounded-xl font-bold text-white transition shadow-md shadow-[#3488c3]/20 cursor-pointer ${
+                      accountLoading
+                        ? 'bg-slate-400 cursor-not-allowed'
+                        : 'bg-[#3488c3] hover:bg-[#2978b3] active:bg-[#246393]'
+                    }`}
+                  >
+                    {accountLoading ? 'Saving Changes...' : 'Save Changes'}
+                  </button>
+                </form>
               </div>
             </div>
           )}
