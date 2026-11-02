@@ -4,6 +4,8 @@ import { apiClient } from "../config/api.config";
 import { useAuth } from "../context/AuthContext";
 import { propertyService } from "../services";
 import { UpgradeAdvertisement } from "../components/UpgradeAdvertisement";
+import ConfirmModal from "../components/ui/ConfirmModal";
+import Toast from "../components/ui/Toast";
 
 const EMPTY_USER = {
   id: null,
@@ -51,6 +53,51 @@ export default function ProfilePage() {
   const [previewImage, setPreviewImage] = useState(user.avatarUrl);
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false);
   const [applicationData, setApplicationData] = useState(createEmptyApplicationData(EMPTY_USER.interests));
+  const [confirmModal, setConfirmModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    confirmText: "Delete",
+    cancelText: "Cancel",
+    intent: "danger",
+    onConfirm: null,
+    isLoading: false,
+  });
+
+  const requestConfirm = ({ title, message, confirmText, cancelText, intent = "danger", onConfirm }) => {
+    setConfirmModal({
+      isOpen: true,
+      title,
+      message,
+      confirmText: confirmText || "Delete",
+      cancelText: cancelText || "Cancel",
+      intent,
+      onConfirm,
+      isLoading: false,
+    });
+  };
+
+  const closeConfirmModal = () => {
+    setConfirmModal((prev) => ({ ...prev, isOpen: false, isLoading: false }));
+  };
+
+  const [toast, setToast] = useState({
+    isOpen: false,
+    message: "",
+    type: "success",
+  });
+
+  const showToast = (message, type = "success") => {
+    setToast({
+      isOpen: true,
+      message,
+      type,
+    });
+  };
+
+  const closeToast = () => {
+    setToast((prev) => ({ ...prev, isOpen: false }));
+  };
 
   const mapPostToApplicationData = (post) => ({
     gender: post?.gender ?? "",
@@ -247,7 +294,7 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     if (!authUser?.id) {
-      alert("Unable to update profile. Please sign in again.");
+      showToast("Unable to update profile. Please sign in again.", "error");
       return;
     }
 
@@ -303,13 +350,14 @@ export default function ProfilePage() {
       setPreviewImage(updatedUser.avatarUrl);
       setProfileImageFile(null);
       setIsEditModalOpen(false);
+      showToast("Profile updated successfully!", "success");
     } catch (error) {
       console.error("Error updating profile:", error);
       const message =
         error?.response?.data?.message ||
         error?.message ||
         "Failed to update profile. Please try again.";
-      alert(message);
+      showToast(message, "error");
     } finally {
       setIsSavingProfile(false);
     }
@@ -328,13 +376,13 @@ export default function ProfilePage() {
     if (file) {
       // Check file size (limit to 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert("Image size should be less than 5MB");
+        showToast("Image size should be less than 5MB", "error");
         return;
       }
 
       // Check file type
       if (!file.type.startsWith("image/")) {
-        alert("Please select a valid image file");
+        showToast("Please select a valid image file", "error");
         return;
       }
 
@@ -363,57 +411,68 @@ export default function ProfilePage() {
     setIsApplyModalOpen(true);
   };
 
-  const handleRemoveApplication = async () => {
+  const handleRemoveApplication = () => {
     if (!currentApplicationId) {
-      alert("No submitted application found.");
+      showToast("No submitted application found.", "info");
       return;
     }
 
-    if (!window.confirm("Are you sure you want to remove your roommate application?")) {
-      return;
-    }
-
-    try {
-      await apiClient.delete(`/roommates/${currentApplicationId}`);
-      setRoommateStatus("notApplied");
-      setCurrentApplicationId(null);
-      setCurrentApplication(null);
-      setIsEditingApplication(false);
-      setApplicationData(createEmptyApplicationData(user.interests || []));
-      alert("Your roommate application was removed.");
-    } catch (error) {
-      console.error("Error removing roommate application:", error);
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to remove application. Please try again.";
-      alert(message);
-    }
+    requestConfirm({
+      title: "Remove Roommate Application?",
+      message: "Are you sure you want to remove your roommate application? Your listing will no longer appear in roommate searches.",
+      confirmText: "Remove Application",
+      intent: "danger",
+      onConfirm: async () => {
+        try {
+          setConfirmModal((prev) => ({ ...prev, isLoading: true }));
+          await apiClient.delete(`/roommates/${currentApplicationId}`);
+          setRoommateStatus("notApplied");
+          setCurrentApplicationId(null);
+          setCurrentApplication(null);
+          setIsEditingApplication(false);
+          setApplicationData(createEmptyApplicationData(user.interests || []));
+          closeConfirmModal();
+          showToast("Your roommate application was removed.", "info");
+        } catch (error) {
+          console.error("Error removing roommate application:", error);
+          const message =
+            error?.response?.data?.message ||
+            error?.message ||
+            "Failed to remove application. Please try again.";
+          showToast(message, "error");
+          closeConfirmModal();
+        }
+      },
+    });
   };
 
-  const handleDeleteProperty = async (propertyId, propertyTitle) => {
-    if (!window.confirm(`Are you sure you want to delete "${propertyTitle}"? This action cannot be undone.`)) {
-      return;
-    }
-
-    try {
-      await propertyService.deleteProperty(propertyId);
-      
-      // Remove property from the list
-      setUser((prev) => ({
-        ...prev,
-        userProperties: prev.userProperties.filter((prop) => prop.id !== propertyId),
-      }));
-      
-      alert("Property deleted successfully.");
-    } catch (error) {
-      console.error("Error deleting property:", error);
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to delete property. Please try again.";
-      alert(message);
-    }
+  const handleDeleteProperty = (propertyId, propertyTitle) => {
+    requestConfirm({
+      title: "Delete Property Listing?",
+      message: `Are you sure you want to delete "${propertyTitle}"? This action cannot be undone.`,
+      confirmText: "Delete Property",
+      intent: "danger",
+      onConfirm: async () => {
+        try {
+          setConfirmModal((prev) => ({ ...prev, isLoading: true }));
+          await propertyService.deleteProperty(propertyId);
+          setUser((prev) => ({
+            ...prev,
+            userProperties: prev.userProperties.filter((prop) => prop.id !== propertyId),
+          }));
+          closeConfirmModal();
+          showToast("Property deleted successfully.", "success");
+        } catch (error) {
+          console.error("Error deleting property:", error);
+          const message =
+            error?.response?.data?.message ||
+            error?.message ||
+            "Failed to delete property. Please try again.";
+          showToast(message, "error");
+          closeConfirmModal();
+        }
+      },
+    });
   };
 
   const handleToggleAvailability = async (e, propertyId, currentStatus) => {
@@ -427,33 +486,43 @@ export default function ProfilePage() {
           p.id === propertyId ? { ...p, status: newStatus } : p
         ),
       }));
+      showToast(newStatus === 'ACTIVE' ? "Property marked as Available." : "Property marked as Rented.", "success");
     } catch (err) {
-      alert("Failed to update listing status. Please try again.");
+      showToast("Failed to update listing status. Please try again.", "error");
     }
   };
 
-  const handleRemoveFavorite = async (propertyId, propertyTitle) => {
+  const handleRemoveFavorite = (propertyId, propertyTitle) => {
     if (!authUser?.id) {
       return;
     }
-    if (!window.confirm(`Remove "${propertyTitle}" from your saved properties?`)) {
-      return;
-    }
 
-    try {
-      await propertyService.removeFavoriteProperty(authUser.id, propertyId);
-      setUser((prev) => ({
-        ...prev,
-        favoriteProperties: (prev.favoriteProperties || []).filter((p) => p.id !== propertyId),
-      }));
-    } catch (error) {
-      console.error("Error removing favorite:", error);
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Failed to remove from favorites.";
-      alert(message);
-    }
+    requestConfirm({
+      title: "Remove Saved Property?",
+      message: `Remove "${propertyTitle}" from your saved properties?`,
+      confirmText: "Remove",
+      intent: "danger",
+      onConfirm: async () => {
+        try {
+          setConfirmModal((prev) => ({ ...prev, isLoading: true }));
+          await propertyService.removeFavoriteProperty(authUser.id, propertyId);
+          setUser((prev) => ({
+            ...prev,
+            favoriteProperties: (prev.favoriteProperties || []).filter((p) => p.id !== propertyId),
+          }));
+          closeConfirmModal();
+          showToast("Removed from saved properties.", "info");
+        } catch (error) {
+          console.error("Error removing favorite:", error);
+          const message =
+            error?.response?.data?.message ||
+            error?.message ||
+            "Failed to remove from favorites.";
+          showToast(message, "error");
+          closeConfirmModal();
+        }
+      },
+    });
   };
 
   const handleApplicationChange = (e) => {
@@ -485,12 +554,12 @@ export default function ProfilePage() {
       !applicationData.moveInDate ||
       !applicationData.budget
     ) {
-      alert("Please fill in all required fields marked with *");
+      showToast("Please fill in all required fields marked with *", "error");
       return;
     }
 
     if (applicationData.interests.length === 0) {
-      alert("Please select at least one interest");
+      showToast("Please select at least one interest", "error");
       return;
     }
 
@@ -532,10 +601,11 @@ export default function ProfilePage() {
       setIsEditingApplication(false);
       setApplicationData(createEmptyApplicationData(user.interests || []));
 
-      alert(
+      showToast(
         isEditingApplication
           ? "Your roommate application was updated."
-          : "You are now applied as a roommate and visible in the roommate section."
+          : "You are now applied as a roommate and visible in the roommate section.",
+        "success"
       );
     } catch (error) {
       console.error("Error creating roommate application:", error);
@@ -543,7 +613,7 @@ export default function ProfilePage() {
         error?.response?.data?.message ||
         error?.message ||
         "Failed to apply as roommate. Please try again.";
-      alert(message);
+      showToast(message, "error");
     }
   };
 
@@ -817,6 +887,17 @@ export default function ProfilePage() {
                             className="bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
                           >
                             Edit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteProperty(property.id, property.title);
+                            }}
+                            className="bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold px-3 py-1.5 rounded-xl transition cursor-pointer"
+                            title="Delete listing"
+                          >
+                            Delete
                           </button>
                         </div>
                       </div>
@@ -1258,6 +1339,26 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
+      {/* Modern Confirmation Modal */}
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={closeConfirmModal}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText}
+        cancelText={confirmModal.cancelText}
+        intent={confirmModal.intent}
+        isLoading={confirmModal.isLoading}
+      />
+
+      {/* Floating Modern Toast Notification */}
+      <Toast
+        isOpen={toast.isOpen}
+        message={toast.message}
+        type={toast.type}
+        onClose={closeToast}
+      />
     </div>
   );
 }

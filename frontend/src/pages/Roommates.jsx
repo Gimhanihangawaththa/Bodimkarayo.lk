@@ -253,7 +253,7 @@ export default function Roommates() {
         preferences: prefText,
         maxBudget: myPost.budget,
         preferredLocation: myPost.preferredLocation || myPost.location,
-        propertyType: 'Roommate'
+        matchType: 'ROOMMATE'
       });
 
       if (response.data && response.data.length > 0) {

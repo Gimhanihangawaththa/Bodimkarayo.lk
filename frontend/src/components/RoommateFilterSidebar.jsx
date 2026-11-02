@@ -320,30 +320,37 @@ export default function RoommateFilterSidebar({ onFiltersChange }) {
         <label className="block text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
           Occupation
         </label>
-        <select
-          value={occupation}
-          onChange={(e) => {
-            const nextValue = e.target.value
-            setOccupation(nextValue)
-            emitFilters({
-              budgetRange,
-              minAge,
-              maxAge,
-              location,
-              genderPreference,
-              occupation: nextValue,
-              roomType,
-              smokingPreference,
-              petFriendly,
-              foodPreference,
-            })
-          }}
-          className="w-full rounded-2xl border border-slate-200 px-3.5 py-2.5 text-sm text-slate-900 bg-slate-50 font-semibold outline-none focus:ring-2 focus:ring-[#3488c3] focus:bg-white transition cursor-pointer"
-        >
-          {occupationOptions.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={occupation}
+            onChange={(e) => {
+              const nextValue = e.target.value
+              setOccupation(nextValue)
+              emitFilters({
+                budgetRange,
+                minAge,
+                maxAge,
+                location,
+                genderPreference,
+                occupation: nextValue,
+                roomType,
+                smokingPreference,
+                petFriendly,
+                foodPreference,
+              })
+            }}
+            className="w-full appearance-none rounded-2xl border border-slate-200 pl-3.5 pr-10 py-2.5 text-sm text-slate-900 bg-slate-50 font-semibold outline-none focus:ring-2 focus:ring-[#3488c3] focus:bg-white transition cursor-pointer"
+          >
+            {occupationOptions.map((option) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4 text-slate-500">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
       </div>
 
       {/* Lifestyle Preferences Checkboxes */}
