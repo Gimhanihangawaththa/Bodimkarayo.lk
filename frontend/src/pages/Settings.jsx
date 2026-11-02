@@ -15,6 +15,9 @@ export default function Settings() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [passwordError, setPasswordError] = useState('');
@@ -81,6 +84,9 @@ export default function Settings() {
         newPassword: '',
         confirmPassword: '',
       });
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
     } catch (error) {
       setPasswordError(
         error.response?.data?.message || 'Failed to change password. Please try again.'
@@ -122,7 +128,7 @@ export default function Settings() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
-      
+
       <div className="flex flex-col md:flex-row gap-8">
         {/* Sidebar Menu */}
         <div className="w-full md:w-64 shrink-0">
@@ -148,13 +154,13 @@ export default function Settings() {
 
         {/* Main Content Area */}
         <div className="flex-1 bg-white rounded-2xl shadow-xs border border-slate-200 min-h-[500px]">
-          
+
           {/* Account & Profile Tab (Dummy) */}
           {activeTab === 'account' && (
             <div className="p-6 md:p-8">
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Account Information</h2>
               <p className="text-slate-500 mb-8">Update your personal details here. (Coming soon)</p>
-              
+
               <div className="space-y-6 max-w-lg opacity-60 pointer-events-none">
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
@@ -178,7 +184,7 @@ export default function Settings() {
             <div className="p-6 md:p-8">
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Password & Security</h2>
               <p className="text-slate-500 mb-8">Manage your password and security preferences.</p>
-              
+
               <div className="max-w-lg">
                 {passwordSuccess && (
                   <div className="mb-4 p-4 bg-emerald-50 border border-emerald-300 text-emerald-800 rounded-xl font-medium text-sm">
@@ -195,42 +201,99 @@ export default function Settings() {
                 <form onSubmit={handlePasswordSubmit} className="space-y-6">
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Current Password</label>
-                    <input 
-                      type="password" 
-                      name="currentPassword"
-                      value={passwordForm.currentPassword}
-                      onChange={handlePasswordChange}
-                      placeholder="Enter your current password"
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
-                      disabled={passwordLoading}
-                    />
+                    <div className="relative">
+                      <input
+                        type={showCurrentPassword ? 'text' : 'password'}
+                        name="currentPassword"
+                        value={passwordForm.currentPassword}
+                        onChange={handlePasswordChange}
+                        placeholder="Enter your current password"
+                        className="w-full pl-4 pr-11 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
+                        disabled={passwordLoading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition p-1 focus:outline-none cursor-pointer"
+                        aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
+                      >
+                        {showCurrentPassword ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">New Password</label>
-                    <input 
-                      type="password" 
-                      name="newPassword"
-                      value={passwordForm.newPassword}
-                      onChange={handlePasswordChange}
-                      placeholder="Enter your new password (min. 8 chars, uppercase, number & symbol)"
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
-                      disabled={passwordLoading}
-                    />
+                    <div className="relative">
+                      <input
+                        type={showNewPassword ? 'text' : 'password'}
+                        name="newPassword"
+                        value={passwordForm.newPassword}
+                        onChange={handlePasswordChange}
+                        placeholder="Enter your new password (min. 8 chars, uppercase, number & symbol)"
+                        className="w-full pl-4 pr-11 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
+                        disabled={passwordLoading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition p-1 focus:outline-none cursor-pointer"
+                        aria-label={showNewPassword ? 'Hide new password' : 'Show new password'}
+                      >
+                        {showNewPassword ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-2">Confirm New Password</label>
-                    <input 
-                      type="password" 
-                      name="confirmPassword"
-                      value={passwordForm.confirmPassword}
-                      onChange={handlePasswordChange}
-                      placeholder="Confirm your new password"
-                      className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
-                      disabled={passwordLoading}
-                    />
+                    <div className="relative">
+                      <input
+                        type={showConfirmPassword ? 'text' : 'password'}
+                        name="confirmPassword"
+                        value={passwordForm.confirmPassword}
+                        onChange={handlePasswordChange}
+                        placeholder="Confirm your new password"
+                        className="w-full pl-4 pr-11 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3]"
+                        disabled={passwordLoading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition p-1 focus:outline-none cursor-pointer"
+                        aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                      >
+                        {showConfirmPassword ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 0 0 1.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.451 10.451 0 0 1 12 4.5c4.756 0 8.773 3.162 10.065 7.498a10.522 10.522 0 0 1-4.293 5.774M6.228 6.228 3 3m3.228 3.228 3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 1 0-4.243-4.243m4.242 4.242L9.88 9.88" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.75} stroke="currentColor" className="w-5 h-5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+                          </svg>
+                        )}
+                      </button>
+                    </div>
                   </div>
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     disabled={passwordLoading}
                     className={`w-full py-3 px-6 rounded-xl font-bold text-white transition shadow-md shadow-[#3488c3]/20 cursor-pointer ${
                       passwordLoading
@@ -250,7 +313,7 @@ export default function Settings() {
             <div className="p-6 md:p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Notification Preferences</h2>
               <p className="text-gray-500 mb-8">Choose what we email you about. (Coming soon)</p>
-              
+
               <div className="space-y-4 opacity-60 pointer-events-none">
                 <div className="flex items-center justify-between py-3 border-b border-gray-100">
                   <div>
@@ -279,7 +342,7 @@ export default function Settings() {
             <div className="p-6 md:p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Privacy & Visibility</h2>
               <p className="text-gray-500 mb-8">Control who sees your information. (Coming soon)</p>
-              
+
               <div className="space-y-6 max-w-lg opacity-60 pointer-events-none">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Profile Visibility in Roommate Search</label>
@@ -304,7 +367,7 @@ export default function Settings() {
             <div className="p-6 md:p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Billing & Payments</h2>
               <p className="text-gray-500 mb-8">Manage your subscriptions and cards. (Coming soon)</p>
-              
+
               <div className="bg-blue-50 border border-blue-100 rounded-lg p-6 opacity-60 pointer-events-none mb-6">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-bold text-blue-900 text-lg">Current Plan</h3>
@@ -333,11 +396,11 @@ export default function Settings() {
             <div className="p-6 md:p-8 border-l-4 border-red-500">
               <h2 className="text-2xl font-bold text-red-700 mb-2">Danger Zone</h2>
               <p className="text-gray-600 mb-8">Irreversible and destructive actions.</p>
-              
+
               <div className="bg-red-50 border border-red-200 rounded-lg p-6">
                 <h3 className="text-lg font-bold text-red-900 mb-2">Delete Account</h3>
                 <p className="text-red-700 mb-6 text-sm">
-                  Once you delete your account, there is no going back. Please be certain. 
+                  Once you delete your account, there is no going back. Please be certain.
                   All your personal data, properties, reviews, and roommate posts will be permanently deleted from our servers.
                 </p>
                 <button
