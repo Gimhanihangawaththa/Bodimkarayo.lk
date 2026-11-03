@@ -36,13 +36,13 @@ const Login = () => {
       {/* Top Header */}
       <div className="w-full max-w-5xl mx-auto flex items-center justify-between">
         <a 
-          href="http://localhost:5173" 
+          href={typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? `${window.location.protocol}//${window.location.hostname}` : 'http://localhost:5173'} 
           className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-1 hover:opacity-90 transition"
         >
           Bodimkarayo<span className="text-[#3488c3]">.lk</span>
         </a>
         <a 
-          href="http://localhost:5173" 
+          href={typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? `${window.location.protocol}//${window.location.hostname}` : 'http://localhost:5173'} 
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white hover:bg-slate-100 text-slate-700 hover:text-[#3488c3] text-xs font-bold transition border border-slate-200/80 shadow-xs cursor-pointer"
         >
           <ArrowLeft size={14} /> Back to Web App

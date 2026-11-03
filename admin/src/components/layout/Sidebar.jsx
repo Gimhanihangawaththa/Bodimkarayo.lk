@@ -62,7 +62,7 @@ const Sidebar = () => {
       {/* Footer Actions */}
       <div className="p-3 border-t border-slate-800/80 space-y-1">
         <a 
-          href="http://localhost:5173" 
+          href={typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? `${window.location.protocol}//${window.location.hostname}` : 'http://localhost:5173'} 
           target="_blank" 
           rel="noopener noreferrer"
           className="flex items-center justify-between px-3.5 py-2 text-xs font-semibold text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition cursor-pointer"
@@ -71,7 +71,7 @@ const Sidebar = () => {
             <ExternalLink size={16} />
             <span>View Public Site</span>
           </span>
-          <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">:5173</span>
+          <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">Live</span>
         </a>
         <button 
           onClick={logout}
