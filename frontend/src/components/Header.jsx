@@ -435,7 +435,7 @@ export default function Header() {
               to="/signin"
               className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-5 py-2.5 rounded-full text-xs font-bold transition shadow-md shadow-[#3488c3]/20 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
             >
-              Thamindu
+              Sign In
             </Link>
           )}
         </div>
