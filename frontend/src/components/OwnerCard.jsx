@@ -1,7 +1,8 @@
 export function OwnerCard({ owner, price, priceRange, availableFrom, onMessage }) {
-  const ownerName = owner?.name || 'Verified Owner';
-  const ownerAvatar = owner?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sunil';
+  const ownerName = owner?.fullName || owner?.name || 'Property Owner';
+  const ownerAvatar = owner?.profilePictureUrl || owner?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(ownerName || 'Landlord')}`;
   const ownerRating = owner?.rating || 4.9;
+  const isVerified = owner?.verified !== false;
 
   return (
     <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-[0_12px_40px_rgba(15,23,42,0.06)] space-y-6">
@@ -32,20 +33,22 @@ export function OwnerCard({ owner, price, priceRange, availableFrom, onMessage }
               alt={ownerName}
               className="w-13 h-13 rounded-2xl object-cover bg-slate-100 border border-slate-200 p-0.5 shadow-xs"
               onError={(e) => {
-                e.target.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Landlord';
+                e.target.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(ownerName || 'Landlord')}`;
               }}
             />
-            <span className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-xs">
-              ✓
-            </span>
+            {isVerified && (
+              <span className="absolute -bottom-1 -right-1 bg-blue-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold shadow-xs">
+                ✓
+              </span>
+            )}
           </div>
           <div>
-            <h4 className="font-extrabold text-slate-900 text-base leading-tight">{ownerName}</h4>
+            <h4 className="font-extrabold text-slate-900 text-base leading-tight capitalize">{ownerName}</h4>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-xs bg-amber-50 text-amber-700 font-bold px-2 py-0.5 rounded-md flex items-center gap-1 border border-amber-200/50">
                 ⭐ {ownerRating}
               </span>
-              <span className="text-xs text-slate-500 font-semibold">Verified Owner</span>
+              <span className="text-xs text-slate-500 font-semibold">{isVerified ? 'Verified Owner' : 'Property Owner'}</span>
             </div>
           </div>
         </div>

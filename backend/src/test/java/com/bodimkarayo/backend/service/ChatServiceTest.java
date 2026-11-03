@@ -190,4 +190,22 @@ class ChatServiceTest {
 
         assertEquals(5L, totalUnread);
     }
+
+    @Test
+    @DisplayName("Should throw exception when creating chat room with oneself")
+    void getOrCreateRoom_SelfChatThrows() {
+        assertThrows(IllegalArgumentException.class, () -> chatService.getOrCreateRoom(1L, 1L));
+    }
+
+    @Test
+    @DisplayName("Should delete chat messages and chat room on deleteRoom")
+    void deleteRoom_Success() {
+        doNothing().when(chatMessageRepository).deleteByChatRoomId(100L);
+        doNothing().when(chatRoomRepository).deleteById(100L);
+
+        chatService.deleteRoom(100L);
+
+        verify(chatMessageRepository, times(1)).deleteByChatRoomId(100L);
+        verify(chatRoomRepository, times(1)).deleteById(100L);
+    }
 }

@@ -54,5 +54,10 @@ public class ChatController {
     public void markAsRead(@PathVariable Long roomId, @PathVariable Long userId) {
         chatService.markAsRead(roomId, userId);
     }
+
+    @DeleteMapping("/rooms/{roomId}")
+    public void deleteRoom(@PathVariable Long roomId) {
+        chatService.deleteRoom(roomId);
+    }
 }
 

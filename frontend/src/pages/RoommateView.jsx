@@ -79,7 +79,7 @@ export default function RoommateView() {
     }
     
     if (roommate?.posterId) {
-      navigate('/chat', { state: { recipientId: roommate.posterId } });
+      navigate(`/chat?userId=${roommate.posterId}`, { state: { recipientId: roommate.posterId } });
     } else {
       alert("Poster information not available for messaging.");
     }

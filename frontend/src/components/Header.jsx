@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from 'react'
 import logo from '../assets/logo.png'
 import { useAuth } from '../context/AuthContext'
 import { searchService } from '../services'
+import { apiClient } from '../config/api.config'
 
 export default function Header() {
   const location = useLocation()
@@ -93,26 +94,23 @@ export default function Header() {
   const [unreadCount, setUnreadCount] = useState(0)
 
   useEffect(() => {
-    if (user && token) {
+    if (user?.id && token) {
       const fetchUnread = async () => {
         try {
-          const res = await fetch(`http://localhost:4000/api/chat/unread-count/${user.id}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (res.ok) {
-            const count = await res.json();
-            setUnreadCount(count);
-          }
+          const res = await apiClient.get(`/chat/unread-count/${user.id}`);
+          setUnreadCount(typeof res.data === 'number' ? res.data : 0);
         } catch (err) {
           console.error("Error fetching unread count", err);
         }
       };
 
       fetchUnread();
-      const interval = setInterval(fetchUnread, 30000); // Check every 30s
+      const interval = setInterval(fetchUnread, 15000); // Check every 15s
       return () => clearInterval(interval);
+    } else {
+      setUnreadCount(0);
     }
-  }, [user, token]);
+  }, [user?.id, token, location.pathname]);
 
   const handleLogout = () => {
     logout()
@@ -179,7 +177,12 @@ export default function Header() {
                 : 'text-slate-700 font-bold hover:text-[#3488c3] hover:bg-white bg-transparent'
             }`}
           >
-            Chat
+            <span>Chat</span>
+            {unreadCount > 0 && (
+              <span className="bg-rose-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full min-w-[18px] text-center shrink-0">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
           </Link>
           <Link
             to="/about"

@@ -30,15 +30,20 @@ public class ChatService {
 
     public List<ChatRoomResponse> getRoomsForUser(Long userId) {
         List<ChatRoom> rooms = chatRoomRepository.findAllByUser(userId);
-        return rooms.stream().map(room -> {
-            ChatRoomResponse response = new ChatRoomResponse();
-            response.setChatRoom(room);
-            response.setUnreadCount(chatMessageRepository.countByChatRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), userId));
-            return response;
-        }).collect(Collectors.toList());
+        return rooms.stream()
+                .filter(room -> room.getUser1() != null && room.getUser2() != null && !room.getUser1().getId().equals(room.getUser2().getId()))
+                .map(room -> {
+                    ChatRoomResponse response = new ChatRoomResponse();
+                    response.setChatRoom(room);
+                    response.setUnreadCount(chatMessageRepository.countByChatRoomIdAndSenderIdNotAndIsReadFalse(room.getId(), userId));
+                    return response;
+                }).collect(Collectors.toList());
     }
 
     public ChatRoom getOrCreateRoom(Long userId1, Long userId2) {
+        if (userId1.equals(userId2)) {
+            throw new IllegalArgumentException("Cannot create a chat room with yourself");
+        }
         return chatRoomRepository.findByUsers(userId1, userId2)
                 .orElseGet(() -> {
                     User u1 = userRepository.findById(userId1).orElseThrow();
@@ -50,6 +55,12 @@ public class ChatService {
                             .build();
                     return chatRoomRepository.save(room);
                 });
+    }
+
+    @Transactional
+    public void deleteRoom(Long roomId) {
+        chatMessageRepository.deleteByChatRoomId(roomId);
+        chatRoomRepository.deleteById(roomId);
     }
 
     public List<ChatMessage> getMessages(Long roomId) {

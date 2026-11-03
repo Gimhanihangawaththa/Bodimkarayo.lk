@@ -139,7 +139,10 @@ public class SearchIndexService {
             String suitableFor
     ) {
         if (!hasAnyCriteria(keyword, location, propertyType, minPrice, maxPrice, bedrooms, bathrooms, furnished, parking, petsAllowed, genderPreference, suitableFor)) {
-            return propertyRepository.findAll();
+            return propertyRepository.findAll().stream()
+                    .filter(p -> "ACTIVE".equalsIgnoreCase(p.getStatus()))
+                    .filter(p -> p.getOwner() == null || !Boolean.FALSE.equals(p.getOwner().getIsActive()))
+                    .toList();
         }
 
         try {
@@ -162,7 +165,9 @@ public class SearchIndexService {
             List<Property> ordered = new ArrayList<>();
             for (Long id : matchedIds) {
                 Property property = propertyMap.get(id);
-                if (property != null) {
+                if (property != null
+                        && "ACTIVE".equalsIgnoreCase(property.getStatus())
+                        && (property.getOwner() == null || !Boolean.FALSE.equals(property.getOwner().getIsActive()))) {
                     ordered.add(property);
                 }
             }
@@ -171,6 +176,8 @@ public class SearchIndexService {
         } catch (Exception ex) {
             System.err.println("Notice: Elasticsearch searchProperties fallback to DB: " + ex.getMessage());
             return propertyRepository.findAll().stream()
+                    .filter(p -> "ACTIVE".equalsIgnoreCase(p.getStatus()))
+                    .filter(p -> p.getOwner() == null || !Boolean.FALSE.equals(p.getOwner().getIsActive()))
                     .filter(prop -> matchesPropertyEntity(prop, keyword, location, propertyType, minPrice, maxPrice, bedrooms, bathrooms, furnished, parking, petsAllowed, genderPreference, suitableFor))
                     .toList();
         }
@@ -250,6 +257,8 @@ public class SearchIndexService {
             List<Property> matchedProperties = matchedPropIds.stream()
                     .map(propertyMap::get)
                     .filter(Objects::nonNull)
+                    .filter(p -> "ACTIVE".equalsIgnoreCase(p.getStatus()))
+                    .filter(p -> p.getOwner() == null || !Boolean.FALSE.equals(p.getOwner().getIsActive()))
                     .toList();
 
             // 2. Query Elasticsearch Roommate Documents
@@ -298,6 +307,7 @@ public class SearchIndexService {
             List<RoommatePost> matchedRoommates = matchedRoomIds.stream()
                     .map(roommateMap::get)
                     .filter(Objects::nonNull)
+                    .filter(r -> r.getPoster() == null || !Boolean.FALSE.equals(r.getPoster().getIsActive()))
                     .toList();
 
             results.put("properties", matchedProperties);
@@ -367,7 +377,9 @@ public class SearchIndexService {
             Double maxBudget
     ) {
         if (!hasAnyCriteria(keyword, location, preferredLocation, gender, occupation, universityOrWorkplace, roomTypePreference, smokingPreference, petFriendly, foodPreference, minBudget, maxBudget)) {
-            return roommateRepository.findAll();
+            return roommateRepository.findAll().stream()
+                    .filter(post -> post.getPoster() == null || !Boolean.FALSE.equals(post.getPoster().getIsActive()))
+                    .toList();
         }
 
         try {
@@ -400,7 +412,7 @@ public class SearchIndexService {
             List<RoommatePost> ordered = new ArrayList<>();
             for (Long id : matchedIds) {
                 RoommatePost roommatePost = roommateMap.get(id);
-                if (roommatePost != null) {
+                if (roommatePost != null && (roommatePost.getPoster() == null || !Boolean.FALSE.equals(roommatePost.getPoster().getIsActive()))) {
                     ordered.add(roommatePost);
                 }
             }
@@ -409,6 +421,7 @@ public class SearchIndexService {
         } catch (Exception ex) {
             System.err.println("Notice: Elasticsearch searchRoommates fallback to DB: " + ex.getMessage());
             return roommateRepository.findAll().stream()
+                    .filter(post -> post.getPoster() == null || !Boolean.FALSE.equals(post.getPoster().getIsActive()))
                     .filter(post -> matchesRoommateEntity(post, keyword, location, preferredLocation, gender, occupation, universityOrWorkplace, roomTypePreference, smokingPreference, petFriendly, foodPreference, minBudget, maxBudget))
                     .toList();
         }
@@ -637,6 +650,11 @@ public class SearchIndexService {
             String genderPreference,
             String suitableFor
     ) {
+        boolean isActive = "ACTIVE".equalsIgnoreCase(property.getStatus());
+        if (!isActive || (property.getOwner() != null && Boolean.FALSE.equals(property.getOwner().getIsActive()))) {
+            return false;
+        }
+
         String searchableText = joinText(
                 property.getTitle(),
                 property.getDescription(),
@@ -681,6 +699,10 @@ public class SearchIndexService {
             Double minBudget,
             Double maxBudget
     ) {
+        if (post.getPoster() != null && Boolean.FALSE.equals(post.getPoster().getIsActive())) {
+            return false;
+        }
+
         String posterName = post.getPoster() != null ? post.getPoster().getFullName() : "";
         String posterEmail = post.getPoster() != null ? post.getPoster().getEmail() : "";
         String searchableText = joinText(

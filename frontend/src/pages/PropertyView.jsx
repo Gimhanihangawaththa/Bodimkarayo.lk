@@ -206,7 +206,7 @@ export default function PropertyView() {
     }
     
     if (property?.owner?.id) {
-      navigate('/chat', { state: { recipientId: property.owner.id } });
+      navigate(`/chat?userId=${property.owner.id}`, { state: { recipientId: property.owner.id } });
     } else {
       alert("Owner information not available.");
     }
