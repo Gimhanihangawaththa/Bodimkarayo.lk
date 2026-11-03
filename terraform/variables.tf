@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region to deploy infrastructure"
   type        = string
-  default     = "us-east-1"
+  default     = "ap-southeast-2"
 }
 
 variable "project_name" {
@@ -29,13 +29,13 @@ variable "public_subnet_cidr" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance size (t3.medium recommended for full-stack Docker containers)"
+  description = "EC2 instance size (t3.small recommended with 2GB swap for full-stack Docker containers)"
   type        = string
-  default     = "t3.medium"
+  default     = "t3.small"
 }
 
 variable "key_name" {
-  description = "Optional EC2 Key Pair name for SSH access"
+  description = "EC2 Key Pair name for SSH access"
   type        = string
-  default     = ""
+  default     = "bodimkarayo-key"
 }
