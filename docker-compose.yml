@@ -70,6 +70,7 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+      - admin
     ports:
       - "80:80"
       - "5173:80"
