@@ -5,8 +5,6 @@ import { apiClient } from '../config/api.config';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
-const API_BASE = 'http://localhost:4000/api';
-
 export default function Chat() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -34,7 +32,7 @@ export default function Chat() {
     if (!room) return { fullName: 'User', profilePictureUrl: null };
     const r = room.chatRoom || room;
     if (!r.user1 || !r.user2) return { fullName: 'User', profilePictureUrl: null };
-    return String(r.user1.id) === String(user?.id) ? r.user2 : r.user1;
+    return String(r.user1?.id) === String(user?.id) ? r.user2 : r.user1;
   };
 
   useEffect(() => {
@@ -170,34 +168,49 @@ export default function Chat() {
   };
 
   const connectWebSocket = () => {
-    const socket = new SockJS('http://localhost:4000/ws');
-    const client = new Client({
-      webSocketFactory: () => socket,
-      debug: (str) => console.log('STOMP: ' + str),
-      onConnect: () => {
-        console.log('Connected to WebSocket SUCCESSFULLY');
-        client.subscribe(`/topic/messages.${user.id}`, (msg) => {
-          console.log('Received message via WebSocket topic:', msg.body);
-          const receivedMsg = JSON.parse(msg.body);
-          if (activeRoomRef.current && String(receivedMsg.chatRoom?.id) === String(activeRoomRef.current.id)) {
-            setMessages(prev => {
-              if (prev.some(m => m.id === receivedMsg.id)) return prev;
-              return [...prev.filter(m => !(m.sender?.id === user?.id && m.content === receivedMsg.content && typeof m.id === 'number' && m.id > 1000000000000)), receivedMsg];
-            });
-          }
-          // Refresh room list for latest messages / unread counts
-          apiClient.get(`/chat/rooms/${user.id}`).then(res => {
-            setRooms(Array.isArray(res.data) ? res.data : []);
-          }).catch(console.error);
-        });
-      },
-      onStompError: (frame) => {
-        console.error('Broker reported error: ' + frame.headers['message']);
-        console.error('Additional details: ' + frame.body);
-      },
-    });
-    client.activate();
-    setStompClient(client);
+    try {
+      const wsUrl = typeof window !== 'undefined' && window.location.hostname !== 'localhost'
+        ? `${window.location.protocol === 'https:' ? 'https:' : 'http:'}//${window.location.host}/ws`
+        : 'http://localhost:4000/ws';
+
+      const socket = new SockJS(wsUrl);
+      const client = new Client({
+        webSocketFactory: () => socket,
+        debug: (str) => console.log('STOMP: ' + str),
+        onConnect: () => {
+          console.log('Connected to WebSocket SUCCESSFULLY');
+          client.subscribe(`/topic/messages.${user.id}`, (msg) => {
+            console.log('Received message via WebSocket topic:', msg.body);
+            try {
+              const receivedMsg = JSON.parse(msg.body);
+              if (activeRoomRef.current && String(receivedMsg.chatRoom?.id) === String(activeRoomRef.current.id)) {
+                setMessages(prev => {
+                  if (prev.some(m => m.id === receivedMsg.id)) return prev;
+                  return [...prev.filter(m => !(m.sender?.id === user?.id && m.content === receivedMsg.content && typeof m.id === 'number' && m.id > 1000000000000)), receivedMsg];
+                });
+              }
+              // Refresh room list for latest messages / unread counts
+              apiClient.get(`/chat/rooms/${user.id}`).then(res => {
+                setRooms(Array.isArray(res.data) ? res.data : []);
+              }).catch(console.error);
+            } catch (parseErr) {
+              console.error('Failed to parse incoming WebSocket message', parseErr);
+            }
+          });
+        },
+        onStompError: (frame) => {
+          console.error('Broker reported error: ' + frame.headers['message']);
+          console.error('Additional details: ' + frame.body);
+        },
+        onWebSocketError: (event) => {
+          console.error('WebSocket connection error:', event);
+        },
+      });
+      client.activate();
+      setStompClient(client);
+    } catch (err) {
+      console.error('Failed to initialize WebSocket client:', err);
+    }
   };
 
   const handleSendMessage = (e) => {
@@ -232,7 +245,25 @@ export default function Chat() {
     }, 300);
   };
 
-  if (!user) return <div className="p-20 text-center">Please sign in to chat.</div>;
+  if (!user) {
+    return (
+      <div className="min-h-[calc(100vh-160px)] flex flex-col items-center justify-center p-8 bg-slate-50 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-blue-50 text-[#3488c3] flex items-center justify-center text-3xl shadow-xs mb-4">
+          💬
+        </div>
+        <h2 className="text-2xl font-bold text-slate-900 mb-2">Sign in to start chatting</h2>
+        <p className="text-slate-500 text-sm max-w-md mb-6">
+          Connect with flatmates, ask questions about boardings, and coordinate room sharing directly.
+        </p>
+        <button
+          onClick={() => navigate('/signin')}
+          className="px-6 py-3 bg-[#3488c3] hover:bg-[#2978b3] text-white font-bold text-sm rounded-xl shadow-md transition-all cursor-pointer"
+        >
+          Sign In to Your Account
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-80px)] bg-slate-50 overflow-hidden">
@@ -328,7 +359,7 @@ export default function Chat() {
             
             <div ref={scrollRef} className="flex-grow p-6 overflow-y-auto bg-slate-50/70 space-y-4">
               {messages.map((msg, i) => {
-                const isMine = msg.sender.id === user.id;
+                const isMine = msg.sender?.id === user?.id;
                 return (
                   <div key={i} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[70%] p-4 rounded-2xl shadow-xs ${
@@ -338,7 +369,7 @@ export default function Chat() {
                     }`}>
                       <p className="text-sm leading-relaxed">{msg.content}</p>
                       <span className={`text-[10px] mt-1.5 block opacity-80 font-medium ${isMine ? 'text-right text-blue-100' : 'text-left text-slate-400'}`}>
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                       </span>
                     </div>
                   </div>
