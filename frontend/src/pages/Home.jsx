@@ -681,21 +681,15 @@ export default function Home() {
           </p>
         )}
 
-        {/* 100% Full-Width Hardware-Accelerated Infinite Marquee Track */}
+        {/* 100% Full-Width Hardware-Accelerated Infinite Marquee Track (for 5+ items) or Clean Centered Grid (for < 5 items) */}
         {filteredProperties.length > 0 ? (
-          <div className="relative w-full overflow-hidden group/carousel mb-10 py-3">
-            
-            {/* Subtle Edge Fade Gradients */}
-            <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-slate-50 to-transparent z-20 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-slate-50 to-transparent z-20 pointer-events-none" />
-
-            {/* GPU Marquee Track */}
-            <div className="animate-marquee-glide gap-6 px-4">
-              {[...filteredProperties, ...filteredProperties].map((prop, index) => (
+          filteredProperties.length < 5 ? (
+            <div className="flex flex-wrap justify-center items-stretch gap-6 mb-10 py-3 px-4 max-w-7xl mx-auto">
+              {filteredProperties.map((prop) => (
                 <div
-                  key={`${prop.id}-${index}`}
+                  key={prop.id}
                   onClick={() => handlePropertyCardClick(prop.id)}
-                  className="w-[280px] sm:w-[310px] md:w-[330px] shrink-0 group bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-md hover:shadow-2xl hover:border-blue-500/40 hover:-translate-y-1.5 transition-all duration-300 flex flex-col cursor-pointer mx-3"
+                  className="w-[280px] sm:w-[310px] md:w-[330px] shrink-0 group bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-md hover:shadow-2xl hover:border-blue-500/40 hover:-translate-y-1.5 transition-all duration-300 flex flex-col cursor-pointer"
                 >
                   <div className="relative h-48 overflow-hidden bg-slate-100">
                     <img
@@ -736,7 +730,62 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          </div>
+          ) : (
+            <div className="relative w-full overflow-hidden group/carousel mb-10 py-3">
+              
+              {/* Subtle Edge Fade Gradients */}
+              <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-slate-50 to-transparent z-20 pointer-events-none" />
+              <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-slate-50 to-transparent z-20 pointer-events-none" />
+
+              {/* GPU Marquee Track */}
+              <div className="animate-marquee-glide gap-6 px-4">
+                {[...filteredProperties, ...filteredProperties].map((prop, index) => (
+                  <div
+                    key={`${prop.id}-${index}`}
+                    onClick={() => handlePropertyCardClick(prop.id)}
+                    className="w-[280px] sm:w-[310px] md:w-[330px] shrink-0 group bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-md hover:shadow-2xl hover:border-blue-500/40 hover:-translate-y-1.5 transition-all duration-300 flex flex-col cursor-pointer mx-3"
+                  >
+                    <div className="relative h-48 overflow-hidden bg-slate-100">
+                      <img
+                        src={prop.image}
+                        alt={prop.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                      {prop.badge && (
+                        <div className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md text-white font-semibold text-[11px] px-2.5 py-1 rounded-full border border-slate-700/60 shadow-xs">
+                          {prop.badge}
+                        </div>
+                      )}
+                      {prop.rating > 0 && (
+                        <div className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-md text-amber-400 font-bold text-xs px-2.5 py-1 rounded-full border border-slate-700/60 shadow-xs flex items-center gap-1">
+                          ★ {prop.rating}
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[11px] font-bold text-[#3488c3] tracking-wide uppercase">{prop.location}</span>
+                        <h3 className="text-base font-bold text-slate-900 mt-1 group-hover:text-[#3488c3] transition-colors line-clamp-1">
+                          {prop.title}
+                        </h3>
+                        <p className="text-slate-500 text-xs mt-1.5 line-clamp-2">
+                          {prop.description || 'Comfortable room in a convenient location near public transport.'}
+                        </p>
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                        <span className="text-lg font-black text-slate-900">
+                          Rs {prop.price.toLocaleString()} <span className="text-xs text-slate-500 font-normal">/mo</span>
+                        </span>
+                        <span className="text-xs text-[#3488c3] font-bold group-hover:translate-x-1 transition-transform inline-block">
+                          Inspect →
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
         ) : (
           <div className="text-center py-12 bg-white rounded-3xl border border-slate-200 mb-8 max-w-4xl mx-auto">
             <p className="text-slate-500 text-sm">No properties found matching the selected category filter.</p>
