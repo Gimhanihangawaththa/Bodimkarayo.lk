@@ -10,11 +10,18 @@ import com.bodimkarayo.backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.bodimkarayo.backend.repository.PropertyRepository;
 import com.bodimkarayo.backend.repository.RoommateRepository;
 import com.bodimkarayo.backend.repository.ReviewRepository;
+import com.bodimkarayo.backend.repository.RefreshTokenRepository;
+import com.bodimkarayo.backend.repository.UserFavoritePropertyRepository;
+import com.bodimkarayo.backend.repository.ChatRoomRepository;
+import com.bodimkarayo.backend.repository.ChatMessageRepository;
+import com.bodimkarayo.backend.repository.ReportRepository;
+import com.bodimkarayo.backend.repository.AdminLogRepository;
 import com.bodimkarayo.backend.model.Property;
 import com.bodimkarayo.backend.model.RoommatePost;
 import com.bodimkarayo.backend.model.Review;
@@ -40,6 +47,24 @@ public class UserService {
 
     @Autowired
     private ReviewRepository reviewRepository;
+
+    @Autowired
+    private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
+    private UserFavoritePropertyRepository userFavoritePropertyRepository;
+
+    @Autowired
+    private ChatRoomRepository chatRoomRepository;
+
+    @Autowired
+    private ChatMessageRepository chatMessageRepository;
+
+    @Autowired
+    private ReportRepository reportRepository;
+
+    @Autowired
+    private AdminLogRepository adminLogRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -103,27 +128,47 @@ public class UserService {
         return toProfileResponse(updatedUser);
     }
 
+    @Transactional
     public void deleteUser(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        // Delete reviews made by the user
-        List<Review> userReviews = reviewRepository.findByReviewer(user);
-        reviewRepository.deleteAll(userReviews);
+        // 1. Delete reviews made by the user
+        reviewRepository.deleteByReviewer(user);
 
-        // Delete user's properties (and their reviews)
+        // 2. Delete user's properties (along with their reviews & favorites)
         List<Property> userProperties = propertyRepository.findByOwner(user);
-        for (Property property : userProperties) {
-            List<Review> propertyReviews = reviewRepository.findByProperty(property);
-            reviewRepository.deleteAll(propertyReviews);
+        if (userProperties != null && !userProperties.isEmpty()) {
+            for (Property property : userProperties) {
+                reviewRepository.deleteByProperty(property);
+                userFavoritePropertyRepository.deleteByProperty(property);
+            }
+            propertyRepository.deleteAll(userProperties);
         }
-        propertyRepository.deleteAll(userProperties);
 
-        // Delete user's roommate posts
+        // 3. Delete user's favorite properties
+        userFavoritePropertyRepository.deleteByUser(user);
+
+        // 4. Delete user's roommate posts
         List<RoommatePost> userRoommatePosts = roommateRepository.findByPoster(user);
-        roommateRepository.deleteAll(userRoommatePosts);
+        if (userRoommatePosts != null && !userRoommatePosts.isEmpty()) {
+            roommateRepository.deleteAll(userRoommatePosts);
+        }
 
-        // Finally, delete the user
+        // 5. Delete user's chat messages and chat rooms
+        chatMessageRepository.deleteByUser(user);
+        chatRoomRepository.deleteByUser(user);
+
+        // 6. Delete user's submitted reports
+        reportRepository.deleteByReporter(user);
+
+        // 7. Delete user's refresh tokens
+        refreshTokenRepository.deleteByUser(user);
+
+        // 8. Delete user's admin logs (if any)
+        adminLogRepository.deleteByAdmin(user);
+
+        // 9. Finally, delete the user
         userRepository.delete(user);
     }
 

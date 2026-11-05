@@ -8,6 +8,8 @@ export default function Settings() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('account');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [dangerError, setDangerError] = useState('');
 
   // Password change state
   const [passwordForm, setPasswordForm] = useState({
@@ -241,23 +243,26 @@ export default function Settings() {
     }
   }
 
-  const handleDeleteAccount = async () => {
-    const isConfirmed = window.confirm(
-      "WARNING: Are you absolutely sure you want to delete your account?\n\nThis action cannot be undone. All your properties, roommate posts, and reviews will be permanently deleted."
-    );
+  const handleDeleteClick = () => {
+    setDangerError('');
+    setIsDeleteModalOpen(true);
+  };
 
-    if (isConfirmed && user?.id) {
-      setIsDeleting(true);
-      try {
-        await apiClient.delete(`/users/${user.id}`);
-        alert('Your account has been successfully deleted.');
-        logout();
-        navigate('/');
-      } catch (error) {
-        console.error('Error deleting account:', error);
-        alert('Failed to delete account. Please try again later.');
-        setIsDeleting(false);
-      }
+  const confirmDeleteAccount = async () => {
+    if (!user?.id) return;
+    setIsDeleting(true);
+    setDangerError('');
+
+    try {
+      await apiClient.delete(`/users/${user.id}`);
+      setIsDeleteModalOpen(false);
+      logout();
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      const msg = error.response?.data?.message || 'Failed to delete account. Please try again later.';
+      setDangerError(msg);
+      setIsDeleting(false);
     }
   };
 
@@ -621,25 +626,97 @@ export default function Settings() {
               <h2 className="text-2xl font-bold text-red-700 mb-2">Danger Zone</h2>
               <p className="text-gray-600 mb-8">Irreversible and destructive actions.</p>
 
-              <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-red-900 mb-2">Delete Account</h3>
-                <p className="text-red-700 mb-6 text-sm">
-                  Once you delete your account, there is no going back. Please be certain.
-                  All your personal data, properties, reviews, and roommate posts will be permanently deleted from our servers.
-                </p>
-                <button
-                  onClick={handleDeleteAccount}
-                  disabled={isDeleting}
-                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-md shadow transition disabled:opacity-50"
-                >
-                  {isDeleting ? 'Deleting...' : 'Permanently Delete My Account'}
-                </button>
+              {dangerError && (
+                <div className="mb-6 p-4 bg-red-100 border border-red-300 text-red-800 rounded-xl font-medium text-sm">
+                  {dangerError}
+                </div>
+              )}
+
+              <div className="bg-red-50/80 border border-red-200 rounded-2xl p-6 md:p-8">
+                <div className="flex items-start gap-4 mb-6">
+                  <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center text-2xl shrink-0">
+                    ⚠️
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-red-900 mb-1">Delete Account</h3>
+                    <p className="text-red-700 text-sm leading-relaxed">
+                      Once you delete your account, there is no going back. All your listings, roommate posts,
+                      saved favorites, chat history, reviews, and profile details will be permanently removed from our servers.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="button"
+                    onClick={handleDeleteClick}
+                    disabled={isDeleting}
+                    className="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold py-2.5 px-6 rounded-xl shadow-md shadow-red-600/20 transition cursor-pointer disabled:opacity-50"
+                  >
+                    Permanently Delete My Account
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
         </div>
       </div>
+
+      {/* Account Deletion Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-red-100 overflow-hidden">
+            <div className="p-6">
+              <div className="w-12 h-12 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center text-2xl font-bold mb-4">
+                ⚠️
+              </div>
+              <h3 className="text-xl font-black text-slate-900 mb-2">Are you absolutely sure?</h3>
+              <p className="text-sm text-slate-600 leading-relaxed mb-4">
+                This action <strong className="text-red-600 font-semibold">cannot be undone</strong>. This will permanently delete your account, remove all your listings, roommate posts, messages, and profile data from our servers.
+              </p>
+
+              {dangerError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs font-semibold">
+                  {dangerError}
+                </div>
+              )}
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDeleteModalOpen(false);
+                    setDangerError('');
+                  }}
+                  disabled={isDeleting}
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteAccount}
+                  disabled={isDeleting}
+                  className="px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-red-600 hover:bg-red-700 active:bg-red-800 transition shadow-md shadow-red-600/20 flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {isDeleting ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Deleting Account...</span>
+                    </>
+                  ) : (
+                    <span>Permanently Delete</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
