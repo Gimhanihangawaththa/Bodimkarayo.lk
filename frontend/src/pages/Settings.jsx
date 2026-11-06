@@ -282,12 +282,12 @@ export default function Settings() {
       <div className="flex flex-col md:flex-row gap-8">
         {/* Sidebar Menu */}
         <div className="w-full md:w-64 shrink-0">
-          <nav className="flex flex-col gap-2">
+          <nav className="flex md:flex-col overflow-x-auto gap-2 pb-2 md:pb-0 shrink-0 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left font-semibold transition ${
+                className={`flex items-center gap-2.5 md:gap-3 px-3.5 md:px-4 py-2.5 md:py-3 rounded-xl text-left font-semibold text-xs md:text-sm whitespace-nowrap shrink-0 transition cursor-pointer ${
                   activeTab === tab.id
                     ? tab.id === 'danger'
                       ? 'bg-red-50 text-red-700 font-bold'
@@ -307,7 +307,7 @@ export default function Settings() {
 
           {/* Account & Profile Tab (Functional) */}
           {activeTab === 'account' && (
-            <div className="p-6 md:p-8">
+            <div className="p-4 sm:p-6 md:p-8">
               <h2 className="text-2xl font-bold text-slate-900 mb-2">Account Information</h2>
               <p className="text-slate-500 mb-6">Update your personal details and public profile.</p>
 
@@ -410,7 +410,7 @@ export default function Settings() {
 
           {/* Security Tab (Functional) */}
           {activeTab === 'security' && (
-            <div className="p-6 md:p-8">
+            <div className="p-4 sm:p-6 md:p-8">
               <h2 className="text-2xl font-bold text-slate-900 mb-6">Password & Security</h2>
               <p className="text-slate-500 mb-8">Manage your password and security preferences.</p>
 
@@ -539,7 +539,7 @@ export default function Settings() {
 
           {/* Notifications Tab (Dummy) */}
           {activeTab === 'notifications' && (
-            <div className="p-6 md:p-8">
+            <div className="p-4 sm:p-6 md:p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Notification Preferences</h2>
               <p className="text-gray-500 mb-8">Choose what we email you about. (Coming soon)</p>
 
@@ -568,7 +568,7 @@ export default function Settings() {
 
           {/* Privacy Tab (Dummy) */}
           {activeTab === 'privacy' && (
-            <div className="p-6 md:p-8">
+            <div className="p-4 sm:p-6 md:p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Privacy & Visibility</h2>
               <p className="text-gray-500 mb-8">Control who sees your information. (Coming soon)</p>
 
@@ -593,7 +593,7 @@ export default function Settings() {
 
           {/* Billing Tab (Dummy) */}
           {activeTab === 'billing' && (
-            <div className="p-6 md:p-8">
+            <div className="p-4 sm:p-6 md:p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Billing & Payments</h2>
               <p className="text-gray-500 mb-8">Manage your subscriptions and cards. (Coming soon)</p>
 
@@ -622,7 +622,7 @@ export default function Settings() {
 
           {/* Danger Zone (Functional) */}
           {activeTab === 'danger' && (
-            <div className="p-6 md:p-8 border-l-4 border-red-500">
+            <div className="p-4 sm:p-6 md:p-8 border-l-4 border-red-500">
               <h2 className="text-2xl font-bold text-red-700 mb-2">Danger Zone</h2>
               <p className="text-gray-600 mb-8">Irreversible and destructive actions.</p>
 
