@@ -4,7 +4,9 @@ import com.bodimkarayo.backend.dto.ChangePasswordRequest;
 import com.bodimkarayo.backend.dto.UserProfileResponse;
 import com.bodimkarayo.backend.dto.UserProfileUpdateRequest;
 import com.bodimkarayo.backend.exception.BadRequestException;
+import com.bodimkarayo.backend.model.Property;
 import com.bodimkarayo.backend.model.Role;
+import com.bodimkarayo.backend.model.RoommatePost;
 import com.bodimkarayo.backend.model.User;
 import com.bodimkarayo.backend.repository.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -271,5 +273,42 @@ class UserServiceTest {
         assertTrue(ex.getMessage().contains("Password must contain"));
         verify(passwordEncoder, never()).encode(any());
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("deleteUser should delete user and cascade delete properties, roommate posts, chats, reviews, and logs")
+    void deleteUser_Success_DeletesAllCascadeDependencies() {
+        Property property = Property.builder().id(101L).title("Test Property").build();
+        RoommatePost roommatePost = RoommatePost.builder().id(201L).build();
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(propertyRepository.findByOwner(testUser)).thenReturn(List.of(property));
+        when(roommateRepository.findByPoster(testUser)).thenReturn(List.of(roommatePost));
+
+        assertDoesNotThrow(() -> userService.deleteUser(1L));
+
+        verify(reviewRepository, times(1)).deleteByReviewer(testUser);
+        verify(reviewRepository, times(1)).deleteByProperty(property);
+        verify(userFavoritePropertyRepository, times(1)).deleteByProperty(property);
+        verify(propertyRepository, times(1)).deleteAll(List.of(property));
+        verify(userFavoritePropertyRepository, times(1)).deleteByUser(testUser);
+        verify(roommateRepository, times(1)).deleteAll(List.of(roommatePost));
+        verify(chatMessageRepository, times(1)).deleteByUser(testUser);
+        verify(chatRoomRepository, times(1)).deleteByUser(testUser);
+        verify(reportRepository, times(1)).deleteByReporter(testUser);
+        verify(refreshTokenRepository, times(1)).deleteByUser(testUser);
+        verify(adminLogRepository, times(1)).deleteByAdmin(testUser);
+        verify(userRepository, times(1)).delete(testUser);
+    }
+
+    @Test
+    @DisplayName("deleteUser should throw RuntimeException when user not found")
+    void deleteUser_UserNotFound_ThrowsException() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> userService.deleteUser(999L));
+
+        assertEquals("User not found", ex.getMessage());
+        verify(userRepository, never()).delete(any());
     }
 }
