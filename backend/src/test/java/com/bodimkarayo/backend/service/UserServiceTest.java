@@ -1,5 +1,6 @@
 package com.bodimkarayo.backend.service;
 
+import com.bodimkarayo.backend.dto.ChangePasswordRequest;
 import com.bodimkarayo.backend.dto.UserProfileResponse;
 import com.bodimkarayo.backend.dto.UserProfileUpdateRequest;
 import com.bodimkarayo.backend.exception.BadRequestException;
@@ -206,5 +207,69 @@ class UserServiceTest {
         assertEquals(uploadedUrl, response.getProfilePictureUrl());
         verify(cloudinaryService, times(1)).uploadUserProfileImage(mockFile, 1L);
         verify(userRepository, times(1)).save(testUser);
+    }
+
+    @Test
+    @DisplayName("changePassword should update password when current password matches and new password meets policy")
+    void changePassword_Success() {
+        ChangePasswordRequest request = new ChangePasswordRequest("OldPassword123!", "NewStrongPass456!");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches("OldPassword123!", testUser.getPassword())).thenReturn(true);
+        when(passwordEncoder.encode("NewStrongPass456!")).thenReturn("encoded_new_strong_pass");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertDoesNotThrow(() -> userService.changePassword(1L, request));
+
+        assertEquals("encoded_new_strong_pass", testUser.getPassword());
+        verify(passwordEncoder, times(1)).matches("OldPassword123!", "encoded_secret_password");
+        verify(passwordEncoder, times(1)).encode("NewStrongPass456!");
+        verify(userRepository, times(1)).save(testUser);
+    }
+
+    @Test
+    @DisplayName("changePassword should throw BadRequestException when current password does not match")
+    void changePassword_WrongCurrentPassword_ThrowsBadRequestException() {
+        ChangePasswordRequest request = new ChangePasswordRequest("WrongPass123!", "NewStrongPass456!");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches("WrongPass123!", testUser.getPassword())).thenReturn(false);
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> userService.changePassword(1L, request));
+
+        assertEquals("Current password is incorrect", ex.getMessage());
+        verify(passwordEncoder, never()).encode(any());
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("changePassword should throw RuntimeException when user not found")
+    void changePassword_UserNotFound_ThrowsException() {
+        ChangePasswordRequest request = new ChangePasswordRequest("OldPassword123!", "NewStrongPass456!");
+
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        RuntimeException ex = assertThrows(RuntimeException.class,
+                () -> userService.changePassword(999L, request));
+
+        assertEquals("User not found", ex.getMessage());
+        verify(passwordEncoder, never()).matches(any(), any());
+    }
+
+    @Test
+    @DisplayName("changePassword should throw BadRequestException when new password violates password policy")
+    void changePassword_WeakNewPassword_ThrowsBadRequestException() {
+        ChangePasswordRequest request = new ChangePasswordRequest("OldPassword123!", "weakpass");
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(passwordEncoder.matches("OldPassword123!", testUser.getPassword())).thenReturn(true);
+
+        BadRequestException ex = assertThrows(BadRequestException.class,
+                () -> userService.changePassword(1L, request));
+
+        assertTrue(ex.getMessage().contains("Password must contain"));
+        verify(passwordEncoder, never()).encode(any());
+        verify(userRepository, never()).save(any());
     }
 }
