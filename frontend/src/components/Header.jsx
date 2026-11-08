@@ -12,6 +12,7 @@ export default function Header() {
   const isLoggedIn = Boolean(token)
   const [searchQuery, setSearchQuery] = useState('')
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [suggestions, setSuggestions] = useState({ properties: [], roommates: [] })
   const [isSearchingLive, setIsSearchingLive] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
@@ -89,6 +90,7 @@ export default function Header() {
   // Close user menu on route change
   useEffect(() => {
     setUserMenuOpen(false)
+    setMobileMenuOpen(false)
   }, [location.pathname])
 
   const [unreadCount, setUnreadCount] = useState(0)
@@ -135,14 +137,14 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs transition-all">
       <div className="w-full px-4 md:px-8 py-3 min-h-[76px] flex items-center justify-between gap-4">
-        
+
         {/* 1. Left: Brand Logo */}
         <div className="flex items-center shrink-0">
           <Link to="/" className="flex items-center group -my-2">
-            <img 
-              src={logo} 
-              alt="Bodimkarayo.lk" 
-              className="h-14 md:h-20 w-auto object-contain mix-blend-multiply scale-135 md:scale-150 group-hover:scale-155 transition-transform duration-300" 
+            <img
+              src={logo}
+              alt="Bodimkarayo.lk"
+              className="h-14 md:h-20 w-auto object-contain mix-blend-multiply scale-135 md:scale-150 group-hover:scale-155 transition-transform duration-300"
             />
           </Link>
         </div>
@@ -433,13 +435,192 @@ export default function Header() {
           ) : (
             <Link
               to="/signin"
-              className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-5 py-2.5 rounded-full text-xs font-bold transition shadow-md shadow-[#3488c3]/20 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+              className="bg-[#3488c3] hover:bg-[#2978b3] text-white px-4 md:px-5 py-2 md:py-2.5 rounded-full text-xs font-bold transition shadow-md shadow-[#3488c3]/20 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
             >
               Sign In
             </Link>
           )}
+
+          {/* Mobile Hamburger Menu Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-2xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer border border-slate-200/80 shrink-0"
+            aria-label={mobileMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
+          >
+            {mobileMenuOpen ? (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Navigation Drawer / Dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-slate-200/80 bg-white/98 backdrop-blur-xl px-4 py-4 space-y-4 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+          {/* Mobile Search Form */}
+          <form onSubmit={handleSearchSubmit} className="relative flex items-center bg-slate-50 border border-slate-200 rounded-2xl p-1.5 focus-within:border-[#3488c3] focus-within:bg-white focus-within:ring-2 focus-within:ring-[#3488c3]/15 transition">
+            <span className="pl-3 pr-1.5 text-[#3488c3]">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+            <input
+              type="text"
+              placeholder="Search rooms, locations, flatmates..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent text-xs text-slate-900 placeholder:text-slate-400 px-2 py-1 outline-none font-medium"
+            />
+            <button
+              type="submit"
+              className="bg-[#3488c3] text-white text-xs font-bold px-3.5 py-1.5 rounded-xl shrink-0 cursor-pointer"
+            >
+              Search
+            </button>
+          </form>
+
+          {/* Primary Mobile Navigation Links */}
+          <div className="space-y-1">
+            <Link
+              to="/properties"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-bold transition ${
+                location.pathname === '/properties'
+                  ? 'bg-[#3488c3] text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-50 hover:text-[#3488c3]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span>🏠</span>
+                <span>Properties</span>
+              </div>
+              <span className="text-slate-400">→</span>
+            </Link>
+            <Link
+              to="/roommates"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-bold transition ${
+                location.pathname === '/roommates'
+                  ? 'bg-[#3488c3] text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-50 hover:text-[#3488c3]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span>👥</span>
+                <span>Roommates</span>
+              </div>
+              <span className="text-slate-400">→</span>
+            </Link>
+            <Link
+              to="/chat"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-bold transition ${
+                location.pathname === '/chat'
+                  ? 'bg-[#3488c3] text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-50 hover:text-[#3488c3]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span>💬</span>
+                <span>Chat Messages</span>
+              </div>
+              {unreadCount > 0 ? (
+                <span className="bg-rose-500 text-white text-[11px] font-extrabold px-2 py-0.5 rounded-full">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              ) : (
+                <span className="text-slate-400">→</span>
+              )}
+            </Link>
+            <Link
+              to="/about"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center justify-between px-4 py-2.5 rounded-2xl text-xs font-bold transition ${
+                location.pathname === '/about'
+                  ? 'bg-[#3488c3] text-white shadow-xs'
+                  : 'text-slate-700 hover:bg-slate-50 hover:text-[#3488c3]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5">
+                <span>ℹ️</span>
+                <span>About Us</span>
+              </div>
+              <span className="text-slate-400">→</span>
+            </Link>
+          </div>
+
+          {/* Account Details / Actions */}
+          <div className="border-t border-slate-100 pt-3">
+            {isLoggedIn ? (
+              <div className="space-y-1">
+                <div className="flex items-center gap-3 px-3 py-2 bg-slate-50 rounded-2xl mb-2 border border-slate-100">
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-500 text-white font-semibold flex items-center justify-center text-xs overflow-hidden shrink-0">
+                    {user && user.profilePictureUrl ? (
+                      <img src={user.profilePictureUrl} alt="Profile" className="h-full w-full object-cover" />
+                    ) : (
+                      <span>{userInitial}</span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-bold text-slate-900 truncate">{userName}</p>
+                    <p className="text-[11px] text-slate-500 truncate">{user?.email}</p>
+                  </div>
+                </div>
+                <Link
+                  to="/profile"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-[#3488c3] transition"
+                >
+                  <span>👤</span>
+                  <span>My Profile</span>
+                </Link>
+                <Link
+                  to="/settings"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50 hover:text-[#3488c3] transition"
+                >
+                  <span>⚙️</span>
+                  <span>Settings</span>
+                </Link>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition text-left cursor-pointer"
+                >
+                  <span>🚪</span>
+                  <span>Logout</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Link
+                  to="/signin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-center py-2.5 px-4 rounded-xl text-xs font-bold text-[#3488c3] bg-[#3488c3]/10 hover:bg-[#3488c3]/20 transition"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-center py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-[#3488c3] hover:bg-[#2978b3] transition shadow-sm shadow-[#3488c3]/20"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   )
 }

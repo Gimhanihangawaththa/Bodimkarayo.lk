@@ -6,6 +6,7 @@ const roomTypeOptions = ['Any', 'Single room', 'Shared room', 'Apartment share']
 const foodPreferences = ['Any', 'Vegetarian', 'Non-vegetarian']
 
 export default function RoommateFilterSidebar({ onFiltersChange }) {
+  const [mobileExpanded, setMobileExpanded] = useState(false);
   const [budgetRange, setBudgetRange] = useState(80000)
   const [minAge, setMinAge] = useState(18)
   const [maxAge, setMaxAge] = useState(65)
@@ -84,19 +85,31 @@ export default function RoommateFilterSidebar({ onFiltersChange }) {
   }
 
   return (
-    <aside className="bg-white rounded-3xl border border-slate-200/90 p-6 shadow-[0_12px_40px_rgba(15,23,42,0.06)] lg:sticky lg:top-24 space-y-6">
-      {/* Header with Title & Reset Button */}
-      <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-        <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-          <span>🎛️</span> Filter Roommates
-        </h3>
+    <aside className="bg-white rounded-3xl border border-slate-200/90 p-5 md:p-6 shadow-[0_12px_40px_rgba(15,23,42,0.06)] lg:sticky lg:top-24">
+      {/* Header with Title, Reset Button & Mobile Toggle */}
+      <div className="flex items-center justify-between pb-3 lg:pb-4 border-b border-slate-100">
+        <button
+          type="button"
+          onClick={() => setMobileExpanded(!mobileExpanded)}
+          className="flex items-center justify-between w-full lg:w-auto text-left cursor-pointer group"
+        >
+          <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+            <span>🎛️</span> Filter Roommates
+          </h3>
+          <span className="lg:hidden text-xs font-bold text-[#3488c3] bg-blue-50 px-2.5 py-1 rounded-xl border border-blue-100 flex items-center gap-1 group-hover:bg-blue-100 transition">
+            {mobileExpanded ? 'Hide ▲' : 'Show Filters ▼'}
+          </span>
+        </button>
         <button
           onClick={handleReset}
-          className="text-xs font-bold text-[#3488c3] hover:underline cursor-pointer"
+          className="hidden lg:inline-block text-xs font-bold text-[#3488c3] hover:underline cursor-pointer"
         >
           Reset All
         </button>
       </div>
+
+      {/* Collapsible Filter Body on Mobile */}
+      <div className={`${mobileExpanded ? 'block' : 'hidden lg:block'} space-y-6 pt-5`}>
 
       {/* Quick Filter Presets */}
       <div>
@@ -410,14 +423,24 @@ export default function RoommateFilterSidebar({ onFiltersChange }) {
         </div>
       </div>
 
-      {/* Apply Filters Action Button */}
-      <button
-        type="button"
-        onClick={() => emitFilters({ budgetRange, minAge, maxAge, location, genderPreference, occupation, roomType, smokingPreference, petFriendly, foodPreference })}
-        className="w-full py-3 bg-[#3488c3] hover:bg-[#2978b3] text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-[#3488c3]/25 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
-      >
-        <span>✨ Apply Filters</span>
-      </button>
+        {/* Apply Filters Action Button */}
+        <button
+          type="button"
+          onClick={() => emitFilters({ budgetRange, minAge, maxAge, location, genderPreference, occupation, roomType, smokingPreference, petFriendly, foodPreference })}
+          className="w-full py-3 bg-[#3488c3] hover:bg-[#2978b3] text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-[#3488c3]/25 active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-2"
+        >
+          <span>✨ Apply Filters</span>
+        </button>
+
+        {/* Mobile Reset Action Button */}
+        <button
+          type="button"
+          onClick={handleReset}
+          className="lg:hidden w-full py-2.5 text-center text-xs font-bold text-[#3488c3] bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
+        >
+          Reset All Filters
+        </button>
+      </div>
     </aside>
   )
 }

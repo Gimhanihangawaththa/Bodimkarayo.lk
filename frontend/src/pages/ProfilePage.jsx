@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../config/api.config";
 import { useAuth } from "../context/AuthContext";
@@ -534,6 +534,7 @@ export default function ProfilePage() {
       [name]: value,
     }));
   };
+
 
   const handleInterestToggle = (interest) => {
     setApplicationData((prev) => ({
