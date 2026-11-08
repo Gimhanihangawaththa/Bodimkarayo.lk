@@ -23,20 +23,27 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   Timer? _pollingTimer;
+  int _lastMessageCount = 0;
 
   @override
   void initState() {
     super.initState();
-    final authUser = context.read<AuthProvider>().user;
-    if (authUser != null && authUser.id != null) {
-      context.read<ChatProvider>().fetchMessages(widget.roomId, authUser.id!);
-      // Poll every 3 seconds for new messages
-      _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
-        if (mounted) {
-          context.read<ChatProvider>().fetchMessages(widget.roomId, authUser.id!);
-        }
-      });
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final chatProvider = context.read<ChatProvider>();
+      chatProvider.clearActiveMessages();
+      final authUser = context.read<AuthProvider>().user;
+      if (authUser != null && authUser.id != null) {
+        chatProvider.fetchMessages(widget.roomId, authUser.id!).then((_) {
+          _scrollToBottom();
+        });
+        _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+          if (mounted) {
+            chatProvider.fetchMessages(widget.roomId, authUser.id!);
+          }
+        });
+      }
+    });
   }
 
   @override
@@ -55,15 +62,15 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     if (authUser == null || authUser.id == null) return;
 
     _messageController.clear();
-    final success = await context.read<ChatProvider>().sendMessage(
+    _scrollToBottom();
+
+    await context.read<ChatProvider>().sendMessage(
           widget.roomId,
           authUser.id!,
           text,
         );
 
-    if (success) {
-      _scrollToBottom();
-    }
+    _scrollToBottom();
   }
 
   void _scrollToBottom() {
@@ -84,12 +91,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
     final currentUserId = authUser?.id ?? 0;
     final messages = context.watch<ChatProvider>().activeMessages;
 
+    if (messages.length != _lastMessageCount) {
+      _lastMessageCount = messages.length;
+      _scrollToBottom();
+    }
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
+        titleSpacing: 0,
         title: Row(
           children: [
             CircleAvatar(
-              radius: 18,
+              radius: 19,
               backgroundColor: const Color(0xFF0A2463),
               backgroundImage: widget.targetUser.profilePictureUrl != null &&
                       widget.targetUser.profilePictureUrl!.isNotEmpty
@@ -101,16 +115,38 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                       widget.targetUser.fullName?.isNotEmpty == true
                           ? widget.targetUser.fullName![0].toUpperCase()
                           : 'U',
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
+                      style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.bold),
                     )
                   : null,
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                widget.targetUser.fullName ?? 'User',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.targetUser.fullName ?? 'Property Owner',
+                    style: const TextStyle(fontSize: 15.5, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF10B981),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      const Text(
+                        'Active Now',
+                        style: TextStyle(fontSize: 11, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
@@ -125,39 +161,67 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
           Expanded(
             child: messages.isEmpty
                 ? Center(
-                    child: Text(
-                      'No messages yet. Say hello!',
-                      style: TextStyle(color: Colors.grey.shade500, fontSize: 15),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF3488C3).withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.waving_hand_rounded, size: 36, color: Color(0xFF3488C3)),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Start chatting with ${widget.targetUser.fullName ?? 'Owner'}',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF334155)),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Ask about availability, rent, or schedule a visit.',
+                          style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
+                        ),
+                      ],
                     ),
                   )
                 : ListView.builder(
                     controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     itemCount: messages.length,
                     itemBuilder: (context, index) {
                       final msg = messages[index];
                       final isMe = msg.senderId == currentUserId;
 
+                      String formattedTime = '';
+                      if (msg.timestamp != null && msg.timestamp!.contains('T')) {
+                        final timePart = msg.timestamp!.split('T')[1];
+                        if (timePart.length >= 5) {
+                          formattedTime = timePart.substring(0, 5);
+                        }
+                      }
+
                       return Align(
                         alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                         child: Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          margin: const EdgeInsets.symmetric(vertical: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 11),
                           constraints: BoxConstraints(
-                            maxWidth: MediaQuery.of(context).size.width * 0.75,
+                            maxWidth: MediaQuery.of(context).size.width * 0.76,
                           ),
                           decoration: BoxDecoration(
-                            color: isMe ? const Color(0xFF0A2463) : Colors.white,
+                            color: isMe ? const Color(0xFF3488C3) : Colors.white,
                             borderRadius: BorderRadius.only(
-                              topLeft: const Radius.circular(16),
-                              topRight: const Radius.circular(16),
-                              bottomLeft: isMe ? const Radius.circular(16) : Radius.zero,
-                              bottomRight: isMe ? Radius.zero : const Radius.circular(16),
+                              topLeft: const Radius.circular(18),
+                              topRight: const Radius.circular(18),
+                              bottomLeft: isMe ? const Radius.circular(18) : const Radius.circular(4),
+                              bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(18),
                             ),
+                            border: isMe ? null : Border.all(color: const Color(0xFFE2E8F0)),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withValues(alpha: 0.04),
-                                blurRadius: 4,
+                                blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
                             ],
@@ -169,19 +233,19 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                               Text(
                                 msg.content,
                                 style: TextStyle(
-                                  color: isMe ? Colors.white : Colors.black87,
+                                  color: isMe ? Colors.white : const Color(0xFF1E293B),
                                   fontSize: 14,
+                                  height: 1.35,
                                 ),
                               ),
-                              if (msg.timestamp != null) ...[
+                              if (formattedTime.isNotEmpty) ...[
                                 const SizedBox(height: 4),
                                 Text(
-                                  msg.timestamp!.contains('T')
-                                      ? msg.timestamp!.split('T')[1].substring(0, 5)
-                                      : '',
+                                  formattedTime,
                                   style: TextStyle(
-                                    color: isMe ? Colors.white60 : Colors.grey.shade500,
+                                    color: isMe ? Colors.white70 : Colors.grey.shade400,
                                     fontSize: 10,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
@@ -195,12 +259,13 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
 
           // Message input bar
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: Colors.white,
+              border: const Border(top: BorderSide(color: Color(0xFFE2E8F0))),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Colors.black.withValues(alpha: 0.04),
                   blurRadius: 8,
                   offset: const Offset(0, -2),
                 ),
@@ -212,28 +277,35 @@ class _ChatConversationScreenState extends State<ChatConversationScreen> {
                   Expanded(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade100,
+                        color: const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: const Color(0xFFE2E8F0)),
                       ),
                       child: TextField(
                         controller: _messageController,
                         textCapitalization: TextCapitalization.sentences,
                         decoration: const InputDecoration(
-                          hintText: 'Type a message...',
+                          hintText: 'Type your message...',
+                          hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
                           border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 11),
                         ),
                         onSubmitted: (_) => _sendMessage(),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
-                  CircleAvatar(
-                    backgroundColor: const Color(0xFF0A2463),
-                    radius: 22,
-                    child: IconButton(
-                      icon: const Icon(Icons.send, color: Colors.white, size: 18),
-                      onPressed: _sendMessage,
+                  Material(
+                    color: const Color(0xFF3488C3),
+                    borderRadius: BorderRadius.circular(22),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(22),
+                      onTap: _sendMessage,
+                      child: const SizedBox(
+                        width: 44,
+                        height: 44,
+                        child: Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                      ),
                     ),
                   ),
                 ],

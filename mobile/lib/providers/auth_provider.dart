@@ -34,6 +34,7 @@ class AuthProvider with ChangeNotifier {
 
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('user_data', jsonEncode(userData));
+        await prefs.setString('saved_password', password);
 
         _user = UserModel.fromJson(userData);
         _isLoading = false;
@@ -163,7 +164,7 @@ class AuthProvider with ChangeNotifier {
     if (_user == null || _user!.id == null) return false;
     try {
       final response = await _apiService.put('/users/${_user!.id}/change-password', {
-        'oldPassword': currentPassword,
+        'currentPassword': currentPassword,
         'newPassword': newPassword,
       });
       return response.statusCode == 200;
@@ -171,6 +172,31 @@ class AuthProvider with ChangeNotifier {
       debugPrint('Change password error: $e');
       return false;
     }
+  }
+
+  Future<bool> upgradeToOwner() async {
+    if (_user == null || _user!.id == null) return false;
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final response = await _apiService.put('/users/${_user!.id}/upgrade-role', {});
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _user = UserModel.fromJson(data);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('user_data', jsonEncode(data));
+        _isLoading = false;
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Upgrade role error: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+    return false;
   }
 
   Future<bool> deleteAccount() async {

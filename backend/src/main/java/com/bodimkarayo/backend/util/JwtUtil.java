@@ -14,7 +14,7 @@ public class JwtUtil {
     @Value("${jwt.secret:your-secret-key-should-be-at-least-32-characters-long}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration:900000}")
+    @Value("${jwt.expiration:86400000}")
     private long jwtExpirationMs;
 
     public String generateToken(String email) {

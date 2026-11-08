@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/property_provider.dart';
-import '../../services/api_service.dart';
-import '../../widgets/glass_card.dart';
+import '../../providers/roommate_provider.dart';
+import '../../models/property_model.dart';
+import '../../models/roommate_model.dart';
+import '../../theme/app_theme.dart';
+import '../../utils/app_notification.dart';
+import '../../widgets/upgrade_advertisement_card.dart';
+import '../auth/sign_in_screen.dart';
 import '../properties/add_property_screen.dart';
 import '../properties/property_view_screen.dart';
+import '../roommates/apply_roommate_screen.dart';
 import 'edit_profile_screen.dart';
-import 'change_password_screen.dart';
-import '../about/about_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,216 +23,194 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  int _selectedTab = 0; // 0: My Properties, 1: Saved Favorites
+  int _selectedTab = 0; // 0 = My Properties (if owner) or Saved, 1 = Saved
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final user = context.read<AuthProvider>().user;
-      if (user != null && user.id != null) {
-        context.read<PropertyProvider>().fetchFavorites(user.id!);
+      context.read<PropertyProvider>().fetchProperties();
+      context.read<RoommateProvider>().fetchRoommates();
+      if (user?.id != null) {
+        context.read<PropertyProvider>().fetchFavorites(user!.id!);
       }
     });
   }
 
-  void _showServerConfigDialog() {
-    final controller = TextEditingController(text: ApiService.baseUrl);
-    showDialog(
+  Future<void> _confirmRemoveApplication(RoommateModel app) async {
+    if (app.id == null) return;
+    final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Backend API Server', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Set server URL for your device or emulator:',
-              style: TextStyle(fontSize: 13, color: Colors.grey),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: controller,
-              decoration: InputDecoration(
-                hintText: 'e.g. http://10.0.2.2:4000/api',
-                filled: true,
-                fillColor: Colors.grey.shade100,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-              ),
-            ),
-          ],
-        ),
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text('Remove Roommate Application?', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text('Are you sure you want to remove your roommate application? You will no longer appear in roommate searches.'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogCtx),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           ElevatedButton(
-            onPressed: () {
-              ApiService.setCustomBaseUrl(controller.text.trim());
-              Navigator.pop(dialogCtx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('API Server updated: ${controller.text.trim()}')),
-              );
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0A2463)),
-            child: const Text('Save', style: TextStyle(color: Colors.white)),
+            onPressed: () => Navigator.pop(ctx, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            child: const Text('Remove', style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
-  }
 
-  void _deleteProperty(int id) {
-    final propertyProvider = Provider.of<PropertyProvider>(context, listen: false);
-    final messenger = ScaffoldMessenger.of(context);
-
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Delete Property'),
-        content: const Text('Are you sure you want to delete this property?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              final success = await propertyProvider.deleteProperty(id);
-              if (!mounted) return;
-              messenger.showSnackBar(
-                SnackBar(content: Text(success ? 'Deleted successfully' : 'Delete failed')),
-              );
-            },
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteAccountDialog() {
-    final auth = context.read<AuthProvider>();
-    final nav = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
-
-    showDialog(
-      context: context,
-      builder: (dialogCtx) => AlertDialog(
-        title: const Text('Delete Account', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-        content: const Text(
-          'Are you sure you want to delete your account? This action is permanent and cannot be undone.',
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(dialogCtx);
-              final success = await auth.deleteAccount();
-              if (!mounted) return;
-              if (success) {
-                nav.pushReplacementNamed('/signin');
-              } else {
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Failed to delete account.')),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Delete Permanently', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+    if (confirmed == true && mounted) {
+      final success = await context.read<RoommateProvider>().deleteRoommate(app.id!);
+      if (mounted) {
+        if (success) {
+          AppNotification.success(
+            context,
+            'Your roommate application has been removed.',
+            title: 'Application Removed',
+          );
+        } else {
+          AppNotification.error(
+            context,
+            'Failed to remove roommate application. Please try again.',
+            title: 'Removal Failed',
+          );
+        }
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final propertyProvider = context.watch<PropertyProvider>();
+    final roommateProvider = context.watch<RoommateProvider>();
     final user = authProvider.user;
 
-    if (user == null) {
+    if (!authProvider.isAuthenticated || user == null) {
       return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.person_outline, size: 64, color: Colors.grey.shade400),
-              const SizedBox(height: 16),
-              const Text('Please login to view your profile', style: TextStyle(fontSize: 16)),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => Navigator.pushNamed(context, '/signin'),
-                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF0A2463)),
-                child: const Text('Sign In', style: TextStyle(color: Colors.white)),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.account_circle_outlined, size: 80, color: Color(0xFF0A2463)),
+                const SizedBox(height: 16),
+                const Text('Welcome to Bodimkarayo', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                const Text(
+                  'Sign in to manage your properties, saved listings, and roommate applications.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const SignInScreen()));
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF0A2463),
+                    minimumSize: const Size(200, 48),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Sign In / Register', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
           ),
         ),
       );
     }
 
-    final myProperties = propertyProvider.properties;
-    final favoriteProperties = propertyProvider.favoriteProperties;
+    final isOwner = (user.role ?? 'USER').toUpperCase() == 'OWNER' ||
+        (user.role ?? 'USER').toUpperCase() == 'ADMIN';
+
+    // Filter properties owned by this user
+    final myProperties = propertyProvider.properties
+        .where((p) => p.ownerId != null && p.ownerId == user.id)
+        .toList();
+
+    final savedProperties = propertyProvider.favoriteProperties;
+
+    // Check if user has applied as a roommate
+    RoommateModel? myRoommateApp;
+    for (final rm in roommateProvider.roommates) {
+      if ((rm.posterId != null && rm.posterId == user.id) ||
+          (rm.posterEmail != null && rm.posterEmail!.toLowerCase() == user.email.toLowerCase())) {
+        myRoommateApp = rm;
+        break;
+      }
+    }
+    final hasAppliedRoommate = myRoommateApp != null;
 
     return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Top Row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Profile', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF0A2463))),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.settings_outlined, color: Color(0xFF0A2463)),
-                          tooltip: 'Server Settings',
-                          onPressed: _showServerConfigDialog,
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit_outlined, color: Color(0xFF0A2463)),
-                          tooltip: 'Edit Profile',
-                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const EditProfileScreen())),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.logout, color: Color(0xFF0A2463)),
-                          tooltip: 'Logout',
-                          onPressed: () async {
-                            final nav = Navigator.of(context);
-                            await authProvider.logout();
-                            if (!mounted) return;
-                            nav.pushReplacementNamed('/signin');
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-
-                // User Header Card
-                GlassCard(
-                  isDark: true,
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
+      backgroundColor: const Color(0xFFF8FAFC),
+      appBar: AppBar(
+        title: const Text('Profile', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0A2463))),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings_outlined, color: Color(0xFF0A2463)),
+            tooltip: 'Settings & Privacy',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: Color(0xFF0A2463)),
+            tooltip: 'Edit Profile',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.redAccent),
+            tooltip: 'Sign Out',
+            onPressed: () => authProvider.logout(),
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Profile Header Card (matching Web ProfilePage.jsx)
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: AppTheme.primaryGradient,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0A2463).withValues(alpha: 0.2),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       CircleAvatar(
-                        radius: 36,
+                        radius: 38,
                         backgroundColor: Colors.white24,
                         backgroundImage: user.profilePictureUrl != null && user.profilePictureUrl!.isNotEmpty
                             ? NetworkImage(user.profilePictureUrl!)
                             : null,
                         child: user.profilePictureUrl == null || user.profilePictureUrl!.isEmpty
                             ? Text(
-                                user.fullName?.isNotEmpty == true ? user.fullName![0].toUpperCase() : 'U',
-                                style: const TextStyle(fontSize: 24, color: Colors.white, fontWeight: FontWeight.bold),
+                                (user.fullName ?? user.email)[0].toUpperCase(),
+                                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
                               )
                             : null,
                       ),
@@ -236,239 +219,452 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(user.fullName ?? 'User', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-                            Text(user.email, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13)),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                              decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(12)),
-                              child: Text(user.role ?? 'USER', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                            Text(
+                              user.fullName ?? 'User',
+                              style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.w900),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              user.email,
+                              style: const TextStyle(color: Colors.white70, fontSize: 13),
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              children: [
+                                // Role Pill
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white24,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    isOwner ? 'Property Owner' : (user.role ?? 'USER'),
+                                    style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                                // Roommate Application Status Pill
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: hasAppliedRoommate
+                                        ? const Color(0xFF10B981).withValues(alpha: 0.25)
+                                        : Colors.black26,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: hasAppliedRoommate
+                                          ? const Color(0xFF6EE7B7)
+                                          : Colors.white24,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Container(
+                                        width: 6,
+                                        height: 6,
+                                        decoration: BoxDecoration(
+                                          color: hasAppliedRoommate ? const Color(0xFF34D399) : Colors.white60,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        hasAppliedRoommate ? 'Applied as Roommate' : 'Not Applied',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 20),
+                  const SizedBox(height: 16),
+                  const Divider(color: Colors.white24, height: 1),
+                  const SizedBox(height: 14),
 
-                // Tab Switcher: My Properties vs Favorites
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedTab = 0),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _selectedTab == 0 ? const Color(0xFF0A2463) : Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: _selectedTab == 0 ? const Color(0xFF0A2463) : Colors.grey.shade300),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'My Properties (${myProperties.length})',
-                            style: TextStyle(
-                              color: _selectedTab == 0 ? Colors.white : Colors.black87,
-                              fontWeight: _selectedTab == 0 ? FontWeight.bold : FontWeight.normal,
-                              fontSize: 13,
+                  // Roommate Application Action Bar (Matches Web ProfilePage.jsx)
+                  if (!hasAppliedRoommate)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ApplyRoommateScreen()),
+                          );
+                        },
+                        icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+                        label: const Text(
+                          'Apply as Roommate',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF0A2463),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          elevation: 0,
+                        ),
+                      ),
+                    )
+                  else
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ApplyRoommateScreen(existingRoommate: myRoommateApp),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.edit_note_rounded, size: 18),
+                            label: const Text(
+                              'Edit Application',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.5),
                             ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color(0xFF0A2463),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 0,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _confirmRemoveApplication(myRoommateApp!),
+                            icon: const Icon(Icons.delete_outline_rounded, size: 18, color: Color(0xFFFCA5A5)),
+                            label: const Text(
+                              'Remove Application',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12.5,
+                                color: Colors.white,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: const BorderSide(color: Color(0xFFFCA5A5)),
+                              backgroundColor: Colors.red.withValues(alpha: 0.2),
+                              padding: const EdgeInsets.symmetric(vertical: 11),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+
+            // Upgrade to Property Owner Banner (only shown if role == USER)
+            const UpgradeAdvertisementCard(),
+
+            const SizedBox(height: 12),
+
+            // If Owner: Show Tabs (My Listed Properties vs Saved Properties) + Add Property button
+            if (isOwner) ...[
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedTab = 0),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _selectedTab == 0 ? const Color(0xFF0A2463) : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _selectedTab == 0 ? const Color(0xFF0A2463) : Colors.grey.shade300,
+                          ),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'My Listed (${myProperties.length})',
+                          style: TextStyle(
+                            color: _selectedTab == 0 ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedTab = 1),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: _selectedTab == 1 ? const Color(0xFF0A2463) : Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: _selectedTab == 1 ? const Color(0xFF0A2463) : Colors.grey.shade300),
-                          ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'Saved (${favoriteProperties.length})',
-                            style: TextStyle(
-                              color: _selectedTab == 1 ? Colors.white : Colors.black87,
-                              fontWeight: _selectedTab == 1 ? FontWeight.bold : FontWeight.normal,
-                              fontSize: 13,
-                            ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedTab = 1),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _selectedTab == 1 ? const Color(0xFF0A2463) : Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _selectedTab == 1 ? const Color(0xFF0A2463) : Colors.grey.shade300,
                           ),
                         ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Saved (${savedProperties.length})',
+                          style: TextStyle(
+                            color: _selectedTab == 1 ? Colors.white : Colors.black87,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              if (_selectedTab == 0) ...[
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'My Listed Properties',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AddPropertyScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.add, size: 16, color: Colors.white),
+                      label: const Text(
+                        'Add Property',
+                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF3488C3),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-
-                // Tab Content
-                if (_selectedTab == 0) ...[
-                  // My Properties List
-                  if (myProperties.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                      child: const Center(
-                        child: Text('You have not posted any properties yet.', style: TextStyle(color: Colors.grey)),
-                      ),
-                    )
-                  else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: myProperties.length,
-                      itemBuilder: (context, index) {
-                        final prop = myProperties[index];
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  prop.images != null && prop.images!.isNotEmpty ? prop.images![0] : 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=200',
-                                  width: 60,
-                                  height: 60,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, __, ___) => Container(width: 60, height: 60, color: Colors.grey.shade300),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(prop.title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                    Text('Rs. ${prop.rent}', style: TextStyle(color: Colors.blue[800], fontSize: 13)),
-                                  ],
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.edit, size: 20, color: Colors.blue),
-                                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => AddPropertyScreen(property: prop))),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, size: 20, color: Colors.red),
-                                onPressed: () => _deleteProperty(prop.id!),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                const SizedBox(height: 10),
+                _buildPropertyList(myProperties, propertyProvider, isOwnerList: true, userId: user.id),
+              ] else ...[
+                const Text(
+                  'Saved Properties',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                ),
+                const SizedBox(height: 10),
+                _buildPropertyList(savedProperties, propertyProvider, isOwnerList: false, userId: user.id),
+              ],
+            ] else ...[
+              // Regular USER view: Saved Properties section
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Saved Properties',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Color(0xFF0F172A)),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE0F2FE),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                ] else ...[
-                  // Favorite / Saved Properties
-                  if (favoriteProperties.isEmpty)
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-                      child: const Center(
-                        child: Text('No saved properties yet. Tap the heart icon on any boarding to save it!', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+                    child: Text(
+                      '${savedProperties.length} Saved',
+                      style: const TextStyle(
+                        color: Color(0xFF0284C7),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
                       ),
-                    )
-                  else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: favoriteProperties.length,
-                      itemBuilder: (context, index) {
-                        final prop = favoriteProperties[index];
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(context, MaterialPageRoute(builder: (context) => PropertyViewScreen(property: prop)));
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2)),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: Image.network(
-                                    prop.images != null && prop.images!.isNotEmpty ? prop.images![0] : 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=200',
-                                    width: 60,
-                                    height: 60,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Container(width: 60, height: 60, color: Colors.grey.shade300),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(prop.title, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                      Text('Rs. ${prop.rent}', style: TextStyle(color: Colors.blue[800], fontSize: 13)),
-                                    ],
-                                  ),
-                                ),
-                                const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
                     ),
+                  ),
                 ],
-                const SizedBox(height: 24),
+              ),
+              const SizedBox(height: 12),
+              _buildPropertyList(savedProperties, propertyProvider, isOwnerList: false, userId: user.id),
+            ],
+            const SizedBox(height: 110),
+          ],
+        ),
+      ),
+    );
+  }
 
-                // Settings & Actions Section
-                Material(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  clipBehavior: Clip.antiAlias,
+  Widget _buildPropertyList(
+    List<PropertyModel> list,
+    PropertyProvider propertyProvider, {
+    required bool isOwnerList,
+    int? userId,
+  }) {
+    if (list.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              isOwnerList ? Icons.real_estate_agent_outlined : Icons.bookmark_border_rounded,
+              size: 48,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isOwnerList ? 'No Properties Listed Yet' : 'No Saved Properties Yet',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              isOwnerList
+                  ? 'Start earning by listing your boarding, annex, or apartment.'
+                  : 'Tap the heart icon on any boarding listing to save it here.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.grey, fontSize: 13),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: list.length,
+      itemBuilder: (context, index) {
+        final prop = list[index];
+        final imageUrl = (prop.images != null && prop.images!.isNotEmpty)
+            ? prop.images!.first
+            : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400';
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.grey.shade200),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => PropertyViewScreen(property: prop)),
+              );
+            },
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    imageUrl,
+                    width: 76,
+                    height: 76,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 76,
+                      height: 76,
+                      color: Colors.grey.shade200,
+                      child: const Icon(Icons.home),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ListTile(
-                        leading: const Icon(Icons.lock_reset, color: Color(0xFF0A2463)),
-                        title: const Text('Change Password'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const ChangePasswordScreen()));
-                        },
+                      Text(
+                        prop.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF0F172A)),
                       ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const Icon(Icons.info_outline, color: Color(0xFF0A2463)),
-                        title: const Text('About Bodimkarayo'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 14),
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (context) => const AboutScreen()));
-                        },
+                      const SizedBox(height: 3),
+                      Text(
+                        prop.location,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(color: Colors.grey, fontSize: 12),
                       ),
-                      const Divider(height: 1),
-                      ListTile(
-                        leading: const Icon(Icons.delete_forever, color: Colors.red),
-                        title: const Text('Delete Account', style: TextStyle(color: Colors.red)),
-                        onTap: _showDeleteAccountDialog,
+                      const SizedBox(height: 5),
+                      Text(
+                        'Rs. ${prop.rent.toStringAsFixed(0)} /mo',
+                        style: const TextStyle(
+                          color: Color(0xFF3488C3),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13.5,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 100),
+                if (isOwnerList)
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, color: Color(0xFF3488C3), size: 20),
+                        tooltip: 'Edit Property',
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => AddPropertyScreen(property: prop)),
+                          );
+                        },
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 20),
+                        tooltip: 'Delete Property',
+                        onPressed: () async {
+                          if (prop.id != null) {
+                            await propertyProvider.deleteProperty(prop.id!);
+                          }
+                        },
+                      ),
+                    ],
+                  )
+                else
+                  IconButton(
+                    icon: const Icon(Icons.favorite, color: Colors.redAccent, size: 22),
+                    tooltip: 'Remove from Saved',
+                    onPressed: () {
+                      if (userId != null && prop.id != null) {
+                        propertyProvider.toggleFavorite(userId, prop.id!);
+                      }
+                    },
+                  ),
               ],
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

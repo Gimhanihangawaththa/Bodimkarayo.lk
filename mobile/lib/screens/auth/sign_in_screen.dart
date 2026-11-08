@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/app_notification.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -26,8 +27,10 @@ class _SignInScreenState extends State<SignInScreen> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
+      AppNotification.warning(
+        context,
+        'Please enter both your email address and password.',
+        title: 'Missing Credentials',
       );
       return;
     }
@@ -35,12 +38,19 @@ class _SignInScreenState extends State<SignInScreen> {
     final success = await context.read<AuthProvider>().login(email, password);
     if (success) {
       if (mounted) {
+        AppNotification.success(
+          context,
+          'Welcome back to Bodimkarayo.lk!',
+          title: 'Signed In',
+        );
         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid email or password')),
+        AppNotification.error(
+          context,
+          'Invalid email or password. Please check your credentials and try again.',
+          title: 'Sign-In Failed',
         );
       }
     }

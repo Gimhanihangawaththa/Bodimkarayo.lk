@@ -7,6 +7,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/property_provider.dart';
 import '../../providers/review_provider.dart';
 import '../../providers/chat_provider.dart';
+import '../../utils/app_notification.dart';
 import '../chat/chat_conversation_screen.dart';
 
 class PropertyViewScreen extends StatefulWidget {
@@ -40,14 +41,12 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
   void _toggleFavorite() async {
     final authUser = context.read<AuthProvider>().user;
     if (authUser == null || authUser.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please sign in to save favorites'),
-          action: SnackBarAction(
-            label: 'Sign In',
-            onPressed: () => Navigator.pushNamed(context, '/signin'),
-          ),
-        ),
+      AppNotification.warning(
+        context,
+        'Please sign in to save properties to your favorites.',
+        title: 'Sign-In Required',
+        actionLabel: 'Sign In',
+        onAction: () => Navigator.pushNamed(context, '/signin'),
       );
       return;
     }
@@ -60,22 +59,25 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
   void _messageOwner() async {
     final authUser = context.read<AuthProvider>().user;
     if (authUser == null || authUser.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please sign in to message the landlord'),
-          action: SnackBarAction(
-            label: 'Sign In',
-            onPressed: () => Navigator.pushNamed(context, '/signin'),
-          ),
-        ),
+      AppNotification.warning(
+        context,
+        'Please sign in to message the property owner.',
+        title: 'Sign-In Required',
+        actionLabel: 'Sign In',
+        onAction: () => Navigator.pushNamed(context, '/signin'),
       );
       return;
     }
 
-    final ownerId = 1;
+    int ownerId = widget.property.ownerId ?? 1;
+    if (widget.property.ownerId == null && authUser.id == 1) {
+      ownerId = 2;
+    }
     if (authUser.id == ownerId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This is your own listing!')),
+      AppNotification.info(
+        context,
+        'This is your own property listing!',
+        title: 'Your Listing',
       );
       return;
     }
@@ -83,7 +85,8 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
     final chatProvider = context.read<ChatProvider>();
     final room = await chatProvider.getOrCreateRoom(authUser.id!, ownerId);
 
-    if (room != null && mounted) {
+    if (!mounted) return;
+    if (room != null) {
       final otherUser = room.getOtherUser(authUser.id!);
       Navigator.push(
         context,
@@ -92,24 +95,43 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
             roomId: room.id,
             targetUser: otherUser.id != null
                 ? otherUser
-                : UserModel(id: ownerId, email: 'landlord@bodimkarayo.lk', fullName: 'Landlord'),
+                : UserModel(
+                    id: ownerId,
+                    email: widget.property.ownerEmail ?? 'landlord@bodimkarayo.lk',
+                    fullName: widget.property.ownerName ?? 'Property Owner',
+                    profilePictureUrl: widget.property.ownerAvatar,
+                  ),
           ),
         ),
       );
+    } else {
+      AppNotification.error(
+        context,
+        chatProvider.errorMessage ?? 'Session expired. Please sign in again to chat.',
+        title: 'Chat Unavailable',
+        actionLabel: 'Sign In',
+        onAction: () => Navigator.pushNamed(context, '/signin'),
+      );
     }
+  }
+
+  void _scheduleVisit() {
+    AppNotification.success(
+      context,
+      'Visit scheduled! The property owner will confirm a time shortly.',
+      title: 'Visit Requested',
+    );
   }
 
   void _showAddReviewDialog() {
     final authUser = context.read<AuthProvider>().user;
     if (authUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please sign in to leave a review'),
-          action: SnackBarAction(
-            label: 'Sign In',
-            onPressed: () => Navigator.pushNamed(context, '/signin'),
-          ),
-        ),
+      AppNotification.warning(
+        context,
+        'Please sign in to leave a review on this property.',
+        title: 'Sign-In Required',
+        actionLabel: 'Sign In',
+        onAction: () => Navigator.pushNamed(context, '/signin'),
       );
       return;
     }
@@ -117,7 +139,6 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
     int selectedRating = 5;
     final commentController = TextEditingController();
     final reviewProvider = context.read<ReviewProvider>();
-    final messenger = ScaffoldMessenger.of(context);
 
     showDialog(
       context: context,
@@ -181,12 +202,19 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
                       comment: commentController.text.trim(),
                     );
                     if (!mounted) return;
-                    messenger.showSnackBar(
-                      SnackBar(
-                        content: Text(success ? 'Review posted successfully!' : 'Failed to post review.'),
-                        backgroundColor: success ? Colors.green : Colors.red,
-                      ),
-                    );
+                    if (success) {
+                      AppNotification.success(
+                        context,
+                        'Your review has been published!',
+                        title: 'Review Posted',
+                      );
+                    } else {
+                      AppNotification.error(
+                        context,
+                        'Failed to post review. Please try again.',
+                        title: 'Review Failed',
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF3488C3),
@@ -207,6 +235,7 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
   Widget build(BuildContext context) {
     final propertyProvider = context.watch<PropertyProvider>();
     final reviewProvider = context.watch<ReviewProvider>();
+    final authUser = context.watch<AuthProvider>().user;
     final isFav = widget.property.id != null && propertyProvider.isFavorite(widget.property.id!);
     final ratingSummary = reviewProvider.ratingSummary;
 
@@ -459,23 +488,143 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 18),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton.icon(
-                            onPressed: _messageOwner,
-                            icon: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 18),
-                            label: const Text('Message Landlord', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              backgroundColor: const Color(0xFF3488C3),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                              elevation: 0,
-                            ),
+                        const SizedBox(height: 16),
+                        // Owner Info Row
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF8FAFC),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
+                          child: Row(
+                            children: [
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: const Color(0xFF0A2463),
+                                backgroundImage: widget.property.ownerAvatar != null &&
+                                        widget.property.ownerAvatar!.isNotEmpty
+                                    ? NetworkImage(widget.property.ownerAvatar!)
+                                    : null,
+                                child: widget.property.ownerAvatar == null ||
+                                        widget.property.ownerAvatar!.isEmpty
+                                    ? Text(
+                                        (widget.property.ownerName ?? 'P')[0].toUpperCase(),
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.property.ownerName ?? 'Property Owner',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: Color(0xFF0F172A),
+                                      ),
+                                    ),
+                                    const Text(
+                                      '✓ Verified Property Owner',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        color: Color(0xFF059669),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: _messageOwner,
+                                icon: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 17),
+                                label: const Text(
+                                  'Message Owner',
+                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 13),
+                                  backgroundColor: const Color(0xFF3488C3),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                  elevation: 0,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: _scheduleVisit,
+                                icon: const Icon(Icons.calendar_month_outlined, color: Color(0xFF0F172A), size: 17),
+                                label: const Text(
+                                  'Schedule Visit',
+                                  style: TextStyle(color: Color(0xFF0F172A), fontWeight: FontWeight.bold, fontSize: 13.5),
+                                ),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 13),
+                                  side: const BorderSide(color: Color(0xFFCBD5E1)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Tenant Eligibility & Property Quick Info Pills (Matches Web PropertyView.jsx)
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildEligibilityPill(
+                        widget.property.genderPreference?.toLowerCase() == 'male'
+                            ? '👨 Male Only'
+                            : widget.property.genderPreference?.toLowerCase() == 'female'
+                                ? '👩 Female Only'
+                                : '🚻 Open to All Genders',
+                        const Color(0xFFE0F2FE),
+                        const Color(0xFF0369A1),
+                      ),
+                      if (widget.property.suitableFor != null && widget.property.suitableFor!.isNotEmpty)
+                        _buildEligibilityPill(
+                          '🎓 Ideal For: ${widget.property.suitableFor}',
+                          const Color(0xFFF3E8FF),
+                          const Color(0xFF6B21A8),
+                        ),
+                      if (widget.property.numberOfPeople != null && widget.property.numberOfPeople!.isNotEmpty)
+                        _buildEligibilityPill(
+                          '👥 Capacity: ${widget.property.numberOfPeople}',
+                          const Color(0xFFF1F5F9),
+                          const Color(0xFF334155),
+                        ),
+                      if (widget.property.furnished != null && widget.property.furnished!.isNotEmpty)
+                        _buildEligibilityPill(
+                          '🛋️ ${widget.property.furnished}',
+                          const Color(0xFFFEF3C7),
+                          const Color(0xFF92400E),
+                        ),
+                      if (widget.property.parking != null && widget.property.parking!.isNotEmpty)
+                        _buildEligibilityPill(
+                          '🚗 Parking: ${widget.property.parking}',
+                          const Color(0xFFECFDF5),
+                          const Color(0xFF065F46),
+                        ),
+                    ],
                   ),
                   const SizedBox(height: 24),
 
@@ -673,13 +822,26 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
                                   ],
                                 ),
                                 Row(
-                                  children: List.generate(5, (i) {
-                                    return Icon(
-                                      i < rev.rating ? Icons.star_rounded : Icons.star_border_rounded,
-                                      color: Colors.amber,
-                                      size: 16,
-                                    );
-                                  }),
+                                  children: [
+                                    ...List.generate(5, (i) {
+                                      return Icon(
+                                        i < rev.rating ? Icons.star_rounded : Icons.star_border_rounded,
+                                        color: Colors.amber,
+                                        size: 16,
+                                      );
+                                    }),
+                                    if (authUser?.id != null && rev.reviewerId == authUser!.id && rev.id != null) ...[
+                                      const SizedBox(width: 6),
+                                      GestureDetector(
+                                        onTap: () async {
+                                          if (widget.property.id != null && rev.id != null) {
+                                            await reviewProvider.deleteReview(rev.id!, widget.property.id!);
+                                          }
+                                        },
+                                        child: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                                      ),
+                                    ],
+                                  ],
                                 ),
                               ],
                             ),
@@ -696,6 +858,24 @@ class _PropertyViewScreenState extends State<PropertyViewScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEligibilityPill(String text, Color bg, Color fg) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: fg,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
       ),
     );
   }

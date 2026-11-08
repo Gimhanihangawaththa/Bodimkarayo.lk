@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/recommendations/**").permitAll()
                         .requestMatchers("/api/search/**").permitAll()
                         .requestMatchers("/api/recommendations/**").permitAll()
+                        .requestMatchers("/api/chat/**").permitAll()
                         .requestMatchers("/ws/**").permitAll()
 
                         // Admin only

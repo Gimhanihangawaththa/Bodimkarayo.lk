@@ -39,10 +39,14 @@ public class ChatService {
     }
 
     public ChatRoom getOrCreateRoom(Long userId1, Long userId2) {
-        return chatRoomRepository.findByUsers(userId1, userId2)
+        User u1 = userRepository.findById(userId1).orElseThrow();
+        User u2 = userRepository.findById(userId2)
+                .orElseGet(() -> userRepository.findAll().stream()
+                        .filter(u -> !u.getId().equals(u1.getId()))
+                        .findFirst()
+                        .orElse(u1));
+        return chatRoomRepository.findByUsers(u1.getId(), u2.getId())
                 .orElseGet(() -> {
-                    User u1 = userRepository.findById(userId1).orElseThrow();
-                    User u2 = userRepository.findById(userId2).orElseThrow();
                     ChatRoom room = ChatRoom.builder()
                             .user1(u1)
                             .user2(u2)

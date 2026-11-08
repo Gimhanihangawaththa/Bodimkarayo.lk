@@ -20,11 +20,11 @@ class ChatRoomModel {
   factory ChatRoomModel.fromJson(Map<String, dynamic> json) {
     Map<String, dynamic> roomJson = json['chatRoom'] ?? json;
     return ChatRoomModel(
-      id: roomJson['id'] ?? 0,
+      id: roomJson['id'] is int ? roomJson['id'] : (int.tryParse(roomJson['id']?.toString() ?? '') ?? 0),
       user1: UserModel.fromJson(roomJson['user1'] ?? {}),
       user2: UserModel.fromJson(roomJson['user2'] ?? {}),
-      createdAt: roomJson['createdAt'],
-      unreadCount: json['unreadCount'] ?? 0,
+      createdAt: roomJson['createdAt']?.toString(),
+      unreadCount: (json['unreadCount'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -52,12 +52,16 @@ class ChatMessageModel {
 
   factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
     return ChatMessageModel(
-      id: json['id'],
-      roomId: json['chatRoom'] != null ? json['chatRoom']['id'] : (json['roomId'] ?? 0),
-      senderId: json['sender'] != null ? json['sender']['id'] : (json['senderId'] ?? 0),
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? ''),
+      roomId: json['chatRoom'] != null
+          ? (json['chatRoom']['id'] ?? 0)
+          : (json['roomId'] ?? 0),
+      senderId: json['sender'] != null
+          ? (json['sender']['id'] ?? 0)
+          : (json['senderId'] ?? 0),
       content: json['content'] ?? '',
-      timestamp: json['timestamp'],
-      isRead: json['isRead'] ?? false,
+      timestamp: json['timestamp']?.toString(),
+      isRead: json['isRead'] ?? json['read'] ?? false,
     );
   }
 

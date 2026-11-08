@@ -8,6 +8,8 @@ class PropertyModel {
   final String? availableFrom;
   final String? address;
   final String? numberOfPeople;
+  final String? genderPreference;
+  final String? suitableFor;
   final int? bedrooms;
   final int? kitchens;
   final int? bathrooms;
@@ -23,6 +25,10 @@ class PropertyModel {
   final List<String>? images;
   final String? badge;
   final double? rating;
+  final int? ownerId;
+  final String? ownerName;
+  final String? ownerEmail;
+  final String? ownerAvatar;
 
   PropertyModel({
     this.id,
@@ -34,6 +40,8 @@ class PropertyModel {
     this.availableFrom,
     this.address,
     this.numberOfPeople,
+    this.genderPreference,
+    this.suitableFor,
     this.bedrooms,
     this.kitchens,
     this.bathrooms,
@@ -49,11 +57,16 @@ class PropertyModel {
     this.images,
     this.badge,
     this.rating,
+    this.ownerId,
+    this.ownerName,
+    this.ownerEmail,
+    this.ownerAvatar,
   });
 
   factory PropertyModel.fromJson(Map<String, dynamic> json) {
+    final ownerObj = json['owner'] as Map<String, dynamic>?;
     return PropertyModel(
-      id: json['id'],
+      id: json['id'] is int ? json['id'] : int.tryParse(json['id']?.toString() ?? ''),
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       location: json['location'] ?? '',
@@ -62,9 +75,11 @@ class PropertyModel {
       availableFrom: json['availableFrom'],
       address: json['address'],
       numberOfPeople: json['numberOfPeople'],
-      bedrooms: json['bedrooms'],
-      kitchens: json['kitchens'],
-      bathrooms: json['bathrooms'],
+      genderPreference: json['genderPreference'] ?? 'Both',
+      suitableFor: json['suitableFor'] ?? 'Any',
+      bedrooms: json['bedrooms'] is int ? json['bedrooms'] : int.tryParse(json['bedrooms']?.toString() ?? ''),
+      kitchens: json['kitchens'] is int ? json['kitchens'] : int.tryParse(json['kitchens']?.toString() ?? ''),
+      bathrooms: json['bathrooms'] is int ? json['bathrooms'] : int.tryParse(json['bathrooms']?.toString() ?? ''),
       floor: json['floor'],
       furnished: json['furnished'],
       parking: json['parking'],
@@ -75,14 +90,20 @@ class PropertyModel {
       rules: json['rules'] != null ? List<String>.from(json['rules']) : [],
       nearby: json['nearby'] != null ? List<String>.from(json['nearby']) : [],
       images: json['images'] != null ? List<String>.from(json['images']) : [],
-      badge: json['badge'],
+      badge: json['badge'] ?? json['propertyType'],
       rating: (json['rating'] as num?)?.toDouble() ?? 4.8,
+      ownerId: ownerObj != null
+          ? (ownerObj['id'] is int ? ownerObj['id'] : int.tryParse(ownerObj['id']?.toString() ?? ''))
+          : (json['ownerId'] is int ? json['ownerId'] : int.tryParse(json['ownerId']?.toString() ?? '')),
+      ownerName: ownerObj?['fullName'] ?? ownerObj?['name'] ?? json['ownerName'],
+      ownerEmail: ownerObj?['email'] ?? json['ownerEmail'],
+      ownerAvatar: ownerObj?['profilePictureUrl'] ?? ownerObj?['avatarUrl'] ?? json['ownerAvatar'],
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
       'title': title,
       'description': description,
       'location': location,
@@ -91,6 +112,8 @@ class PropertyModel {
       'availableFrom': availableFrom,
       'address': address,
       'numberOfPeople': numberOfPeople,
+      'genderPreference': genderPreference ?? 'Both',
+      'suitableFor': suitableFor ?? 'Any',
       'bedrooms': bedrooms,
       'kitchens': kitchens,
       'bathrooms': bathrooms,
@@ -106,6 +129,7 @@ class PropertyModel {
       'images': images,
       'badge': badge,
       'rating': rating,
+      if (ownerId != null) 'owner': {'id': ownerId},
     };
   }
 }

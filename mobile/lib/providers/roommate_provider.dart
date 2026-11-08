@@ -9,9 +9,11 @@ class RoommateProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
   List<RoommateModel> _roommates = List.from(showcaseRoommates);
   bool _isLoading = false;
+  String? _errorMessage;
 
   List<RoommateModel> get roommates => _roommates;
   bool get isLoading => _isLoading;
+  String? get errorMessage => _errorMessage;
 
   Future<void> fetchRoommates() async {
     _isLoading = true;
@@ -41,6 +43,7 @@ class RoommateProvider with ChangeNotifier {
 
   Future<bool> createRoommate(Map<String, dynamic> data) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -48,8 +51,12 @@ class RoommateProvider with ChangeNotifier {
       if (response.statusCode == 200 || response.statusCode == 201) {
         await fetchRoommates(); // Refresh the list
         return true;
+      } else {
+        _errorMessage = 'Server returned status ${response.statusCode}';
+        debugPrint('Create roommate failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
+      _errorMessage = e.toString();
       debugPrint('Create roommate error: $e');
     }
 
@@ -60,6 +67,7 @@ class RoommateProvider with ChangeNotifier {
 
   Future<bool> updateRoommate(int id, Map<String, dynamic> data) async {
     _isLoading = true;
+    _errorMessage = null;
     notifyListeners();
 
     try {
@@ -67,8 +75,12 @@ class RoommateProvider with ChangeNotifier {
       if (response.statusCode == 200) {
         await fetchRoommates(); // Refresh the list
         return true;
+      } else {
+        _errorMessage = 'Server returned status ${response.statusCode}';
+        debugPrint('Update roommate failed: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
+      _errorMessage = e.toString();
       debugPrint('Update roommate error: $e');
     }
 

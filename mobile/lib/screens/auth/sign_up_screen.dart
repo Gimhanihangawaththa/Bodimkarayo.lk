@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../utils/app_notification.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -29,8 +30,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final password = _passwordController.text.trim();
 
     if (name.isEmpty || email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
+      AppNotification.warning(
+        context,
+        'Please complete your full name, email address, and password.',
+        title: 'Incomplete Form',
       );
       return;
     }
@@ -38,15 +41,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
     final success = await context.read<AuthProvider>().register(name, email, password);
     if (success) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful! Please login.')),
+        AppNotification.success(
+          context,
+          'Your account has been created! Please sign in to continue.',
+          title: 'Registration Successful',
         );
         Navigator.pushReplacementNamed(context, '/signin');
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration failed. Email might be taken.')),
+        AppNotification.error(
+          context,
+          'Could not create account. This email address may already be registered.',
+          title: 'Registration Failed',
         );
       }
     }

@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/user_model.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/app_notification.dart';
 import 'package:image_picker/image_picker.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -45,9 +46,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       final success = await authProvider.uploadProfileImage(image);
       if (mounted) {
         setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(success ? 'Image uploaded!' : 'Upload failed')),
-        );
+        if (success) {
+          AppNotification.success(
+            context,
+            'Your profile photo has been updated!',
+            title: 'Photo Uploaded',
+          );
+        } else {
+          AppNotification.error(
+            context,
+            'Failed to upload profile photo. Please try again.',
+            title: 'Upload Failed',
+          );
+        }
       }
     }
   }
@@ -74,13 +85,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (mounted) {
       setState(() => _isLoading = false);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
+        AppNotification.success(
+          context,
+          'Your profile details have been saved.',
+          title: 'Profile Updated',
         );
         Navigator.pop(context);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to update profile')),
+        AppNotification.error(
+          context,
+          'Failed to update profile details. Please try again.',
+          title: 'Update Failed',
         );
       }
     }

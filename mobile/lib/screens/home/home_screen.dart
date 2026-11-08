@@ -189,7 +189,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Stack(
                   children: [
                     SizedBox(
-                      height: 380,
+                      height: 410,
                       child: PageView.builder(
                         controller: _heroPageController,
                         onPageChanged: (idx) => setState(() => _currentSlide = idx),
@@ -226,10 +226,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // Content overlay inside Hero
                     Positioned(
-                      top: 24,
+                      top: 20,
                       left: 20,
                       right: 20,
-                      bottom: 20,
+                      bottom: 16,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -260,26 +260,28 @@ class _HomeScreenState extends State<HomeScreen> {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 12),
                           // Hero Heading
                           const Text(
                             'Find your perfect\nboarding in Sri Lanka',
                             style: TextStyle(
                               color: Colors.white,
-                              fontSize: 28,
+                              fontSize: 26,
                               fontWeight: FontWeight.w900,
                               height: 1.15,
                               letterSpacing: -0.5,
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Text(
                             heroSlides[_currentSlide].subtitle,
                             style: const TextStyle(
                               color: Color(0xFFE2E8F0),
-                              fontSize: 13,
+                              fontSize: 12,
                               fontWeight: FontWeight.normal,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
                           const Spacer(),
 
@@ -378,15 +380,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatColumn('150+', 'Verified\nPlaces', const Color(0xFF3488C3)),
+                      Expanded(child: _buildStatColumn('150+', 'Verified\nPlaces', const Color(0xFF3488C3))),
                       Container(width: 1, height: 35, color: Colors.grey.shade200),
-                      _buildStatColumn('2,500+', 'Happy\nTenants', const Color(0xFF3488C3)),
+                      Expanded(child: _buildStatColumn('2,500+', 'Happy\nTenants', const Color(0xFF3488C3))),
                       Container(width: 1, height: 35, color: Colors.grey.shade200),
-                      _buildStatColumn('4.9 ★', 'Average\nRating', const Color(0xFF10B981)),
+                      Expanded(child: _buildStatColumn('4.9 ★', 'Average\nRating', const Color(0xFF10B981))),
                       Container(width: 1, height: 35, color: Colors.grey.shade200),
-                      _buildStatColumn('100%', 'Direct\nOwners', const Color(0xFFF59E0B)),
+                      Expanded(child: _buildStatColumn('100%', 'Direct\nOwners', const Color(0xFFF59E0B))),
                     ],
                   ),
                 ),
@@ -487,7 +488,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
                 else
                   SizedBox(
-                    height: 385,
+                    height: 400,
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       scrollDirection: Axis.horizontal,
@@ -558,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
                 else
                   SizedBox(
-                    height: 385,
+                    height: 400,
                     child: ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       scrollDirection: Axis.horizontal,
@@ -656,7 +657,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 30),
+                const SizedBox(height: 110),
               ],
             ),
           ),

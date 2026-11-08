@@ -61,4 +61,17 @@ class ReviewProvider with ChangeNotifier {
     }
     return false;
   }
+
+  Future<bool> deleteReview(int reviewId, int propertyId) async {
+    try {
+      final response = await _apiService.delete('/reviews/$reviewId');
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        await fetchPropertyReviews(propertyId);
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Delete review error: $e');
+    }
+    return false;
+  }
 }

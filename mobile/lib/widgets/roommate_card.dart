@@ -4,6 +4,7 @@ import '../models/roommate_model.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
+import '../utils/app_notification.dart';
 import '../screens/roommates/roommate_view_screen.dart';
 import '../screens/chat/chat_conversation_screen.dart';
 
@@ -27,22 +28,22 @@ class _RoommateCardState extends State<RoommateCard> {
   void _connectAndMessage(BuildContext context) async {
     final authUser = context.read<AuthProvider>().user;
     if (authUser == null || authUser.id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Please sign in to message this roommate'),
-          action: SnackBarAction(
-            label: 'Sign In',
-            onPressed: () => Navigator.pushNamed(context, '/signin'),
-          ),
-        ),
+      AppNotification.warning(
+        context,
+        'Please sign in to message this roommate.',
+        title: 'Sign-In Required',
+        actionLabel: 'Sign In',
+        onAction: () => Navigator.pushNamed(context, '/signin'),
       );
       return;
     }
 
     final targetId = widget.roommate.posterId ?? 1;
     if (authUser.id == targetId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('This is your own roommate post!')),
+      AppNotification.info(
+        context,
+        'This is your own roommate post!',
+        title: 'Your Profile',
       );
       return;
     }
@@ -270,19 +271,24 @@ class _RoommateCardState extends State<RoommateCard> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEAF4FB),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: const Color(0xFFD2E7F6)),
-                            ),
-                            child: Text(
-                              roommate.occupation,
-                              style: const TextStyle(
-                                color: Color(0xFF246FA8),
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFEAF4FB),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFFD2E7F6)),
+                              ),
+                              child: Text(
+                                roommate.occupation,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Color(0xFF246FA8),
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),

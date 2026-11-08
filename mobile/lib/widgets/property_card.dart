@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/property_model.dart';
 import '../providers/property_provider.dart';
 import '../providers/auth_provider.dart';
+import '../utils/app_notification.dart';
 import '../screens/properties/property_view_screen.dart';
 
 class PropertyCard extends StatefulWidget {
@@ -160,8 +161,12 @@ class _PropertyCardState extends State<PropertyCard> {
                               if (authUser?.id != null && property.id != null) {
                                 propertyProvider.toggleFavorite(authUser!.id!, property.id!);
                               } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Please sign in to save properties')),
+                                AppNotification.warning(
+                                  context,
+                                  'Please sign in to save properties to your favorites.',
+                                  title: 'Sign-In Required',
+                                  actionLabel: 'Sign In',
+                                  onAction: () => Navigator.pushNamed(context, '/signin'),
                                 );
                               }
                             },
@@ -245,30 +250,76 @@ class _PropertyCardState extends State<PropertyCard> {
                       ),
                       const SizedBox(height: 10),
 
-                      // Amenity Pills
-                      if (property.offers != null && property.offers!.isNotEmpty)
-                        Wrap(
-                          spacing: 6,
-                          runSpacing: 4,
-                          children: property.offers!.take(3).map((offer) {
-                            return Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      // Eligibility & Amenity Pills
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: [
+                          if (property.genderPreference != null && property.genderPreference!.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFEAF4FB),
+                                color: property.genderPreference!.toLowerCase() == 'male'
+                                    ? const Color(0xFFE0F2FE)
+                                    : property.genderPreference!.toLowerCase() == 'female'
+                                        ? const Color(0xFFFCE7F3)
+                                        : const Color(0xFFF1F5F9),
                                 borderRadius: BorderRadius.circular(8),
-                                border: Border.all(color: const Color(0xFFD2E7F6)),
                               ),
                               child: Text(
-                                offer,
+                                property.genderPreference!.toLowerCase() == 'male'
+                                    ? '👨 Male Only'
+                                    : property.genderPreference!.toLowerCase() == 'female'
+                                        ? '👩 Female Only'
+                                        : '🚻 Open to All',
+                                style: TextStyle(
+                                  color: property.genderPreference!.toLowerCase() == 'male'
+                                      ? const Color(0xFF0369A1)
+                                      : property.genderPreference!.toLowerCase() == 'female'
+                                          ? const Color(0xFFBE185D)
+                                          : const Color(0xFF475569),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          if (property.numberOfPeople != null && property.numberOfPeople!.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '👥 ${property.numberOfPeople}',
                                 style: const TextStyle(
-                                  color: Color(0xFF246FA8),
+                                  color: Color(0xFF475569),
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
-                            );
-                          }).toList(),
-                        ),
+                            ),
+                          if (property.offers != null && property.offers!.isNotEmpty)
+                            ...property.offers!.take(2).map((offer) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEAF4FB),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(color: const Color(0xFFD2E7F6)),
+                                ),
+                                child: Text(
+                                  offer,
+                                  style: const TextStyle(
+                                    color: Color(0xFF246FA8),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              );
+                            }),
+                        ],
+                      ),
 
                       const SizedBox(height: 12),
                       const Divider(height: 1),

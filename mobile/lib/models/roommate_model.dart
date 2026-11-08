@@ -12,6 +12,7 @@ class RoommateModel {
   final String? moveInDate;
   final double? budget;
   final int? posterId;
+  final String? posterEmail;
   final String? name;
   final String? image;
   final int? matchPercentage;
@@ -31,6 +32,7 @@ class RoommateModel {
     this.moveInDate,
     this.budget,
     this.posterId,
+    this.posterEmail,
     this.name,
     this.image,
     this.matchPercentage,
@@ -57,6 +59,7 @@ class RoommateModel {
       moveInDate: json['moveInDate'],
       budget: (json['budget'] as num?)?.toDouble(),
       posterId: posterObj != null ? posterObj['id'] : json['posterId'],
+      posterEmail: posterObj != null ? posterObj['email'] : json['posterEmail'],
       name: json['name'] ?? posterObj?['fullName'] ?? 'Roommate',
       image: json['image'] ?? posterObj?['profilePictureUrl'] ?? fallbackImg,
       matchPercentage: json['matchPercentage'] ?? 95,

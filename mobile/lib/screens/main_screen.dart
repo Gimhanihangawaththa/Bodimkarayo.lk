@@ -6,7 +6,6 @@ import 'properties/properties_screen.dart';
 import 'roommates/roommates_screen.dart';
 import 'chat/chat_list_screen.dart';
 import 'profile/profile_screen.dart';
-import 'properties/add_property_screen.dart';
 import '../providers/chat_provider.dart';
 import '../providers/auth_provider.dart';
 
@@ -64,19 +63,6 @@ class _MainScreenState extends State<MainScreen> {
           _screens[_currentIndex],
         ],
       ),
-      floatingActionButton: _currentIndex == 1
-          ? Padding(
-              padding: const EdgeInsets.only(bottom: 15),
-              child: FloatingActionButton(
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const AddPropertyScreen()),
-                ),
-                backgroundColor: const Color(0xFF0A2463),
-                child: const Icon(Icons.add, color: Colors.white),
-              ),
-            )
-          : null,
       bottomNavigationBar: Container(
         margin: const EdgeInsets.only(left: 14, right: 14, bottom: 20),
         decoration: BoxDecoration(

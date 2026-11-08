@@ -5,6 +5,7 @@ import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/roommate_provider.dart';
 import '../../providers/chat_provider.dart';
+import '../../utils/app_notification.dart';
 import '../chat/chat_conversation_screen.dart';
 import 'apply_roommate_screen.dart';
 
@@ -150,30 +151,56 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
                             onPressed: () async {
                               final authUser = context.read<AuthProvider>().user;
                               if (authUser == null || authUser.id == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: const Text('Please sign in to message this roommate'),
-                                    action: SnackBarAction(label: 'Sign In', onPressed: () => Navigator.pushNamed(context, '/signin')),
-                                  ),
+                                AppNotification.warning(
+                                  context,
+                                  'Please sign in to message this roommate.',
+                                  title: 'Sign-In Required',
+                                  actionLabel: 'Sign In',
+                                  onAction: () => Navigator.pushNamed(context, '/signin'),
                                 );
                                 return;
                               }
-                              final targetId = currentRoommate.posterId ?? 1;
+                              int targetId = currentRoommate.posterId ?? 1;
+                              if (currentRoommate.posterId == null && authUser.id == 1) {
+                                targetId = 2;
+                              }
                               if (authUser.id == targetId) {
-                                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('This is your own post!')));
+                                AppNotification.info(
+                                  context,
+                                  'This is your own roommate profile.',
+                                  title: 'Your Profile',
+                                );
                                 return;
                               }
                               final chatProvider = context.read<ChatProvider>();
                               final navigator = Navigator.of(context);
                               final room = await chatProvider.getOrCreateRoom(authUser.id!, targetId);
-                              if (room != null && mounted) {
+                              if (!mounted) return;
+                              if (room != null) {
+                                final otherUser = room.getOtherUser(authUser.id!);
                                 navigator.push(
                                   MaterialPageRoute(
                                     builder: (context) => ChatConversationScreen(
                                       roomId: room.id,
-                                      targetUser: UserModel(id: targetId, email: 'roommate@bodimkarayo.lk', fullName: 'Roommate Poster'),
+                                      targetUser: otherUser.id != null
+                                          ? otherUser
+                                          : UserModel(
+                                              id: targetId,
+                                              email: currentRoommate.posterEmail ?? 'roommate@bodimkarayo.lk',
+                                              fullName: currentRoommate.name ?? 'Roommate Poster',
+                                              profilePictureUrl: currentRoommate.image,
+                                            ),
                                     ),
                                   ),
+                                );
+                              } else {
+                                if (!context.mounted) return;
+                                AppNotification.error(
+                                  context,
+                                  chatProvider.errorMessage ?? 'Unable to start chat. Please sign in again.',
+                                  title: 'Chat Unavailable',
+                                  actionLabel: 'Sign In',
+                                  onAction: () => Navigator.pushNamed(context, '/signin'),
                                 );
                               }
                             },
@@ -291,7 +318,6 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
   void _showDeleteDialog() {
     final roommateProvider = context.read<RoommateProvider>();
     final navigator = Navigator.of(context);
-    final messenger = ScaffoldMessenger.of(context);
 
     showDialog(
       context: context,
@@ -309,13 +335,17 @@ class _RoommateViewScreenState extends State<RoommateViewScreen> {
               final success = await roommateProvider.deleteRoommate(widget.roommate.id!);
               if (!mounted) return;
               if (success) {
-                navigator.pop(); // close view screen
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Post deleted successfully')),
+                AppNotification.success(
+                  context,
+                  'Your roommate post has been deleted.',
+                  title: 'Post Removed',
                 );
+                navigator.pop(); // close view screen
               } else {
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('Failed to delete post')),
+                AppNotification.error(
+                  context,
+                  'Failed to delete roommate post. Please try again.',
+                  title: 'Delete Failed',
                 );
               }
             },
