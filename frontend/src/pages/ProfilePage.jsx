@@ -110,7 +110,9 @@ export default function ProfilePage() {
       ? post.interests.split(",").map((value) => value.trim()).filter(Boolean)
       : user.interests || [],
     preferredLocation: post?.preferredLocation ?? "",
-    moveInDate: post?.moveInDate ?? "",
+    moveInDate: post?.moveInDate
+      ? (/^\d{4}-\d{2}$/.test(post.moveInDate) ? `${post.moveInDate}-01` : post.moveInDate)
+      : "",
     budget: post?.budget != null ? String(post.budget) : "",
     preferences: post?.preferences ?? "",
     additionalInfo: "",
@@ -1256,10 +1258,11 @@ export default function ProfilePage() {
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Move-In Date <span className="text-rose-500">*</span></label>
                     <div className="relative">
                       <input
-                        type="month"
+                        type="date"
                         name="moveInDate"
                         value={applicationData.moveInDate}
                         onChange={handleApplicationChange}
+                        onClick={(e) => e.target.showPicker?.()}
                         className="w-full px-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900 cursor-pointer"
                       />
                     </div>
