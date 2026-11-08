@@ -20,6 +20,53 @@ export function mapReviewFromApi(raw) {
 }
 
 const reviewService = {
+  // ─── Roommate reviews ────────────────────────────────────────────────────────
+
+  getReviewsByRoommateId: async (roommatePostId) => {
+    try {
+      const response = await apiClient.get(`/roommates/${roommatePostId}/reviews`);
+      const data = response.data;
+      return Array.isArray(data) ? data.map(mapReviewFromApi) : [];
+    } catch (error) {
+      console.error(`Error fetching reviews for roommate ${roommatePostId}:`, error);
+      throw error;
+    }
+  },
+
+  createRoommateReview: async (roommatePostId, reviewData) => {
+    try {
+      const response = await apiClient.post(`/roommates/${roommatePostId}/reviews`, {
+        rating: reviewData.rating,
+        comment: reviewData.text,
+      });
+      return mapReviewFromApi(response.data);
+    } catch (error) {
+      console.error(`Error creating review for roommate ${roommatePostId}:`, error);
+      throw error;
+    }
+  },
+
+  deleteRoommateReview: async (roommatePostId, reviewId) => {
+    try {
+      const response = await apiClient.delete(`/roommates/${roommatePostId}/reviews/${reviewId}`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error deleting roommate review ${reviewId}:`, error);
+      throw error;
+    }
+  },
+
+  getRoommateRating: async (roommatePostId) => {
+    try {
+      const response = await apiClient.get(`/roommates/${roommatePostId}/rating`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching rating for roommate ${roommatePostId}:`, error);
+      throw error;
+    }
+  },
+
+  // ─── Property reviews ────────────────────────────────────────────────────────
   getReviewsByPropertyId: async (propertyId) => {
     try {
       const response = await apiClient.get(`/properties/${propertyId}/reviews`);
