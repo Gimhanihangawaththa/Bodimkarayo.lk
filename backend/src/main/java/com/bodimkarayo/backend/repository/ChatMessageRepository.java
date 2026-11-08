@@ -1,10 +1,12 @@
 package com.bodimkarayo.backend.repository;
 
 import com.bodimkarayo.backend.model.ChatMessage;
+import com.bodimkarayo.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
@@ -19,4 +21,14 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     @Modifying
     @Query("DELETE FROM ChatMessage m WHERE m.chatRoom.id = :roomId")
     void deleteByChatRoomId(@Param("roomId") Long roomId);
+
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM ChatMessage m WHERE m.sender = :sender")
+    void deleteBySender(@Param("sender") User sender);
+
+    @Transactional
+    @Modifying
+    @Query("DELETE FROM ChatMessage m WHERE m.chatRoom IN (SELECT r FROM ChatRoom r WHERE r.user1 = :u OR r.user2 = :u) OR m.sender = :u")
+    void deleteByUser(@Param("u") User u);
 }

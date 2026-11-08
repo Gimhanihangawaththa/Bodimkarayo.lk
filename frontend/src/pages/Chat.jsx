@@ -268,7 +268,7 @@ export default function Chat() {
   return (
     <div className="flex h-[calc(100vh-80px)] bg-slate-50 overflow-hidden">
       {/* Sidebar - Chat List */}
-      <div className="w-80 md:w-96 border-r border-slate-200/80 bg-white flex flex-col shadow-xs z-10 shrink-0">
+      <div className={`${activeRoom ? 'hidden md:flex' : 'flex'} w-full md:w-96 border-r border-slate-200/80 bg-white flex-col shadow-xs z-10 shrink-0`}>
         <div className="p-5 md:p-6 border-b border-slate-100 bg-gradient-to-r from-[#3488c3] to-[#2978b3] text-white shadow-xs">
           <h2 className="text-xl font-bold tracking-tight">Messages</h2>
           <p className="text-xs text-blue-100 font-medium mt-0.5">Your conversations & flatmate chats</p>
@@ -328,16 +328,26 @@ export default function Chat() {
       </div>
 
       {/* Main Chat Window */}
-      <div className="flex-grow flex flex-col bg-white">
+      <div className={`${activeRoom ? 'flex' : 'hidden md:flex'} flex-grow flex-col bg-white`}>
         {activeRoom ? (
           <>
-            <div className="p-4 border-b border-slate-200/80 flex items-center justify-between bg-white shadow-xs z-10">
-              <div className="flex items-center gap-3.5">
-                <div className="w-10 h-10 bg-slate-200 rounded-full overflow-hidden border border-slate-200 shrink-0">
+            <div className="p-3 md:p-4 border-b border-slate-200/80 flex items-center justify-between bg-white shadow-xs z-10">
+              <div className="flex items-center gap-2.5 md:gap-3.5">
+                <button
+                  type="button"
+                  onClick={() => setActiveRoom(null)}
+                  className="md:hidden p-1.5 -ml-1 text-slate-600 hover:text-slate-900 rounded-xl hover:bg-slate-100 transition cursor-pointer"
+                  aria-label="Back to conversations"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div className="w-9 h-9 md:w-10 md:h-10 bg-slate-200 rounded-full overflow-hidden border border-slate-200 shrink-0">
                   <img src={getOtherUser(activeRoom).profilePictureUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} alt="Recipient" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h2 className="font-bold text-slate-900 text-base leading-tight">{getOtherUser(activeRoom).fullName}</h2>
+                  <h2 className="font-bold text-slate-900 text-sm md:text-base leading-tight truncate max-w-[140px] sm:max-w-none">{getOtherUser(activeRoom).fullName}</h2>
                   <span className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Active Now
                   </span>
@@ -357,12 +367,12 @@ export default function Chat() {
               </button>
             </div>
             
-            <div ref={scrollRef} className="flex-grow p-6 overflow-y-auto bg-slate-50/70 space-y-4">
+            <div ref={scrollRef} className="flex-grow p-3 md:p-6 overflow-y-auto bg-slate-50/70 space-y-3 md:space-y-4">
               {messages.map((msg, i) => {
                 const isMine = msg.sender?.id === user?.id;
                 return (
                   <div key={i} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] p-4 rounded-2xl shadow-xs ${
+                    <div className={`max-w-[85%] md:max-w-[70%] p-3.5 md:p-4 rounded-2xl shadow-xs ${
                       isMine 
                         ? 'bg-[#3488c3] text-white rounded-br-none' 
                         : 'bg-white text-slate-800 rounded-bl-none border border-slate-200/80'

@@ -220,7 +220,7 @@ export default function SignIn() {
       </div>
 
       {/* Right Column - Hero & Floating Cards Showcase (7 Cols on LG) */}
-      <div className="lg:col-span-7 bg-slate-950 relative overflow-hidden flex flex-col justify-between p-8 md:p-12 min-h-screen text-white">
+      <div className="hidden lg:flex lg:col-span-7 bg-slate-950 relative overflow-hidden flex-col justify-between p-8 md:p-12 min-h-screen text-white">
         
         {/* Carousel Background Images (Vivid Clarity) */}
         {HERO_IMAGES.map((imgUrl, index) => (

@@ -65,6 +65,14 @@ export function AuthProvider({ children }) {
     if (newRefreshToken) setRefreshToken(newRefreshToken)
   }
 
+  const updateUser = (updatedUserData) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const merged = typeof updatedUserData === 'function' ? updatedUserData(prev) : { ...prev, ...updatedUserData };
+      return merged;
+    });
+  };
+
   const logout = async () => {
     try {
       const storedRefreshToken = localStorage.getItem('refreshToken') || refreshToken
@@ -89,7 +97,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, refreshToken, isAuthenticated: !!token, login, logout, updateTokens }}>
+    <AuthContext.Provider value={{ user, token, refreshToken, isAuthenticated: !!token, login, logout, updateTokens, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiClient } from "../config/api.config";
+import reviewService from "../services/reviewService";
+import { AddReview } from "../components/AddReview";
+import { ReviewsList } from "../components/ReviewsList";
 
 const DEFAULT_AVATAR = "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400";
 
@@ -12,6 +15,10 @@ export default function RoommateView() {
   const [roommate, setRoommate] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // ── Reviews state ──────────────────────────────────────────────────────────
+  const [reviews, setReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
 
   useEffect(() => {
     const loadRoommate = async () => {
@@ -57,8 +64,19 @@ export default function RoommateView() {
             preferredLocation: post.preferredLocation || post.location || "Flexible",
             moveInDate: post.moveInDate || "Immediate",
           },
-          reviews: Array.isArray(post.reviews) ? post.reviews : [],
         });
+
+        // Fetch reviews separately
+        setReviewsLoading(true);
+        try {
+          const reviewsData = await reviewService.getReviewsByRoommateId(roommateId);
+          setReviews(reviewsData);
+        } catch (reviewErr) {
+          console.error("Error fetching roommate reviews:", reviewErr);
+          setReviews([]);
+        } finally {
+          setReviewsLoading(false);
+        }
       } catch (err) {
         console.error("Error loading roommate:", err);
         const message = err?.response?.data?.message || err?.message || "Failed to load roommate profile.";
@@ -84,6 +102,54 @@ export default function RoommateView() {
       alert("Poster information not available for messaging.");
     }
   };
+
+  // ── Review handlers ────────────────────────────────────────────────────────
+  const handleAddReview = async ({ rating, text }) => {
+    if (!currentUser) {
+      alert("Please sign in to post a review.");
+      navigate("/signin");
+      return;
+    }
+    try {
+      const created = await reviewService.createRoommateReview(roommateId, { rating, text });
+      setReviews((prev) => {
+        // Replace existing review by this user (upsert behaviour mirrors backend)
+        const withoutDup = prev.filter((r) => r.reviewerId !== currentUser.id);
+        return [created, ...withoutDup];
+      });
+      alert("Thank you for your review!");
+    } catch (err) {
+      console.error("Error adding roommate review:", err);
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data ||
+        "Failed to add review. Please try again.";
+      alert(msg);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!window.confirm("Are you sure you want to delete this review?")) return;
+    try {
+      await reviewService.deleteRoommateReview(roommateId, reviewId);
+      setReviews((prev) => prev.filter((r) => r.id !== reviewId));
+      alert("Review deleted successfully.");
+    } catch (err) {
+      console.error("Error deleting roommate review:", err);
+      alert("Failed to delete review. Please try again.");
+    }
+  };
+
+  // ── Derived values ─────────────────────────────────────────────────────────
+  const reviewAverage =
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : null;
+
+  const reviewSummaryText =
+    reviewAverage == null
+      ? "No reviews yet"
+      : `${reviewAverage.toFixed(1)} avg · ${reviews.length} review${reviews.length !== 1 ? "s" : ""}`;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-16">
@@ -166,7 +232,7 @@ export default function RoommateView() {
                     </button>
                     <div className="bg-white/15 backdrop-blur-md text-white px-5 py-3 rounded-2xl font-bold text-sm border border-white/20 flex items-center gap-2">
                       <span className="text-amber-400">⭐</span>
-                      <span>{roommate.rating} Rating</span>
+                      <span>{reviewSummaryText}</span>
                     </div>
                   </div>
                 </div>
@@ -198,7 +264,7 @@ export default function RoommateView() {
                     <span className="w-9 h-9 rounded-2xl bg-[#3488c3]/10 text-[#3488c3] flex items-center justify-center text-lg font-bold border border-[#3488c3]/20">
                       🎯
                     </span>
-                    <span>Living Preferences & Details</span>
+                    <span>Living Preferences &amp; Details</span>
                   </h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="flex items-center gap-3.5 p-4 rounded-2xl bg-slate-50/90 border border-slate-200/70 hover:bg-[#eaf4fb]/50 transition">
@@ -259,7 +325,7 @@ export default function RoommateView() {
                     <span className="w-9 h-9 rounded-2xl bg-[#3488c3]/10 text-[#3488c3] flex items-center justify-center text-lg font-bold border border-[#3488c3]/20">
                       🎨
                     </span>
-                    <span>Interests & Hobbies</span>
+                    <span>Interests &amp; Hobbies</span>
                   </h3>
                   {roommate.interests.length > 0 ? (
                     <div className="flex flex-wrap gap-2.5">
@@ -277,38 +343,33 @@ export default function RoommateView() {
                   )}
                 </div>
 
-                {/* Reviews Section */}
+                {/* ── Reviews Section ─────────────────────────────────────────────────── */}
                 <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200/90 shadow-[0_12px_40px_rgba(15,23,42,0.04)] space-y-6">
                   <h3 className="text-xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3 border-b border-slate-100 pb-4">
                     <span className="w-9 h-9 rounded-2xl bg-[#3488c3]/10 text-[#3488c3] flex items-center justify-center text-lg font-bold border border-[#3488c3]/20">
                       ⭐
                     </span>
-                    <span>Reviews ({roommate.reviews.length})</span>
+                    <span>Reviews ({reviews.length})</span>
                   </h3>
 
-                  {roommate.reviews.length === 0 ? (
-                    <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                      <span className="text-3xl block mb-2">⭐</span>
-                      <p className="text-slate-500 font-medium text-sm">No reviews yet for this roommate.</p>
+                  {reviewsLoading ? (
+                    <div className="flex justify-center py-8">
+                      <div className="w-8 h-8 border-4 border-[#3488c3] border-t-transparent rounded-full animate-spin" />
                     </div>
                   ) : (
-                    <div className="space-y-4">
-                      {roommate.reviews.map((review) => (
-                        <div key={review.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <p className="font-extrabold text-slate-900 text-sm">{review.author}</p>
-                            <div className="flex text-amber-400 text-xs">
-                              {[...Array(5)].map((_, i) => (
-                                <span key={i} className={i < review.rating ? "" : "opacity-30"}>
-                                  ★
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          <p className="text-slate-700 text-xs md:text-sm leading-relaxed">{review.text}</p>
-                        </div>
-                      ))}
-                    </div>
+                    <>
+                      {/* Add review form — hidden for the poster's own profile */}
+                      {currentUser && currentUser.id !== roommate.posterId && (
+                        <AddReview onSubmit={handleAddReview} />
+                      )}
+
+                      <ReviewsList
+                        reviews={reviews}
+                        reviewCount={reviews.length}
+                        onDeleteReview={handleDeleteReview}
+                        currentUserId={currentUser?.id}
+                      />
+                    </>
                   )}
                 </div>
               </div>
@@ -336,6 +397,14 @@ export default function RoommateView() {
                       <span className="text-slate-500 font-medium">Move-In</span>
                       <span className="font-extrabold text-slate-900">{roommate.preferences.moveInDate}</span>
                     </div>
+                    {reviews.length > 0 && (
+                      <div className="flex justify-between py-1.5 border-b border-slate-100">
+                        <span className="text-slate-500 font-medium">Rating</span>
+                        <span className="font-extrabold text-amber-500">
+                          ⭐ {reviewAverage?.toFixed(1)} ({reviews.length})
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <button

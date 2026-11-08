@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiClient } from "../config/api.config";
 import { useAuth } from "../context/AuthContext";
@@ -531,6 +531,26 @@ export default function ProfilePage() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Derive month/year parts from moveInDate string ("YYYY-MM")
+  const moveInParts = (() => {
+    const raw = applicationData.moveInDate || "";
+    const match = raw.match(/^(\d{4})-(\d{2})$/);
+    if (match) return { year: match[1], month: match[2] };
+    return { year: "", month: "" };
+  })();
+
+  const handleMoveInMonthChange = (e) => {
+    const month = e.target.value;
+    const year = moveInParts.year || String(new Date().getFullYear());
+    setApplicationData((prev) => ({ ...prev, moveInDate: month ? (year + "-" + month) : "" }));
+  };
+
+  const handleMoveInYearChange = (e) => {
+    const year = e.target.value;
+    const month = moveInParts.month || "01";
+    setApplicationData((prev) => ({ ...prev, moveInDate: year ? (year + "-" + month) : "" }));
   };
 
   const handleInterestToggle = (interest) => {
@@ -1254,14 +1274,31 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Move-In Date <span className="text-rose-500">*</span></label>
-                    <div className="relative">
-                      <input
-                        type="month"
-                        name="moveInDate"
-                        value={applicationData.moveInDate}
-                        onChange={handleApplicationChange}
-                        className="w-full px-4 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900 cursor-pointer"
-                      />
+                    <div className="flex gap-2">
+                      <select
+                        value={moveInParts.month}
+                        onChange={handleMoveInMonthChange}
+                        className="flex-1 px-3 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900 cursor-pointer"
+                      >
+                        <option value="">Month</option>
+                        {[["01","January"],["02","February"],["03","March"],
+                          ["04","April"],["05","May"],["06","June"],
+                          ["07","July"],["08","August"],["09","September"],
+                          ["10","October"],["11","November"],["12","December"]
+                        ].map(([val, label]) => (
+                          <option key={val} value={val}>{label}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={moveInParts.year}
+                        onChange={handleMoveInYearChange}
+                        className="w-28 px-3 py-3 border border-slate-200/90 rounded-2xl text-sm font-semibold focus:ring-2 focus:ring-[#3488c3] focus:border-[#3488c3] outline-none transition bg-slate-50/50 focus:bg-white text-slate-900 cursor-pointer"
+                      >
+                        <option value="">Year</option>
+                        {Array.from({ length: 5 }, (_, i) => String(new Date().getFullYear() + i)).map((yr) => (
+                          <option key={yr} value={yr}>{yr}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
