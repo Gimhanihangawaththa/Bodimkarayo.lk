@@ -269,8 +269,6 @@ export default function Settings() {
   const tabs = [
     { id: 'account', label: 'Account & Profile', icon: '👤' },
     { id: 'security', label: 'Password & Security', icon: '🔒' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔' },
-    { id: 'privacy', label: 'Privacy & Visibility', icon: '👁️' },
     { id: 'billing', label: 'Billing & Payments', icon: '💳' },
     { id: 'danger', label: 'Danger Zone', icon: '⚠️' },
   ];
@@ -537,59 +535,6 @@ export default function Settings() {
             </div>
           )}
 
-          {/* Notifications Tab (Dummy) */}
-          {activeTab === 'notifications' && (
-            <div className="p-4 sm:p-6 md:p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Notification Preferences</h2>
-              <p className="text-gray-500 mb-8">Choose what we email you about. (Coming soon)</p>
-
-              <div className="space-y-4 opacity-60 pointer-events-none">
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <div>
-                    <h4 className="font-medium text-gray-900">New Messages</h4>
-                    <p className="text-sm text-gray-500">Get notified when someone messages you.</p>
-                  </div>
-                  <div className="w-12 h-6 bg-blue-600 rounded-full flex items-center p-1 justify-end">
-                    <div className="w-4 h-4 bg-white rounded-full"></div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between py-3 border-b border-gray-100">
-                  <div>
-                    <h4 className="font-medium text-gray-900">Promotions & Offers</h4>
-                    <p className="text-sm text-gray-500">Receive emails about new features and discounts.</p>
-                  </div>
-                  <div className="w-12 h-6 bg-gray-300 rounded-full flex items-center p-1">
-                    <div className="w-4 h-4 bg-white rounded-full"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Privacy Tab (Dummy) */}
-          {activeTab === 'privacy' && (
-            <div className="p-4 sm:p-6 md:p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Privacy & Visibility</h2>
-              <p className="text-gray-500 mb-8">Control who sees your information. (Coming soon)</p>
-
-              <div className="space-y-6 max-w-lg opacity-60 pointer-events-none">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Profile Visibility in Roommate Search</label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50">
-                    <option>Visible to everyone</option>
-                    <option>Hidden</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Contact Details Privacy</label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-md bg-gray-50">
-                    <option>Show phone number to registered users only</option>
-                    <option>Hide phone number completely</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Billing Tab (Dummy) */}
           {activeTab === 'billing' && (
